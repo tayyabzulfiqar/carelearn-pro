@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 const BASE = 'https://carelearn-pro-web.vercel.app';
-const API_BASE = 'https://carelearn-pro-api.vercel.app/api/v1';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 async function login(page) {
   await page.goto(`${BASE}/login`);

@@ -13,11 +13,39 @@ const enrollmentRoutes = require('./routes/enrollments.routes');
 const certificateRoutes = require('./routes/certificates.routes');
 const uploadRoutes = require('./routes/upload.routes');
 const errorHandler = require('./middleware/errorHandler');
+const { bootstrapDatabase } = require('./bootstrap');
 
 const app = express();
-const LOCAL_FIRE_SAFETY_ROOT = 'C:/Users/HP/Desktop/uk training';
 const allowedOrigins = [
-  process.env.CORS_ORIGIN || 'https://carelearn-pro-web.vercel.app',
+  process.env.CORS_ORIGIN,
+  'https://carelearn-pro-web.vercel.app',
+  'https://carelearn-pro-web-tayyab12.vercel.app',
+].filter(Boolean);
+
+const databaseReady = bootstrapDatabase().catch((err) => {
+  console.error('Database bootstrap failed', err);
+  throw err;
+});
+
+const requireDatabaseReady = async (req, res, next) => {
+  try {
+    await databaseReady;
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+const noStoreStaticHeaders = (res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+};
+
+const localImageRoots = [
+  path.join(__dirname, '../uploads/local-images'),
+  path.join(__dirname, '../uploads'),
 ];
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
@@ -29,37 +57,33 @@ app.use(cors({
     }
     callback(new Error('Not allowed by CORS'));
   },
+  credentials: true,
 }));
 app.use(morgan('dev'));
 app.use(express.json());
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-app.use('/api/v1/local-images', express.static(LOCAL_FIRE_SAFETY_ROOT, {
-  fallthrough: false,
-  immutable: false,
-  maxAge: 0,
-  setHeaders(res) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.setHeader('Surrogate-Control', 'no-store');
-  },
-}));
+for (const root of localImageRoots) {
+  app.use('/api/v1/local-images', express.static(root, {
+    fallthrough: true,
+    immutable: false,
+    maxAge: 0,
+    setHeaders: noStoreStaticHeaders,
+  }));
+}
 
 app.get('/health', (req, res) =>
   res.json({ status: 'ok', service: 'CareLearn API', version: '1.0.0' })
 );
 
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/users', userRoutes);
-app.use('/api/v1/organisations', orgRoutes);
-app.use('/api/v1/courses', courseRoutes);
-app.use('/api/v1/enrollments', enrollmentRoutes);
-app.use('/api/v1/certificates', certificateRoutes);
-app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/auth', requireDatabaseReady, authRoutes);
+app.use('/api/v1/users', requireDatabaseReady, userRoutes);
+app.use('/api/v1/organisations', requireDatabaseReady, orgRoutes);
+app.use('/api/v1/courses', requireDatabaseReady, courseRoutes);
+app.use('/api/v1/enrollments', requireDatabaseReady, enrollmentRoutes);
+app.use('/api/v1/certificates', requireDatabaseReady, certificateRoutes);
+app.use('/api/v1/upload', requireDatabaseReady, uploadRoutes);
 
 app.use(errorHandler);
 
-// For Vercel serverless: export app as default
-module.exports = app;
-exports.default = app;
+module.exports = (req, res) => app(req, res);

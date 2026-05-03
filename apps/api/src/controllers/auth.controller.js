@@ -3,12 +3,15 @@ const jwt = require('jsonwebtoken');
 const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_in_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecure123';
 const JWT_EXPIRES = process.env.JWT_EXPIRES || '24h';
 
 exports.register = async (req, res, next) => {
   try {
     const { email, password, first_name, last_name, role = 'learner' } = req.body;
+    if (!email || !password || !first_name || !last_name) {
+      return res.status(400).json({ error: 'Email, password, first name, and last name are required' });
+    }
     const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       return res.status(409).json({ error: 'Email already registered' });
@@ -30,6 +33,9 @@ exports.register = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
     const result = await db.query(
       'SELECT id, email, password_hash, first_name, last_name, role FROM users WHERE email = $1',
       [email]

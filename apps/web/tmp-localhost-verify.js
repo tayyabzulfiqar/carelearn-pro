@@ -2,10 +2,10 @@ const { chromium } = require('playwright');
 const axios = require('axios');
 const { Client } = require('pg');
 
-const APP_URL = 'http://localhost:8081';
-const API_URL = 'http://localhost:5000/api/v1';
-const EMAIL = 'admin@test.com';
-const PASSWORD = 'Admin1234';
+const APP_URL = 'https://carelearn-pro-web.vercel.app';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const EMAIL = 'test@care.com';
+const PASSWORD = 'Test1234!';
 
 async function getDemoCourse() {
   const login = await axios.post(`${API_URL}/auth/login`, { email: EMAIL, password: PASSWORD });
@@ -31,7 +31,8 @@ async function getDemoCourse() {
 
 async function resetCourseState(courseId) {
   const client = new Client({
-    connectionString: 'postgresql://postgres:postgres@localhost:5432/carelearn',
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL?.includes('sslmode=disable') ? false : { rejectUnauthorized: false },
   });
   await client.connect();
 

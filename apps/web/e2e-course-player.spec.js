@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'https://carelearn-pro-web.vercel.app';
 
 async function loginAs(page, email, password) {
   await page.goto(`${BASE_URL}/login`);

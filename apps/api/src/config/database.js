@@ -3,21 +3,20 @@ const { Pool } = require('pg');
 
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
-const connectionConfig = process.env.DATABASE_URL
-  ? {
-      connectionString: process.env.DATABASE_URL,
-    }
-  : {
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 5432,
-      database: process.env.DB_NAME || 'carelearn',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'password',
-    };
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required for CareLearn API');
+}
+
+const connectionConfig = {
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL.includes('sslmode=disable')
+    ? false
+    : { rejectUnauthorized: false },
+};
 
 const pool = new Pool({
   ...connectionConfig,
-  max: 20,
+  max: 5,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
 });

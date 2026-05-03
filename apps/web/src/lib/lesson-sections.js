@@ -1,16 +1,17 @@
 const EMPHASIS_REGEX = /\b(must|always|important|ensure)\b/gi;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 function resolveImageUrl(value) {
   if (value && typeof value === 'object' && typeof value.src === 'string') {
     if (!value.src) return '';
     return value.src.startsWith('http://') || value.src.startsWith('https://')
       ? value.src
-      : `${process.env.NEXT_PUBLIC_API_URL || 'https://carelearn-pro-api.vercel.app/api/v1'}${value.src.startsWith('/') ? value.src.replace(/^\/api\/v1/, '') : `/${value.src}`}`;
+      : `${API_BASE}${value.src.startsWith('/') ? value.src.replace(/^\/api\/v1/, '') : `/${value.src}`}`;
   }
   if (!value || typeof value !== 'string') return '';
   if (value.startsWith('http://') || value.startsWith('https://')) return value;
-  if (value.startsWith('/uploads')) return `${process.env.NEXT_PUBLIC_API_URL || 'https://carelearn-pro-api.vercel.app/api/v1'}${value}`;
-  return `${process.env.NEXT_PUBLIC_API_URL || 'https://carelearn-pro-api.vercel.app/api/v1'}${value.startsWith('/') ? value : `/${value}`}`;
+  if (value.startsWith('/uploads')) return `${API_BASE}${value}`;
+  return `${API_BASE}${value.startsWith('/') ? value : `/${value}`}`;
 }
 
 function getLessonSections(content = {}) {

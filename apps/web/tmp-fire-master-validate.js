@@ -1,8 +1,8 @@
 const axios = require('axios');
 const { chromium } = require('playwright');
 
-const API_URL = 'http://localhost:5000/api/v1';
-const WEB_URL = 'http://localhost:8081';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const WEB_URL = 'https://carelearn-pro-web.vercel.app';
 const EMAIL = 'test@carehome.com';
 const PASSWORD = 'Test1234!';
 const USER = {
@@ -194,7 +194,7 @@ function evaluateLesson(lesson) {
     const certName = await page.getByText('Test User').isVisible();
     const certCourse = await page.getByText('Fire Safety Awareness').isVisible();
 
-    const health = await axios.get('http://localhost:5000/health');
+    const health = await axios.get(`${API_URL.replace(/\/api\/v1$/, '')}/health`);
     const front = await axios.get(`${WEB_URL}/login`);
 
     console.log(JSON.stringify({

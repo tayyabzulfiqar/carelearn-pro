@@ -4,3 +4,6 @@ uploads/
 server.out.log
 server.err.log
 *.log
+
+.vercel
+.env*.local
