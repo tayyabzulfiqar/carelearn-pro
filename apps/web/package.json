@@ -1,0 +1,36 @@
+{
+  "name": "@carelearn/web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 8081",
+    "build": "next build",
+    "start": "next start -p 8081",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "axios": "^1.15.2",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
+    "js-cookie": "^3.0.5",
+    "lucide-react": "^1.14.0",
+    "next": "14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.74.0",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
+    "@types/node": "^20.12.7",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.5.0",
+    "playwright": "^1.59.1",
+    "postcss": "^8.5.12",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.4.5"
+  }
+}
