@@ -33,32 +33,28 @@ function EmphasizedText({ text, className }) {
 function LessonSectionImage({ imageSrc }) {
   const [hasError, setHasError] = useState(false);
 
-  if (!imageSrc || hasError) {
-    return (
-      <div
-        aria-hidden="true"
-        className="mx-auto my-5 h-[280px] w-full max-w-[650px] rounded-lg border border-dashed border-stone-200 bg-stone-100"
-      />
-    );
-  }
+  if (!imageSrc || hasError) return null;
 
   return (
     <div
-      className="mx-auto my-5 flex w-fit max-w-full items-center justify-center p-0"
+      className="mx-auto my-5 flex w-full max-w-[650px] items-center justify-center overflow-hidden rounded-lg border border-stone-200 bg-white p-3"
       style={{ marginLeft: 'auto', marginRight: 'auto' }}
     >
       <img
         src={imageSrc}
         alt=""
-        className="block w-full rounded-lg object-cover"
+        className="block max-w-full rounded-lg object-contain"
         onError={() => {
           console.error(`Failed to load lesson image: ${imageSrc}`);
           setHasError(true);
         }}
         style={{
-          width: '100%',
+          maxWidth: '100%',
+          width: 'auto',
+          height: 'auto',
+          maxHeight: '420px',
+          objectFit: 'contain',
           maxWidth: '650px',
-          height: '280px',
           marginLeft: 'auto',
           marginRight: 'auto',
         }}

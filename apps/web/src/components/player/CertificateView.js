@@ -29,14 +29,17 @@ export default function CertificateView({ certificate, course, user, onDone }) {
             <img
               src={backgroundImage}
               alt="Fire safety certificate"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-contain"
             />
             <div className="absolute inset-0">
               <div className="absolute left-1/2 top-[45%] -translate-x-1/2 text-center w-[70%]">
                 <h2 className="text-4xl font-semibold tracking-[0.08em] text-[#3b2418]">
                   {template.recipientName || `${user?.first_name || ''} ${user?.last_name || ''}`.trim()}
                 </h2>
-                <p className="mt-3 text-sm uppercase tracking-[0.32em] text-[#72584a]">{course?.title}</p>
+                <p className="mt-3 text-sm uppercase tracking-[0.32em] text-[#72584a]">
+                  {template.companyName || 'Flexible Health Care One Solution Ltd'}
+                </p>
+                <p className="mt-2 text-xs uppercase tracking-[0.28em] text-[#8a6a59]">{course?.title}</p>
               </div>
               <div className="absolute left-[14%] bottom-[14%] text-left">
                 <p className="text-xs uppercase tracking-[0.24em] text-[#72584a]">Date</p>
@@ -47,7 +50,8 @@ export default function CertificateView({ certificate, course, user, onDone }) {
                 <p className="mt-1 text-base font-semibold text-[#3b2418]">{template.statusText || 'PASS'}</p>
               </div>
               <div className="absolute right-[12%] bottom-[24%] text-center">
-                <p className="text-sm italic text-[#3b2418]">Authorised by {template.authorizedBy || 'Nargis Nawaz'}</p>
+                <p className="text-sm italic text-[#3b2418]">Director: {template.directorName || 'Nargis Nawaz'}</p>
+                <p className="mt-1 text-sm italic text-[#3b2418]">Authorised by {template.authorizedBy || 'Nargis Nawaz'}</p>
               </div>
             </div>
           </div>

@@ -11,7 +11,9 @@ test('buildCertificateTemplateModel points at the fire safety certificate image 
   });
 
   assert.match(model.backgroundImage, /certificate_fire_safety\.png$/);
-  assert.equal(model.recipientName, 'Test User');
+  assert.equal(model.recipientName, 'Tayyab Abbasi');
   assert.equal(model.statusText, 'PASS');
   assert.equal(model.authorizedBy, 'Nargis Nawaz');
+  assert.equal(model.companyName, 'Flexible Health Care One Solution Ltd');
+  assert.equal(model.directorName, 'Nargis Nawaz');
 });

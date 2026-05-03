@@ -43,18 +43,12 @@ exports.getByUser = async (req, res, next) => {
 exports.issue = async (req, res, next) => {
   try {
     const { enrollment_id, user_id, course_id, organisation_id } = req.body;
-    const questionCount = await db.query(
-      'SELECT COUNT(*)::int as count FROM assessment_questions WHERE course_id=$1 AND is_final_assessment=true AND is_active=true',
-      [course_id]
+    const passed = await db.query(
+      'SELECT id FROM assessment_attempts WHERE enrollment_id=$1 AND is_final=true AND passed=true LIMIT 1',
+      [enrollment_id]
     );
-    if (questionCount.rows[0].count > 0) {
-      const passed = await db.query(
-        'SELECT id FROM assessment_attempts WHERE enrollment_id=$1 AND is_final=true AND passed=true LIMIT 1',
-        [enrollment_id]
-      );
-      if (!passed.rows.length) {
-        return res.status(403).json({ error: 'Assessment not passed' });
-      }
+    if (!passed.rows.length) {
+      return res.status(403).json({ error: 'Assessment not passed' });
     }
     const existing = await db.query(
       'SELECT * FROM certificates WHERE enrollment_id = $1',

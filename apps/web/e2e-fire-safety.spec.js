@@ -1,5 +1,4 @@
 const { test, expect } = require('@playwright/test');
-const { buildAttemptQuestionSet } = require('./src/lib/quizSession');
 
 const BASE = 'http://localhost:8081';
 const API_BASE = 'http://localhost:5000/api/v1';
@@ -28,9 +27,7 @@ async function getUserCookie(page) {
 
 async function apiGet(request, token, path) {
   const response = await request.get(`${API_BASE}${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
   expect(response.ok()).toBeTruthy();
   return response.json();
@@ -38,9 +35,7 @@ async function apiGet(request, token, path) {
 
 async function apiPut(request, token, path, body) {
   const response = await request.put(`${API_BASE}${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
     data: body,
   });
   expect(response.ok()).toBeTruthy();
@@ -49,29 +44,19 @@ async function apiPut(request, token, path, body) {
 
 async function apiPost(request, token, path, body) {
   const response = await request.post(`${API_BASE}${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
     data: body,
   });
   expect(response.ok()).toBeTruthy();
   return response.json();
 }
 
-async function answerQuiz(page, questions, seed, mode = 'pass') {
-  const attempt = buildAttemptQuestionSet({ seed, questions });
+async function answerQuiz(page, mode) {
+  for (let index = 0; index < 14; index += 1) {
+    const answerIndex = mode === 'pass' ? 0 : (index < 10 ? 0 : 1);
+    await page.locator('div.grid > button').nth(answerIndex).click();
 
-  for (let questionIndex = 0; questionIndex < attempt.questions.length; questionIndex += 1) {
-    const question = attempt.questions[questionIndex];
-    const optionButtons = page.locator('div.grid > button');
-    const targetIndex = mode === 'pass'
-      ? question.correct_answer
-      : (question.correct_answer === 0 ? 1 : 0);
-
-    await optionButtons.nth(targetIndex).click();
-    await page.getByRole('button', { name: 'Confirm Answer' }).click();
-
-    if (questionIndex < questions.length - 1) {
+    if (index < 13) {
       await page.getByRole('button', { name: 'Next Question' }).click();
     }
   }
@@ -79,8 +64,9 @@ async function answerQuiz(page, questions, seed, mode = 'pass') {
   await page.getByRole('button', { name: 'Submit Quiz' }).click();
 }
 
-test('Fire Safety Awareness lesson quiz, fail gate, retry, and certificate flow work end to end', async ({ page, request }) => {
+test('fixed fire safety quiz gates lessons, fails at under 75 percent, and issues certificate on pass', async ({ page, request }) => {
   test.setTimeout(120000);
+
   await login(page);
   const token = await getAuthCookie(page);
   const currentUser = await getUserCookie(page);
@@ -89,66 +75,51 @@ test('Fire Safety Awareness lesson quiz, fail gate, retry, and certificate flow 
   const course = coursesPayload.courses.find((item) => item.title === 'Fire Safety Awareness');
   expect(course).toBeTruthy();
 
-  await page.goto(`${BASE}/dashboard/courses/${course.id}/player`);
-  await expect(page.locator('h1').first()).toBeVisible({ timeout: 15000 });
-
   const coursePayload = await apiGet(request, token, `/courses/${course.id}`);
-  const allLessons = (coursePayload.course.modules || []).flatMap((module) => module.lessons || []);
-  expect(allLessons.length).toBe(17);
+  const lessons = (coursePayload.course.modules || []).flatMap((module) => module.lessons || []);
+  expect(lessons.length).toBe(17);
 
   const enrollmentsPayload = await apiGet(request, token, '/enrollments/my');
   const enrollment = enrollmentsPayload.enrollments.find((item) => item.course_id === course.id);
   expect(enrollment).toBeTruthy();
 
-  const progressPayload = await apiGet(request, token, `/enrollments/${enrollment.id}/progress`);
-  const completedIds = new Set((progressPayload.progress || []).filter((item) => item.completed).map((item) => item.lesson_id));
-  const nextIncompleteIndex = allLessons.findIndex((lesson) => !completedIds.has(lesson.id));
-  const lessonIndex = nextIncompleteIndex === -1 ? allLessons.length - 1 : nextIncompleteIndex;
-  const lessonNumber = lessonIndex + 1;
+  await page.goto(`${BASE}/dashboard/courses/${course.id}/player`);
+  await expect(page.locator('body')).toContainText('Fire Safety Awareness', { timeout: 15000 });
+  await expect(page.locator('body')).not.toContainText('Final Quiz');
+
+  for (let index = 0; index < 16; index += 1) {
+    await apiPut(request, token, '/enrollments/progress', {
+      enrollment_id: enrollment.id,
+      lesson_id: lessons[index].id,
+      time_spent_seconds: 60,
+    });
+  }
+
+  await page.goto(`${BASE}/dashboard/courses/${course.id}/player`);
+  await expect(page.locator('body')).toContainText(lessons[16].title, { timeout: 15000 });
 
   const images = page.locator('main img');
-  const imgCount = await images.count();
-  for (let index = 0; index < imgCount; index += 1) {
+  const imageCount = await images.count();
+  for (let index = 0; index < imageCount; index += 1) {
     const naturalWidth = await images.nth(index).evaluate((element) => element.naturalWidth);
     expect(naturalWidth).toBeGreaterThan(0);
   }
 
-  await page.getByRole('button', { name: /Go to Assessment|Next/i }).last().click();
-  await expect(page.getByText(`Lesson ${lessonNumber} Quiz`)).toBeVisible({ timeout: 15000 });
+  await page.getByRole('button', { name: 'Go to Assessment' }).click();
+  await expect(page.getByText('Final Quiz')).toBeVisible({ timeout: 15000 });
 
-  const lessonQuestionsPayload = await apiGet(request, token, `/courses/${course.id}/lessons/${lessonNumber}/questions`);
-  expect(lessonQuestionsPayload.questions.length).toBe(14);
+  const questionsPayload = await apiGet(request, token, `/courses/${course.id}/questions?is_final=true`);
+  expect(questionsPayload.questions.length).toBe(14);
 
-  await answerQuiz(page, lessonQuestionsPayload.questions, `lesson-${lessonNumber}-1`, 'fail');
-  await expect(page.getByText('You must achieve at least 75% to pass.')).toBeVisible({ timeout: 10000 });
-  await page.getByRole('button', { name: 'Restart Quiz' }).click();
+  await answerQuiz(page, 'fail');
+  await expect(page.getByText('You must achieve at least 75 percent to pass')).toBeVisible({ timeout: 10000 });
+  await page.getByRole('button', { name: 'Retake Quiz' }).click();
 
-  await answerQuiz(page, lessonQuestionsPayload.questions, `lesson-${lessonNumber}-2`, 'pass');
-
-  for (const lesson of allLessons) {
-    if (!completedIds.has(lesson.id)) {
-      await apiPut(request, token, '/enrollments/progress', {
-        enrollment_id: enrollment.id,
-        lesson_id: lesson.id,
-        time_spent_seconds: 60,
-      });
-    }
-  }
-
-  await page.goto(`${BASE}/dashboard/courses/${course.id}/player`);
-  await expect(page.locator('h1').first()).toBeVisible({ timeout: 15000 });
-
-  const finalQuestionsPayload = await apiGet(request, token, `/courses/${course.id}/questions?is_final=true`);
-  expect(finalQuestionsPayload.questions.length).toBeGreaterThan(0);
-  const finalAttempt = await apiPost(request, token, `/courses/${course.id}/attempt`, {
-    enrollment_id: enrollment.id,
-    is_final: true,
-    answers: finalQuestionsPayload.questions.map((question) => ({
-      question_id: question.id,
-      answer: question.correct_answer,
-    })),
-  });
-  expect(finalAttempt.passed).toBeTruthy();
+  await answerQuiz(page, 'pass');
+  await expect(page.getByText('Certificate Ready')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('body')).toContainText('Tayyab Abbasi');
+  await expect(page.locator('body')).toContainText('Director: Nargis Nawaz');
+  await expect(page.locator('body')).toContainText('Flexible Health Care One Solution Ltd');
 
   const certificatePayload = await apiPost(request, token, '/certificates', {
     enrollment_id: enrollment.id,
@@ -156,6 +127,8 @@ test('Fire Safety Awareness lesson quiz, fail gate, retry, and certificate flow 
     course_id: course.id,
     organisation_id: enrollment.organisation_id || null,
   });
-  expect(certificatePayload.certificate.template.statusText).toBe('PASS');
-  expect(certificatePayload.certificate.template.backgroundImage).toContain('certificate_fire_safety.png');
+
+  expect(certificatePayload.certificate.template.recipientName).toBe('Tayyab Abbasi');
+  expect(certificatePayload.certificate.template.authorizedBy).toBe('Nargis Nawaz');
+  expect(certificatePayload.certificate.template.companyName).toBe('Flexible Health Care One Solution Ltd');
 });

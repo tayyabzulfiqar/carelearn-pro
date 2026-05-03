@@ -2,75 +2,57 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
-  buildLessonQuestionSet,
-  buildCourseQuizPackage,
-} = require('./fire-safety-quiz');
+  QUIZ_DATA,
+  getFireSafetyDemoQuiz,
+  scoreFireSafetyDemoQuiz,
+} = require('./fire-safety-demo-quiz');
 
-function makeLesson(lessonNumber) {
-  return {
-    lesson_number: lessonNumber,
-    title: `Lesson ${lessonNumber}`,
-    sections: [
-      {
-        heading: 'Section A',
-        paragraphs: [
-          `Lesson ${lessonNumber} paragraph one about staff actions and hazard prevention.`,
-          `Lesson ${lessonNumber} paragraph two about alarms, smoke, and emergency response.`,
-        ],
-        bullets: [
-          `Lesson ${lessonNumber} bullet one about local procedure.`,
-          `Lesson ${lessonNumber} bullet two about resident safety.`,
-        ],
-      },
-      {
-        heading: 'Section B',
-        paragraphs: [
-          `Lesson ${lessonNumber} paragraph three about care-home decision making.`,
-        ],
-        bullets: [
-          `Lesson ${lessonNumber} bullet three about reporting and evacuation.`,
-        ],
-      },
-    ],
-  };
-}
+test('fixed fire safety quiz contains exactly 14 clean questions', () => {
+  assert.equal(QUIZ_DATA.length, 14);
 
-test('buildLessonQuestionSet returns exactly 14 typed questions with a 4/7/3 difficulty split', () => {
-  const questions = buildLessonQuestionSet(makeLesson(1));
+  QUIZ_DATA.forEach((question) => {
+    assert.equal(typeof question.question_text, 'string');
+    assert.equal(question.question_text.length > 0, true);
+    assert.equal(question.question_text.length < 120, true);
+    assert.equal(Array.isArray(question.options), true);
+    assert.equal(question.options.length, 4);
+    assert.equal(question.correct_answer, 0);
+    assert.match(question.question_text, /^[A-Za-z0-9 ,]+$/);
+    question.options.forEach((option) => {
+      assert.match(option, /^[A-Za-z0-9 ,]+$/);
+    });
+  });
+});
+
+test('fixed fire safety quiz builds a final assessment payload', () => {
+  const questions = getFireSafetyDemoQuiz();
 
   assert.equal(questions.length, 14);
-  assert.equal(questions.filter((q) => q.difficulty === 'easy').length, 4);
-  assert.equal(questions.filter((q) => q.difficulty === 'medium').length, 7);
-  assert.equal(questions.filter((q) => q.difficulty === 'hard').length, 3);
-
-  const questionTypes = new Set(questions.map((question) => question.question_type));
-  assert.equal(questionTypes.has('multiple_choice'), true);
-  assert.equal(questionTypes.has('scenario'), true);
-  assert.equal(questionTypes.has('true_false'), true);
+  assert.equal(questions.every((question) => question.is_final_assessment), true);
+  assert.equal(questions.every((question) => question.question_type === 'multiple_choice'), true);
 });
 
-test('buildLessonQuestionSet derives all prompts from lesson content without generic filler', () => {
-  const questions = buildLessonQuestionSet(makeLesson(2));
+test('fixed fire safety quiz fails at 10 correct and passes at 11 correct', () => {
+  const failAnswers = QUIZ_DATA.map((question, index) => ({
+    question_id: question.id,
+    answer: index < 10 ? 0 : 1,
+  }));
+  const passAnswers = QUIZ_DATA.map((question, index) => ({
+    question_id: question.id,
+    answer: index < 11 ? 0 : 1,
+  }));
 
-  questions.forEach((question) => {
-    assert.match(question.question_text, /Lesson 2|staff|resident|alarm|smoke|evacuation/i);
-    assert.equal(question.question_text.includes('Option A'), false);
-    assert.equal(question.question_text.includes('Option B'), false);
-    assert.equal(Array.isArray(question.options), true);
-    assert.equal(question.correct_answer >= 0, true);
-    assert.equal(question.correct_answer < question.options.length, true);
+  assert.deepEqual(scoreFireSafetyDemoQuiz(failAnswers), {
+    correct: 10,
+    total: 14,
+    score: 71,
+    passed: false,
   });
 
-  const trueFalse = questions.find((question) => question.question_type === 'true_false');
-  assert.deepEqual(trueFalse.options, ['True', 'False']);
-});
-
-test('buildCourseQuizPackage generates 17 lesson quizzes with 14 questions each and a final exam', () => {
-  const lessons = Array.from({ length: 17 }, (_, index) => makeLesson(index + 1));
-  const quizPackage = buildCourseQuizPackage({ lessons, versionTag: 'fire-safety-v1' });
-
-  assert.equal(quizPackage.lessonQuizzes.length, 17);
-  assert.equal(quizPackage.lessonQuizzes.every((lessonQuiz) => lessonQuiz.questions.length === 14), true);
-  assert.equal(quizPackage.finalExam.questions.length, 34);
-  assert.equal(quizPackage.finalExam.questions.every((question) => question.is_final_assessment), true);
+  assert.deepEqual(scoreFireSafetyDemoQuiz(passAnswers), {
+    correct: 11,
+    total: 14,
+    score: 79,
+    passed: true,
+  });
 });
