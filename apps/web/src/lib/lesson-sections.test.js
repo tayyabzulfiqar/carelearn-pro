@@ -7,6 +7,26 @@ const {
   splitEmphasis,
 } = require('./lesson-sections');
 
+test('resolves upload paths against configured api host in production', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+  const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  process.env.NODE_ENV = 'production';
+  process.env.NEXT_PUBLIC_API_URL = 'https://carelearn-pro-api.vercel.app/api/v1';
+
+  delete require.cache[require.resolve('./lesson-sections')];
+  const { resolveImageUrl: resolveConfiguredImageUrl } = require('./lesson-sections');
+
+  assert.equal(
+    resolveConfiguredImageUrl('/api/v1/local-images/slide1_1.png'),
+    'https://carelearn-pro-api.vercel.app/api/v1/local-images/slide1_1.png'
+  );
+
+  process.env.NODE_ENV = originalNodeEnv;
+  process.env.NEXT_PUBLIC_API_URL = originalApiUrl;
+  delete require.cache[require.resolve('./lesson-sections')];
+});
+
 test('returns structured lesson sections from content schema', () => {
   const sections = getLessonSections({
     sections: [
@@ -28,7 +48,7 @@ test('returns structured lesson sections from content schema', () => {
 test('resolves upload paths against local api host', () => {
   assert.equal(
     resolveImageUrl('/api/v1/local-images/slide1_1.png'),
-    'http://localhost:5000/api/v1/local-images/slide1_1.png'
+    'https://carelearn-pro-api.vercel.app/api/v1/local-images/slide1_1.png'
   );
 });
 

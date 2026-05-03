@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
 const COURSE_ID = '2ce6e1d3-5be7-46b1-9081-62df3411bad4';
 
 async function login(page) {
-  await page.goto('http://localhost:8081/login', { waitUntil: 'networkidle' });
+  await page.goto('https://carelearn-pro-web.vercel.app/login', { waitUntil: 'networkidle' });
   await page.locator('input[type="email"]').fill('admin@test.com');
   await page.locator('input[type="password"]').fill('Admin1234');
   await page.getByRole('button', { name: 'Sign In' }).click();
@@ -74,7 +74,7 @@ async function answerAssessment(page, choiceIndex) {
   });
 
   await login(desktopPage);
-  await desktopPage.goto('http://localhost:8081/dashboard/courses', { waitUntil: 'networkidle' });
+  await desktopPage.goto('https://carelearn-pro-web.vercel.app/dashboard/courses', { waitUntil: 'networkidle' });
   const coursesHeadingVisible = await desktopPage.getByRole('heading', { name: 'All Courses' }).isVisible();
   await desktopPage.getByRole('button', { name: /Start Course|Continue|Review Course/i }).first().click();
   await desktopPage.waitForURL(`**/dashboard/courses/${COURSE_ID}/player`, { timeout: 30000 });
@@ -123,7 +123,7 @@ async function answerAssessment(page, choiceIndex) {
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await mobile.addCookies(await desktop.cookies());
   const mobilePage = await mobile.newPage();
-  await mobilePage.goto(`http://localhost:8081/dashboard/courses/${COURSE_ID}/player`, { waitUntil: 'networkidle' });
+  await mobilePage.goto(`https://carelearn-pro-web.vercel.app/dashboard/courses/${COURSE_ID}/player`, { waitUntil: 'networkidle' });
   const mobileNoHorizontalOverflow = await mobilePage.evaluate(() => {
     const body = document.body;
     return body.scrollWidth <= window.innerWidth + 20;

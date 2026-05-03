@@ -5,12 +5,12 @@ function resolveImageUrl(value) {
     if (!value.src) return '';
     return value.src.startsWith('http://') || value.src.startsWith('https://')
       ? value.src
-      : `http://localhost:5000${value.src.startsWith('/') ? value.src : `/${value.src}`}`;
+      : `${process.env.NEXT_PUBLIC_API_URL || 'https://carelearn-pro-api.vercel.app/api/v1'}${value.src.startsWith('/') ? value.src.replace(/^\/api\/v1/, '') : `/${value.src}`}`;
   }
   if (!value || typeof value !== 'string') return '';
   if (value.startsWith('http://') || value.startsWith('https://')) return value;
-  if (value.startsWith('/uploads')) return `http://localhost:5000${value}`;
-  return `http://localhost:5000${value.startsWith('/') ? value : `/${value}`}`;
+  if (value.startsWith('/uploads')) return `${process.env.NEXT_PUBLIC_API_URL || 'https://carelearn-pro-api.vercel.app/api/v1'}${value}`;
+  return `${process.env.NEXT_PUBLIC_API_URL || 'https://carelearn-pro-api.vercel.app/api/v1'}${value.startsWith('/') ? value : `/${value}`}`;
 }
 
 function getLessonSections(content = {}) {

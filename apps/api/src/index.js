@@ -17,8 +17,7 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 const LOCAL_FIRE_SAFETY_ROOT = 'C:/Users/HP/Desktop/uk training';
 const allowedOrigins = [
-  process.env.CORS_ORIGIN || 'http://localhost:8081',
-  'http://127.0.0.1:8081',
+  process.env.CORS_ORIGIN || 'https://carelearn-pro-web.vercel.app',
 ];
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
@@ -61,9 +60,6 @@ app.use('/api/v1/upload', uploadRoutes);
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`CareLearn API running on port ${PORT}`)
-);
-
+// For Vercel serverless: export app as default
 module.exports = app;
+exports.default = app;

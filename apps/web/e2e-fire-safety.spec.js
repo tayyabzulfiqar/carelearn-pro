@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
-const BASE = 'http://localhost:8081';
-const API_BASE = 'http://localhost:5000/api/v1';
+const BASE = 'https://carelearn-pro-web.vercel.app';
+const API_BASE = 'https://carelearn-pro-api.vercel.app/api/v1';
 
 async function login(page) {
   await page.goto(`${BASE}/login`);
