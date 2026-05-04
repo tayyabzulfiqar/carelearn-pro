@@ -7,7 +7,7 @@ const {
   validateFireSafetyCourseSource,
   formatCourseValidationReport,
 } = require('../lib/fire-safety-course');
-const { buildCourseQuizPackage } = require('../lib/fire-safety-quiz');
+const { getStaticQuizQuestions } = require('../lib/quiz-data');
 
 const COURSE_TITLE = 'Fire Safety Awareness';
 const SOURCE_ROOT = process.env.FIRE_SAFETY_SOURCE_ROOT || path.resolve(__dirname, '../content/fire-safety');
@@ -33,7 +33,7 @@ async function ensureCourseId() {
     [
       courseId,
       COURSE_TITLE,
-      'Imported Fire Safety course loaded from fire-safety-course.json with validated lesson images and deterministic generated quiz banks.',
+      'Imported Fire Safety course loaded from fire-safety-course.json with validated lesson images and static quiz-data.json.',
       'Fire Safety',
       'CQC-HS-004',
       85,
@@ -130,47 +130,35 @@ async function upsertLessons({ moduleId, lessons }) {
   }
 }
 
-async function refreshQuestions({ courseId, moduleId, quizPackage }) {
-  await db.query(
-    `UPDATE assessment_questions
-     SET is_active = false
-     WHERE course_id = $1`,
-    [courseId]
-  );
+async function refreshQuestions({ courseId, moduleId, questions }) {
+  await db.query('DELETE FROM assessment_questions WHERE course_id = $1', [courseId]);
 
-  const questionGroups = [
-    ...quizPackage.lessonQuizzes.map((lessonQuiz) => lessonQuiz.questions),
-    quizPackage.finalExam.questions,
-  ];
-
-  for (const questions of questionGroups) {
-    for (const question of questions) {
-      await db.query(
-        `INSERT INTO assessment_questions
-         (id, course_id, module_id, lesson_number, question_text, question_type, options,
-          correct_answer, explanation, difficulty, is_final_assessment, is_active,
-          version_tag, question_key, option_order, order_index)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
-        [
-          randomUUID(),
-          courseId,
-          moduleId,
-          question.lesson_number || null,
-          question.question_text,
-          question.question_type,
-          JSON.stringify(question.options),
-          question.correct_answer,
-          `${question.difficulty} ${question.question_type} question generated from Fire Safety lesson content.`,
-          question.difficulty,
-          question.is_final_assessment,
-          true,
-          quizPackage.versionTag,
-          question.question_key,
-          JSON.stringify(question.options.map((_, index) => index)),
-          question.order_index,
-        ]
-      );
-    }
+  for (const question of questions) {
+    await db.query(
+      `INSERT INTO assessment_questions
+       (id, course_id, module_id, lesson_number, question_text, question_type, options,
+        correct_answer, explanation, difficulty, is_final_assessment, is_active,
+        version_tag, question_key, option_order, order_index)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+      [
+        randomUUID(),
+        courseId,
+        moduleId,
+        null,
+        question.question_text,
+        question.question_type,
+        JSON.stringify(question.options),
+        question.correct_answer,
+        'Static Fire Safety quiz question from quiz-data.json.',
+        question.difficulty,
+        true,
+        true,
+        'static-json',
+        question.question_key,
+        JSON.stringify(question.option_order),
+        question.order_index,
+      ]
+    );
   }
 }
 
@@ -187,15 +175,7 @@ async function run() {
     throw new Error(`Fire Safety import aborted due to local validation errors:\n- ${issues.join('\n- ')}`);
   }
 
-  const versionTag = `fire-safety-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`;
-  const quizPackage = buildCourseQuizPackage({
-    lessons: validation.lessons.map((lesson) => ({
-      lesson_number: lesson.lessonNumber,
-      title: lesson.title,
-      sections: lesson.content.sections,
-    })),
-    versionTag,
-  });
+  const questions = getStaticQuizQuestions();
 
   await db.query('BEGIN');
 
@@ -210,7 +190,7 @@ async function run() {
            updated_at = NOW()
        WHERE id = $4`,
       [
-        'Imported Fire Safety course loaded from local JSON with validated lesson images and deterministic generated quiz banks.',
+        'Imported Fire Safety course loaded from local JSON with validated lesson images and static quiz-data.json.',
         validation.totalLessons * 5,
         75,
         courseId,
@@ -228,7 +208,7 @@ async function run() {
     );
 
     await upsertLessons({ moduleId, lessons: validation.lessons });
-    await refreshQuestions({ courseId, moduleId, quizPackage });
+    await refreshQuestions({ courseId, moduleId, questions: getStaticQuizQuestions(courseId) });
 
     await db.query('COMMIT');
   } catch (error) {
@@ -237,9 +217,8 @@ async function run() {
   }
 
   console.log(formatCourseValidationReport(validation));
-  console.log(`Generated lesson quiz questions: ${quizPackage.lessonQuizzes.length * 14}`);
-  console.log(`Generated final exam questions: ${quizPackage.finalExam.questions.length}`);
-  console.log(`Question version tag: ${quizPackage.versionTag}`);
+  console.log(`Static quiz questions imported: ${questions.length}`);
+  console.log('Question version tag: static-json');
 }
 
 run()

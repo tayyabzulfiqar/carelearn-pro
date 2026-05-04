@@ -1,6 +1,7 @@
 const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/database');
 const { normalizeLessonContent } = require('../lib/lesson-content');
+const { getStaticQuizQuestions } = require('../lib/quiz-data');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -28,15 +29,6 @@ exports.getById = async (req, res, next) => {
        WHERE m.course_id = $1 GROUP BY m.id ORDER BY m.order_index`,
       [req.params.id]
     );
-    const questions = await db.query(
-      `SELECT id, course_id, module_id, lesson_number, question_text, question_type, options,
-              correct_answer, explanation, difficulty, is_final_assessment, is_active,
-              version_tag, question_key, option_order, order_index
-       FROM assessment_questions
-       WHERE course_id = $1 AND is_active = true
-       ORDER BY is_final_assessment DESC, order_index ASC`,
-      [req.params.id]
-    );
     res.json({
       course: {
         ...course.rows[0],
@@ -52,7 +44,7 @@ exports.getById = async (req, res, next) => {
               }))
             : [],
         })),
-        questions: questions.rows,
+        questions: getStaticQuizQuestions(req.params.id),
       }
     });
   } catch (err) { next(err); }

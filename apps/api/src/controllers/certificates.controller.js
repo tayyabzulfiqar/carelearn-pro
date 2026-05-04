@@ -1,26 +1,37 @@
 const { randomUUID: uuidv4 } = require('crypto');
+const fs = require('node:fs');
+const path = require('node:path');
 const db = require('../config/database');
 const { buildCertificateTemplateModel } = require('../lib/certificate-template');
+const { CERTIFICATE_ROOT, generateCertificateImage } = require('../lib/certificate-image');
 
 const CERTIFICATE_IMAGE_ROOT = process.env.FIRE_SAFETY_SOURCE_ROOT || require('node:path').resolve(__dirname, '../content/fire-safety');
 
 async function getUserProfile(userId) {
   const userResult = await db.query(
-    'SELECT first_name, last_name FROM users WHERE id = $1',
+    'SELECT first_name, last_name, email FROM users WHERE id = $1',
     [userId]
   );
-  return userResult.rows[0] || { first_name: '', last_name: '' };
+  return userResult.rows[0] || { first_name: '', last_name: '', email: '' };
+}
+
+function getUserName(user) {
+  const fullName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
+  return fullName || 'Unknown';
 }
 
 async function withTemplate(certificate) {
   if (!certificate) return certificate;
   const user = await getUserProfile(certificate.user_id);
+  const courseTitle = certificate.course_title || 'Fire Safety Awareness';
   return {
     ...certificate,
+    certificate_url: certificate.pdf_url || null,
     template: buildCertificateTemplateModel({
       imageRoot: CERTIFICATE_IMAGE_ROOT,
       user,
       issuedAt: certificate.issued_at,
+      courseTitle,
     }),
   };
 }
@@ -50,32 +61,60 @@ exports.issue = async (req, res, next) => {
     if (!passed.rows.length) {
       return res.status(403).json({ error: 'Assessment not passed' });
     }
+    const course = await db.query(
+      'SELECT renewal_years, title FROM courses WHERE id=$1', [course_id]
+    );
+    const renewalYears = course.rows[0]?.renewal_years || 1;
+    const courseTitle = course.rows[0]?.title || 'Fire Safety Awareness';
+    const user = await getUserProfile(user_id);
+    let image = { publicUrl: null };
+    try {
+      image = await generateCertificateImage({
+        userId: user_id,
+        userName: getUserName(user),
+        courseTitle,
+        issuedAt: new Date(),
+      });
+    } catch (imgErr) {
+      console.error('Certificate image generation failed:', imgErr.message);
+    }
+
     const existing = await db.query(
       'SELECT * FROM certificates WHERE enrollment_id = $1',
       [enrollment_id]
     );
     if (existing.rows.length) {
-      return res.status(200).json({ certificate: await withTemplate(existing.rows[0]) });
+      const updated = await db.query(
+        'UPDATE certificates SET pdf_url = $1 WHERE id = $2 RETURNING *',
+        [image.publicUrl, existing.rows[0].id]
+      );
+      return res.status(200).json({
+        certificate: await withTemplate({ ...updated.rows[0], course_title: courseTitle }),
+        certificate_url: image.publicUrl,
+      });
     }
-    const course = await db.query(
-      'SELECT renewal_years FROM courses WHERE id=$1', [course_id]
-    );
-    const renewalYears = course.rows[0]?.renewal_years || 1;
+
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + renewalYears);
     const certNumber = `CLP-${Date.now()}-${Math.random().toString(36).substr(2,6).toUpperCase()}`;
     const id = uuidv4();
     const result = await db.query(
       `INSERT INTO certificates
-       (id, enrollment_id, user_id, course_id, organisation_id, certificate_number, expires_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [id, enrollment_id, user_id, course_id, organisation_id, certNumber, expiresAt]
+       (id, enrollment_id, user_id, course_id, organisation_id, certificate_number, pdf_url, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [id, enrollment_id, user_id, course_id, organisation_id, certNumber, image.publicUrl, expiresAt]
     );
     await db.query(
       `UPDATE enrollments SET status='completed', completed_at=NOW() WHERE id=$1`,
       [enrollment_id]
     );
-    res.status(201).json({ certificate: await withTemplate(result.rows[0]) });
+    res.status(201).json({
+      certificate: await withTemplate({
+        ...result.rows[0],
+        course_title: courseTitle,
+      }),
+      certificate_url: image.publicUrl,
+    });
   } catch (err) { next(err); }
 };
 
@@ -93,5 +132,35 @@ exports.verify = async (req, res, next) => {
     const cert = result.rows[0];
     const isValid = cert.is_valid && new Date(cert.expires_at) > new Date();
     res.json({ certificate: await withTemplate(cert), is_valid: isValid });
+  } catch (err) { next(err); }
+};
+
+exports.downloadImage = async (req, res, next) => {
+  try {
+    const fileName = path.basename(req.params.fileName);
+    const filePath = path.join(CERTIFICATE_ROOT, fileName);
+    if (fs.existsSync(filePath)) {
+      return res.sendFile(filePath);
+    }
+
+    const result = await db.query(
+      `SELECT cert.*, u.first_name, u.last_name, c.title as course_title
+       FROM certificates cert
+       JOIN users u ON u.id = cert.user_id
+       JOIN courses c ON c.id = cert.course_id
+       WHERE cert.pdf_url = $1
+       LIMIT 1`,
+      [`/certificates/${fileName}`]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Certificate image not found' });
+
+    const cert = result.rows[0];
+    const image = await generateCertificateImage({
+      userId: cert.user_id,
+      userName: getUserName(cert),
+      courseTitle: cert.course_title,
+      issuedAt: cert.issued_at,
+    });
+    res.sendFile(image.filePath);
   } catch (err) { next(err); }
 };

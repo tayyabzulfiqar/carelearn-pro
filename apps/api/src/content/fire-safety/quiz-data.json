@@ -1,0 +1,72 @@
+[
+  {
+    "question": "What is the first action when a fire alarm sounds?",
+    "options": ["Leave by the nearest safe exit", "Collect personal belongings", "Open nearby windows", "Wait for a manager"],
+    "correct_answer": 0
+  },
+  {
+    "question": "Which item helps contain fire in a room?",
+    "options": ["A plastic waste bin", "A closed fire door", "An open corridor door", "A loose floor mat"],
+    "correct_answer": 1
+  },
+  {
+    "question": "What does a clear escape route support?",
+    "options": ["Longer storage space", "Quieter work areas", "Fast and safe evacuation", "Better room lighting"],
+    "correct_answer": 2
+  },
+  {
+    "question": "Which extinguisher is unsafe for live electrical equipment?",
+    "options": ["Carbon dioxide extinguisher", "Dry powder extinguisher", "Foam mist extinguisher", "Water extinguisher"],
+    "correct_answer": 3
+  },
+  {
+    "question": "What should staff do before using an extinguisher?",
+    "options": ["Stand with their back to fire", "Check they have a safe exit", "Move closer to the flames", "Remove all warning signs"],
+    "correct_answer": 1
+  },
+  {
+    "question": "What is the safest response to heavy smoke?",
+    "options": ["Walk quickly through it", "Breathe through clothing", "Use another safe route", "Stay to finish tasks"],
+    "correct_answer": 2
+  },
+  {
+    "question": "Why must fire doors not be wedged open?",
+    "options": ["They reduce heating costs", "They improve room access", "They lower alarm volume", "They slow smoke and flames"],
+    "correct_answer": 3
+  },
+  {
+    "question": "Which practice reduces electrical fire risk?",
+    "options": ["Avoid overloading sockets", "Cover warm plugs with cloth", "Run cables under rugs", "Ignore damaged leads"],
+    "correct_answer": 0
+  },
+  {
+    "question": "Where should people go after leaving the building?",
+    "options": ["Their parked vehicle", "The assembly point", "The main reception", "The nearest doorway"],
+    "correct_answer": 1
+  },
+  {
+    "question": "Who should be helped first during evacuation planning?",
+    "options": ["Only senior employees", "Visitors without badges", "People needing assistance", "People near reception"],
+    "correct_answer": 2
+  },
+  {
+    "question": "What information belongs in a fire risk assessment?",
+    "options": ["Staff lunch preferences", "Payroll approval dates", "Office decoration plans", "Hazards and control measures"],
+    "correct_answer": 3
+  },
+  {
+    "question": "What should happen after a fire drill?",
+    "options": ["Delete the attendance record", "Review issues and improve", "Ignore minor delays", "Cancel future drills"],
+    "correct_answer": 1
+  },
+  {
+    "question": "Which action helps prevent arson?",
+    "options": ["Keep external bins secure", "Leave doors unlocked", "Store waste by exits", "Disable outside lighting"],
+    "correct_answer": 0
+  },
+  {
+    "question": "What score is needed to pass this course?",
+    "options": ["50 percent or higher", "60 percent or higher", "75 percent or higher", "100 percent only"],
+    "correct_answer": 2
+  }
+]

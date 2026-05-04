@@ -1,5 +1,6 @@
 const EMPHASIS_REGEX = /\b(must|always|important|ensure)\b/gi;
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API_ORIGIN = API_BASE ? API_BASE.replace(/\/api\/v1\/?$/, '') : '';
 
 function resolveImageUrl(value) {
   if (value && typeof value === 'object' && typeof value.src === 'string') {
@@ -10,6 +11,7 @@ function resolveImageUrl(value) {
   }
   if (!value || typeof value !== 'string') return '';
   if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  if (value.startsWith('/certificates')) return `${API_ORIGIN}${value}`;
   if (value.startsWith('/api/v1')) return `${API_BASE}${value.replace(/^\/api\/v1/, '')}`;
   if (value.startsWith('/uploads')) return `${API_BASE}${value}`;
   return `${API_BASE}${value.startsWith('/') ? value : `/${value}`}`;

@@ -1,6 +1,6 @@
 const path = require('node:path');
 
-function buildCertificateTemplateModel({ imageRoot, user, issuedAt }) {
+function buildCertificateTemplateModel({ imageRoot, user, issuedAt, courseTitle }) {
   const issuedDate = new Date(issuedAt || Date.now()).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'long',
@@ -9,7 +9,8 @@ function buildCertificateTemplateModel({ imageRoot, user, issuedAt }) {
 
   return {
     backgroundImage: path.join(imageRoot, 'certificate_fire_safety.png'),
-    recipientName: 'Tayyab Abbasi',
+    recipientName: `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'Unknown',
+    courseTitle: courseTitle || 'Fire Safety Awareness',
     issuedDate,
     statusText: 'PASS',
     authorizedBy: 'Nargis Nawaz',

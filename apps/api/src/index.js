@@ -11,9 +11,11 @@ const orgRoutes = require('./routes/organisations.routes');
 const courseRoutes = require('./routes/courses.routes');
 const enrollmentRoutes = require('./routes/enrollments.routes');
 const certificateRoutes = require('./routes/certificates.routes');
+const certificatesController = require('./controllers/certificates.controller');
 const uploadRoutes = require('./routes/upload.routes');
 const errorHandler = require('./middleware/errorHandler');
 const { bootstrapDatabase } = require('./bootstrap');
+const { CERTIFICATE_ROOT } = require('./lib/certificate-image');
 
 const app = express();
 const allowedOrigins = [
@@ -64,6 +66,12 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/certificates', express.static(CERTIFICATE_ROOT, {
+  immutable: false,
+  maxAge: 0,
+  setHeaders: noStoreStaticHeaders,
+}));
+app.get('/certificates/:fileName', requireDatabaseReady, certificatesController.downloadImage);
 for (const root of localImageRoots) {
   app.use('/api/v1/local-images', express.static(root, {
     fallthrough: true,

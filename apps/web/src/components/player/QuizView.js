@@ -2,18 +2,6 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 
-function normalizeOptions(question) {
-  if (Array.isArray(question?.options)) return question.options;
-  if (typeof question?.options === 'string') {
-    try {
-      return JSON.parse(question.options);
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
 export default function QuizView({
   course,
   questions,
@@ -27,10 +15,7 @@ export default function QuizView({
   const [selected, setSelected] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const normalizedQuestions = (questions || []).map((question) => ({
-    ...question,
-    options: normalizeOptions(question),
-  }));
+  const normalizedQuestions = Array.isArray(questions) ? questions : [];
 
   useEffect(() => {
     setCurrent(0);
@@ -117,7 +102,7 @@ export default function QuizView({
               Course Completion Quiz
             </p>
             <p className="text-2xl font-semibold text-navy-900 mt-2 leading-snug">
-              {question.question_text}
+              {question.question}
             </p>
 
             <div className="grid gap-3 mt-6">

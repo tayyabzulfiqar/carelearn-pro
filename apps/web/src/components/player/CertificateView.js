@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import lessonSectionUtils from '@/lib/lesson-sections';
 
+const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/api\/v1$/, '');
+
 export default function CertificateView({ certificate, course, user, onDone }) {
   const [show, setShow] = useState(false);
   const { resolveImageUrl } = lessonSectionUtils;
@@ -12,9 +14,15 @@ export default function CertificateView({ certificate, course, user, onDone }) {
   }, []);
 
   const template = certificate?.template || {};
+  const canvasCertPath = certificate?.certificate_url || certificate?.pdf_url;
+
   const backgroundImage = template.backgroundImage
     ? resolveImageUrl(`/api/v1/local-images/${template.backgroundImage.split('\\').pop().split('/').pop()}`)
     : resolveImageUrl('/api/v1/local-images/certificate_fire_safety.png');
+
+  const downloadUrl = canvasCertPath
+    ? `${API_ORIGIN}${canvasCertPath.startsWith('/') ? canvasCertPath : `/${canvasCertPath}`}`
+    : null;
 
   return (
     <div className="min-h-screen bg-[#f2efe8] flex flex-col items-center justify-center p-6">
@@ -58,12 +66,22 @@ export default function CertificateView({ certificate, course, user, onDone }) {
         </div>
 
         <div className="flex justify-center gap-4">
-          <button
-            onClick={() => window.print()}
-            className="rounded-xl border border-navy-900/10 bg-white px-6 py-3 text-sm font-medium text-navy-900 transition-colors hover:bg-stone-50"
-          >
-            Download Certificate
-          </button>
+          {downloadUrl ? (
+            <a
+              href={downloadUrl}
+              download
+              className="rounded-xl border border-navy-900/10 bg-white px-6 py-3 text-sm font-medium text-navy-900 transition-colors hover:bg-stone-50"
+            >
+              Download Certificate
+            </a>
+          ) : (
+            <button
+              onClick={() => window.print()}
+              className="rounded-xl border border-navy-900/10 bg-white px-6 py-3 text-sm font-medium text-navy-900 transition-colors hover:bg-stone-50"
+            >
+              Download Certificate
+            </button>
+          )}
           <button
             onClick={onDone}
             className="rounded-xl bg-navy-800 px-6 py-3 text-sm font-medium text-white shadow-lg transition-colors hover:bg-navy-700"

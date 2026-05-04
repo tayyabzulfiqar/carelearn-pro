@@ -6,7 +6,7 @@ const {
   loadFireSafetyCourseSource,
   validateFireSafetyCourseSource,
 } = require('../lib/fire-safety-course');
-const { buildCourseQuizPackage } = require('../lib/fire-safety-quiz');
+const { getStaticQuizQuestions } = require('../lib/quiz-data');
 const { buildCertificateTemplateModel } = require('../lib/certificate-template');
 
 const SOURCE_ROOT = process.env.FIRE_SAFETY_SOURCE_ROOT || path.resolve(__dirname, '../content/fire-safety');
@@ -35,36 +35,18 @@ async function run() {
     errors.push('certificate_fire_safety.png is missing');
   }
 
-  const quizPackage = buildCourseQuizPackage({
-    lessons: validation.lessons.map((lesson) => ({
-      lesson_number: lesson.lessonNumber,
-      title: lesson.title,
-      sections: lesson.content.sections,
-    })),
-    versionTag: 'validation',
-  });
-
-  if (quizPackage.lessonQuizzes.length !== 17) {
-    errors.push(`Expected 17 lesson quizzes but found ${quizPackage.lessonQuizzes.length}`);
+  const questions = getStaticQuizQuestions();
+  if (questions.length !== 14) {
+    errors.push(`Expected 14 static quiz questions but found ${questions.length}`);
   }
-
-  quizPackage.lessonQuizzes.forEach((lessonQuiz) => {
-    if (lessonQuiz.questions.length !== 14) {
-      errors.push(`Lesson ${lessonQuiz.lesson_number} has ${lessonQuiz.questions.length} questions`);
+  questions.forEach((question, index) => {
+    if (!Array.isArray(question.options) || question.options.length !== 4) {
+      errors.push(`Question ${index + 1} does not have 4 options`);
     }
-    lessonQuiz.questions.forEach((question) => {
-      if (!Number.isInteger(question.correct_answer) || question.correct_answer < 0) {
-        errors.push(`Lesson ${lessonQuiz.lesson_number} has an invalid correct answer`);
-      }
-      if (!Array.isArray(question.options) || question.options.length < 2) {
-        errors.push(`Lesson ${lessonQuiz.lesson_number} has invalid options`);
-      }
-    });
+    if (!Number.isInteger(question.correct_answer) || question.correct_answer < 0 || question.correct_answer > 3) {
+      errors.push(`Question ${index + 1} has an invalid correct answer`);
+    }
   });
-
-  if (quizPackage.finalExam.questions.length === 0) {
-    errors.push('Final exam questions were not generated');
-  }
 
   const template = buildCertificateTemplateModel({
     imageRoot: SOURCE_ROOT,
@@ -96,8 +78,8 @@ async function run() {
   const passFailStatus = errors.some((error) => /question|quiz|answer|option/i.test(error)) ? 'FAIL' : 'PASS';
   const certificateStatus = errors.some((error) => /certificate|director|company|name overlay/i.test(error)) ? 'FAIL' : 'PASS';
 
-  console.log(`Total lesson quiz questions generated: ${quizPackage.lessonQuizzes.length * 14}`);
-  console.log(`Total final exam questions generated: ${quizPackage.finalExam.questions.length}`);
+  console.log('Quiz source: STATIC JSON');
+  console.log(`Static quiz questions: ${questions.length}`);
   console.log(`Pass/Fail logic status: ${passFailStatus}`);
   console.log(`Certificate status: ${certificateStatus}`);
   console.log(`Errors: ${errors.length}`);
