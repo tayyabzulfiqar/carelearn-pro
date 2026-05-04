@@ -1,0 +1,768 @@
+{
+"schema_version": 2,
+"lessons": [
+{
+"lesson_number": 1,
+"title": "Learning Outcomes",
+"sections": [
+{
+"heading": "Purpose of Fire Safety Training in UK Care Homes",
+"paragraphs": [
+"Fire safety in a care home is a life-protection system for residents, staff, visitors and contractors. Many residents may be frail, asleep, sedated, visually or hearing impaired, living with dementia, or unable to follow an alarm without support. Staff must be ready to prevent fire, recognise early warning signs, raise the alarm immediately and assist residents according to the home’s fire emergency plan. This course reflects UK adult social care practice, where a homely environment must be balanced with firm controls for ignition sources, combustible materials, medical oxygen, fire doors, escape routes and evacuation.",
+"By completing this training, learners should understand the practical link between fire science, legal duties and daily care practice. The Regulatory Reform (Fire Safety) Order 2005 places duties on the responsible person to manage fire risks. The Fire Safety Act 2021 strengthened focus on relevant building features, including fire doors where applicable. CQC’s Safe key question expects providers to protect people from avoidable harm through effective risk management, training, premises safety and emergency procedures. Staff do not need to be fire engineers, but they must know what to do on every shift, especially at night when staffing is lower."
+],
+"bullet_points": [
+"Explain why fire safety is high-risk in residential care settings.",
+"Recognise that residents with dementia may not respond predictably to alarms or evacuation.",
+"Identify the main legal duties linked to fire precautions, staff training and risk assessment.",
+"Describe the difference between prevention, detection, response and evacuation.",
+"Understand why night staffing, resident dependency and compartment size must be considered together.",
+"Follow local fire procedures rather than relying on assumptions from previous workplaces.",
+"Know that fire safety supports CQC Safe by reducing avoidable harm."
+],
+"image": {
+"expected_marker": "slide1_1.png",
+"assigned_file": "slide1_1.png"
+}
+},
+{
+"heading": "What Learners Must Be Able to Do",
+"paragraphs": [
+"Learners should be able to describe how fire starts, how smoke and toxic fumes threaten life, and how fire spreads through buildings. They should apply this knowledge to care home risks such as overloaded sockets, unsafe smoking, unattended cooking, oxygen use, waste build-up and blocked corridors. The focus is practical: spotting hazards early, reporting them promptly, keeping escape routes clear, respecting fire doors and understanding why small shortcuts can weaken the whole fire strategy. Fire safety is everyone’s responsibility, even when a fire warden or manager leads the emergency response.",
+"Learners should also follow the correct emergency response: raise the alarm, ensure contact with the fire and rescue service, contain the fire where safe, support evacuation and provide accurate information. They must understand resident safety planning, including Personal Emergency Evacuation Plans, mobility categories, evacuation aids and Progressive Horizontal Evacuation. They should identify key signs, detectors, manual call points, extinguishers and fire blankets, while knowing the limits of their role. Safe staff act quickly, calmly and in line with training."
+],
+"bullet_points": [
+"Describe the Fire Triangle and how removing heat, fuel or oxygen controls fire.",
+"Identify smoke as an early and fast-moving life risk.",
+"Recognise common care home fire hazards and act before ignition occurs.",
+"Use the five-step response process and understand RACE principles.",
+"Locate alarms, call points, exits, fire doors, extinguishers and blankets.",
+"Assist residents according to PEEPs, mobility needs and the home’s evacuation strategy.",
+"Explain when not to tackle a fire, including when untrained or unsafe."
+],
+"image": {
+"expected_marker": "slide1_2.png",
+"assigned_file": "slide1_2.png"
+}
+}
+]
+},
+{
+"lesson_number": 2,
+"title": "Fire & Smoke",
+"sections": [
+{
+"heading": "Fire, the Fire Triangle and Care Home Risk",
+"paragraphs": [
+"Fire is a chemical reaction that releases heat, smoke and toxic gases. For a fire to start and continue burning, three elements must be present: heat, fuel and oxygen. Heat may come from cooking appliances, electrical faults, smoking materials, portable heaters, damaged chargers or hot surfaces. Fuel may include bedding, furniture, paper records, laundry, decorations, waste, soft furnishings and oxygen-enriched materials. Oxygen is usually present in air, but risk increases where medical oxygen cylinders or concentrators are used. Understanding this triangle helps staff see why prevention needs several controls working together.",
+"In a care home, the Fire Triangle must be considered alongside resident vulnerability. A small ignition source can become life-threatening if fuel is nearby, doors are open, or a resident cannot move away unaided. Residents with dementia may investigate a smell, return to a room, resist instructions or become distressed by noise. Bedbound residents may be exposed to smoke before staff reach them. The correct approach is to remove or reduce one or more elements before fire starts: control ignition, reduce fuel, store oxygen safely, maintain equipment and challenge unsafe behaviour."
+],
+"bullet_points": [
+"Heat sources include cooking, electrical faults, smoking, heaters, chargers and hot work.",
+"Fuel sources include bedding, furniture, waste, paper, laundry and decorations.",
+"Oxygen is usually from air, but medical oxygen increases fire risk.",
+"Removing heat, fuel or oxygen can prevent or stop fire.",
+"Residents may be unable to recognise danger, move independently or follow instructions.",
+"Dementia can affect response to alarms, smoke and staff direction.",
+"Good prevention depends on daily observation, reporting and housekeeping."
+],
+"image": {
+"expected_marker": "slide2_1.png",
+"assigned_file": "slide2_1.png"
+}
+},
+{
+"heading": "Smoke and Toxic Fumes",
+"paragraphs": [
+"Smoke is often more dangerous than flames because it moves rapidly through corridors, door gaps, service voids and stairwells. In the early stages of a fire, smoke may spread faster than residents or staff can move. It reduces visibility, causes panic and can make escape routes unsafe. Smoke contains gases, particles and vapours, including carbon monoxide, carbon dioxide, nitrogen oxides and irritant substances. Carbon monoxide is especially dangerous because it is colourless and odourless, and can incapacitate people before flames reach them.",
+"Toxic fumes are particularly hazardous in care homes because many residents already live with COPD, asthma, bronchitis, frailty or reduced immunity. Smoke inhalation may cause coughing, confusion, breathlessness, collapse and rapid deterioration. Night-time risk is higher because residents are asleep, some may be sedated, and staffing levels are lower. Staff must never assume a small amount of smoke is harmless. A smoky corridor, warm door, haze, burning smell or repeated detector activation must be treated as a potential emergency."
+],
+"bullet_points": [
+"Smoke can reach residents before visible flames appear.",
+"Carbon monoxide can incapacitate or kill without being seen or smelt.",
+"Smoke reduces visibility and makes familiar corridors confusing.",
+"Residents with respiratory disease are at increased risk from fumes.",
+"Sleeping, sedated or confused residents may not react to smoke or alarms.",
+"Closing doors helps slow smoke movement and protects compartments.",
+"Any sign of smoke must trigger immediate action."
+],
+"image": {
+"expected_marker": "slide2_2.png",
+"assigned_file": "slide2_2.png"
+}
+}
+]
+},
+{
+"lesson_number": 3,
+"title": "Fire Spread",
+"sections": [
+{
+"heading": "How Fire and Heat Spread",
+"paragraphs": [
+"Fire spreads through conduction, convection and radiation. Conduction is heat transfer through solid materials such as metal handles, pipework, rails or structural elements. Convection occurs when hot gases and smoke rise and move through spaces, carrying heat into corridors, stairwells, ceiling voids or adjoining rooms. Radiation transfers heat from hot surfaces or flames to nearby materials without direct contact. These processes explain why fire can spread beyond the room of origin and why care homes rely on compartmentation, fire doors, protected routes and reduced combustible storage.",
+"For care staff, understanding fire spread changes behaviour. A hot door handle should not be opened casually, because opening a door can introduce oxygen and intensify the fire. Smoke in one area may indicate danger elsewhere, especially if doors are wedged open or seals are damaged. A waste bag, laundry trolley or chair in a corridor can provide fuel and obstruct evacuation. Fire spread is affected by everyday staff decisions. Keeping doors shut, corridors clear and storage controlled helps the building protect residents."
+],
+"bullet_points": [
+"Conduction transfers heat through solid objects such as metal, walls or fittings.",
+"Convection carries heat and smoke through air currents, corridors and voids.",
+"Radiation can ignite nearby materials without direct flame contact.",
+"Fire spread accelerates through open doors, clutter and poor housekeeping.",
+"A warm handle, smoky gap or discoloured surface may indicate hidden fire.",
+"Combustible items must not be stored in corridors or escape routes.",
+"Staff decisions directly affect whether compartmentation remains effective."
+],
+"image": {
+"expected_marker": "slide3_1.png",
+"assigned_file": "slide3_1.png"
+}
+},
+{
+"heading": "Fire Doors, Compartmentation and Smoke Control",
+"paragraphs": [
+"Care homes are commonly designed around fire-resisting compartments. Their purpose is to slow fire and smoke long enough for residents to move horizontally into an Area of Relative Safety. Fire doors, walls, ceilings, seals and protected routes work together; if one part fails, the whole strategy can weaken. Fire doors only work if they close fully, are not wedged open, have intact seals and are not damaged. A door held open for convenience can remove the protection residents rely on during Progressive Horizontal Evacuation.",
+"Staff must treat fire doors as life safety equipment. This is especially important at night, when fewer staff may need to move more residents and smoke could spread before support arrives. Residents with dementia may prop doors open, remove signs, move objects into corridors or try to return to familiar rooms. Staff should respond supportively but firmly through observation, checks and reporting. Compartmentation is also undermined by damaged doors, missing closers, gaps or penetrations around services. Any defect must be reported immediately."
+],
+"bullet_points": [
+"Fire doors must close fully and must never be wedged open.",
+"Compartmentation supports horizontal evacuation on the same floor.",
+"Damaged seals, gaps, missing closers or warped doors must be reported.",
+"Dementia-related behaviour can increase risk if residents interfere with doors.",
+"Night staff must be vigilant because early containment buys evacuation time.",
+"Corridors, stairwells and exits must remain clear.",
+"A fire door defect is a resident safety issue."
+],
+"image": {
+"expected_marker": "slide3_2.png",
+"assigned_file": "slide3_2.png"
+}
+}
+]
+},
+{
+"lesson_number": 4,
+"title": "Prevention",
+"sections": [
+{
+"heading": "Preventing Ignition in Daily Care Home Practice",
+"paragraphs": [
+"The best way to protect residents is to stop fires starting. Prevention begins with recognising ignition hazards during normal routines. Electrical equipment should be safe, maintained and used only as intended. Sockets must not be overloaded, extension leads should be controlled, chargers must be suitable and undamaged, and faulty equipment must be removed from use rather than repaired informally. Personal devices brought into the home, including radios, kettles, chargers, fans or speakers, may still create risk and should follow the home’s policy.",
+"Smoking and vaping controls are equally important. Many care homes operate a no-smoking and no-vaping policy, but some residents may have designated smoking arrangements as part of person-centred care. These arrangements must be supervised and risk assessed, especially where residents have dementia, poor dexterity, oxygen therapy, alcohol use, medication effects or unsafe smoking history. Cigarette ends must be fully extinguished and placed in proper bins. Staff should check outdoor areas in dry weather because waste, leaves and discarded materials can ignite easily."
+],
+"bullet_points": [
+"Never overload sockets or use damaged plugs, leads, chargers or appliances.",
+"Do not attempt informal repairs; remove faulty equipment and report it.",
+"Follow policy for personal electrical items brought in by residents, staff or visitors.",
+"Ensure heated or flame-producing equipment is supervised and used by authorised staff.",
+"Apply smoking and vaping controls consistently.",
+"Risk assess smoking where residents have dementia, oxygen use or reduced dexterity.",
+"Check outdoor smoking areas for waste build-up."
+],
+"image": {
+"expected_marker": "slide4_1.png",
+"assigned_file": "slide4_1.png"
+}
+},
+{
+"heading": "Housekeeping, Kitchens, Equipment, Waste and Arson Risk",
+"paragraphs": [
+"Care home prevention also depends on controlling fuel. Kitchens are high-risk because heat, oils, electrical equipment and busy routines come together. Cooking must not be left unattended, appliances should be switched off after use, and grease or food residue should be cleaned because it supports fire growth. Laundry rooms, sluices, store cupboards and treatment rooms also need good controls. Equipment should be used only by trained and authorised staff, and medical devices must be clean, maintained and in good condition.",
+"Waste management is a major fire spread issue, even when waste did not cause ignition. Rubbish, cardboard, linen, clinical waste bags and furniture left in corridors or external areas can accelerate fire growth and block evacuation. External waste can also increase arson risk if accessible. Staff should report suspicious behaviour, unsecured bins, damaged external lighting or waste near the building. Clean does not only mean infection-safe; it also means fire-safe. Good housekeeping supports CQC Safe because it shows active risk management."
+],
+"bullet_points": [
+"Never leave cooking food, hot pans or kitchen appliances unattended.",
+"Keep kitchens free from grease, food residue and combustible clutter.",
+"Use only equipment you are trained and authorised to use.",
+"Switch off equipment after use and report defects, overheating or unusual smells.",
+"Keep corridors, bedrooms, stores and external areas free from unnecessary combustibles.",
+"Store waste securely and prevent build-up near escape routes.",
+"Report suspicious behaviour or arson risks immediately."
+],
+"image": {
+"expected_marker": "slide4_2.png",
+"assigned_file": "slide4_2.png"
+}
+}
+]
+},
+{
+"lesson_number": 5,
+"title": "Risk Assessment",
+"sections": [
+{
+"heading": "Legal Duties and the Fire Risk Assessment",
+"paragraphs": [
+"The Regulatory Reform (Fire Safety) Order 2005 requires the responsible person to take general fire precautions and ensure a suitable and sufficient fire risk assessment is completed. In a care home, the responsible person is usually the provider, employer, registered manager or person with control of the premises. The assessment must reflect the actual building, residents, staffing, equipment, activities and evacuation strategy. It must not be a generic document copied from another service. The Fire Safety Act 2021 also reinforced attention on relevant building features, including external walls and fire doors where applicable.",
+"A care home fire risk assessment must consider who may be especially at risk. This includes residents with dementia, reduced mobility, sensory impairment, communication difficulties, oxygen therapy, bariatric needs, end-of-life care needs or behavioural distress. It must also consider night-time conditions, because fewer staff may be available and residents are more likely to be asleep. The assessment should identify ignition sources, fuel sources, oxygen sources, detection, alarms, compartmentation, emergency lighting, escape routes, training, drills, evacuation aids and PEEPs. It should be reviewed after significant changes, incidents or near misses."
+],
+"bullet_points": [
+"The fire risk assessment must be suitable, sufficient, current and specific.",
+"The responsible person must identify hazards and protect residents, staff and visitors.",
+"Resident dependency, cognition, mobility and oxygen use must be considered.",
+"Night staffing must be tested against evacuation demands.",
+"The assessment must cover fire doors, routes, alarms, detection and evacuation equipment.",
+"Reviews are required after significant changes, near misses or incidents.",
+"Poor or generic assessments can lead to enforcement action and resident harm."
+],
+"image": {
+"expected_marker": "slide5_1.png",
+"assigned_file": "slide5_1.png"
+}
+},
+{
+"heading": "Staff Role in Hazard Awareness, Prevention and Communication",
+"paragraphs": [
+"Although managers hold formal responsibilities, every staff member contributes to risk assessment through observation and action. Staff see the environment during personal care, mealtimes, activities, night checks, medication rounds, laundry routines and visiting periods. They may first notice a hot plug, blocked exit, unsafe smoking, a fire door not closing, missing extinguisher sign or a change in resident mobility. These findings must be reported quickly. If a risk can be removed immediately, such as moving a trolley away from an exit, staff should do so and still report it.",
+"Good communication prevents small hazards becoming serious incidents. Fire safety concerns should be shared at handover, recorded where required and escalated if unresolved. Staff must know who the fire warden or responsible lead is on each shift. A risk assessment only protects people when findings are communicated and implemented. For CQC Safe, evidence matters: training records, drill records, maintenance logs, PEEP reviews, fire door checks and action plans all demonstrate active management."
+],
+"bullet_points": [
+"Stay alert for hazards linked to heat, fuel, oxygen and blocked routes.",
+"Report hazards immediately using the home’s agreed system.",
+"Remove simple hazards safely when this can be done without delay.",
+"Escalate unresolved fire safety issues.",
+"Share concerns during handover, especially changes in resident mobility or behaviour.",
+"Know the fire warden or lead person for the shift.",
+"Support accurate records for training, drills, maintenance, PEEPs and actions."
+],
+"image": null
+}
+]
+},
+{
+"lesson_number": 6,
+"title": "Fire Alarms",
+"sections": [
+{
+"heading": "Alarm Systems and Immediate Action",
+"paragraphs": [
+"Fire alarm systems give early warning so staff can act before smoke and fire place residents at greater risk. Care home staff must know how the alarm sounds, what different tones mean, where the fire panel is, where manual call points are located and whether the system automatically contacts the fire and rescue service. Some homes use continuous and intermittent signals to indicate whether the fire is local or elsewhere. Staff must follow the home’s fire action notice and written emergency plan rather than guessing.",
+"When fire is discovered or suspected, the alarm must be raised immediately. Staff should not wait for visible flames, finish a task, collect belongings or investigate alone. Manual call points are usually red break-glass units located on escape routes and near exits. Delayed alarm activation can allow smoke to spread, put bedbound residents at risk and reduce time for Progressive Horizontal Evacuation. In care homes, a cautious false alarm is safer than hesitation during a real fire."
+],
+"bullet_points": [
+"Know the sound and meaning of the home’s alarm signals.",
+"Locate the fire panel and understand who checks it.",
+"Know whether 999 is contacted automatically or manually.",
+"Raise the alarm immediately if fire, smoke, burning smell or suspicious heat is detected.",
+"Do not delay alarm activation to investigate alone.",
+"Use manual call points according to training and procedure.",
+"Follow the fire action notice and designated role."
+],
+"image": {
+"expected_marker": "slide6_1.png",
+"assigned_file": "slide6_1.png"
+}
+},
+{
+"heading": "False Alarms and Responsible Alarm Management",
+"paragraphs": [
+"A false alarm is an activation for a reason other than fire. False alarms may be caused by cooking fumes, steam, aerosols, dust from maintenance, vaping, accidental activation or deliberate misuse. They disrupt residents, unsettle people with dementia, interrupt care routines and may create alarm fatigue if staff treat activations as routine. False alarms can also waste fire and rescue service resources and may lead to scrutiny. However, false alarms must never discourage staff from raising the alarm when fire is suspected.",
+"Reducing false alarms requires environmental control, maintenance and awareness. Doors between kitchens and corridors should be managed, detectors should not be covered, contractors should be controlled during dusty work, and aerosols or vaping should be kept away from detectors. Staff should report repeated nuisance activations because they may indicate poor detector siting, ventilation issues or unsafe behaviour. Residents with dementia may need calm reassurance, but staff must still follow the emergency plan."
+],
+"bullet_points": [
+"Common false alarm causes include cooking, steam, dust, aerosols and vaping.",
+"False alarms can distress residents, especially those living with dementia.",
+"Repeated false alarms may weaken staff response if unmanaged.",
+"Never ignore an alarm because previous activations were false.",
+"Do not cover detectors, silence alarms or reset panels unless authorised.",
+"Report nuisance activations for investigation.",
+"Reassure residents while continuing to follow the emergency procedure."
+],
+"image": null
+}
+]
+},
+{
+"lesson_number": 7,
+"title": "Signs",
+"sections": [
+{
+"heading": "Fire Safety Sign Colours and Meanings",
+"paragraphs": [
+"Fire safety signs help staff, residents, visitors and contractors understand what to do quickly. In an emergency, people may be anxious, visibility may be reduced and verbal instructions may be difficult to hear. Signs provide a simple visual system. Green signs show safe routes, emergency exits and evacuation direction. Red signs identify fire equipment such as extinguishers, alarm call points and fire blankets. Yellow signs warn about hazards such as electrical risk or flammable materials. Blue signs give mandatory instructions, such as keeping a fire door shut.",
+"Staff must identify these signs instantly and should not wait until a fire to learn them. During induction, agency shifts or work in an unfamiliar area, staff should walk the environment and locate key signs. This is especially important at night when visibility, staffing and familiarity may be reduced. Signs must be visible, clean, correctly positioned and not hidden by decorations, notices, furniture or equipment. Missing, damaged, misleading or obscured signs should be reported."
+],
+"bullet_points": [
+"Green signs identify emergency exits, escape routes and direction of travel.",
+"Red signs identify fire equipment, extinguishers, blankets and call points.",
+"Yellow signs warn about hazards such as electricity or flammable substances.",
+"Blue signs give mandatory instructions, including fire door requirements.",
+"Signs must remain visible, clean and free from obstruction.",
+"Staff should locate key signs in unfamiliar areas.",
+"Report missing, damaged, obscured or confusing signs."
+],
+"image": {
+"expected_marker": "slide7_1.png",
+"assigned_file": "slide7_1.png"
+}
+},
+{
+"heading": "Using Signs During Evacuation and Daily Checks",
+"paragraphs": [
+"During evacuation, signs support movement towards safe areas and final exits, but staff must still follow the home’s evacuation strategy. In many care homes, the first instruction may not be to leave the building by the nearest final exit; it may be to move residents horizontally through fire-resisting doors into an Area of Relative Safety. Green direction signs, fire door signs and compartment signs help staff move residents correctly. This matters for residents using wheelchairs, beds, slide sheets or evacuation chairs, and for residents with dementia who may become disorientated.",
+"Daily awareness of signs helps prevent emergencies becoming chaotic. Staff should know where fire action notices are displayed, where assembly point information is available and what instructions apply to the area. Some signs are linked to controls, such as keeping doors closed, keeping exits clear or not using lifts during a fire. These must be followed consistently, not only during inspections. If residents remove signs, cover them or become distressed by them, staff should report this so a safe person-centred solution can be agreed."
+],
+"bullet_points": [
+"Use signs alongside the written fire plan, not instead of training.",
+"Follow local PHE instructions rather than automatically heading outside.",
+"Know where fire action notices and assembly information are displayed.",
+"Respect mandatory signs such as keep fire door shut and keep clear.",
+"Do not use passenger lifts unless a designated evacuation lift is specified.",
+"Support residents who become confused by signs, alarms or changed routes.",
+"Report signage issues affecting safety or resident dignity."
+],
+"image": {
+"expected_marker": "slide7_2.png",
+"assigned_file": "slide7_2.png"
+}
+}
+]
+},
+{
+"lesson_number": 8,
+"title": "Recognising Fire",
+"sections": [
+{
+"heading": "Using the Senses to Detect Fire Early",
+"paragraphs": [
+"Fire is often detectable before flames are visible. Staff should use hearing, smell, touch and vision to recognise early signs. Hearing may include crackling, popping, roaring, hissing or unusual electrical sounds from a room, wall, ceiling void or appliance. Smell may include smoke, hot plastic, gas, scorched fabric, overheated electrics or an unfamiliar chemical odour. Touch may reveal warmth through a door, handle, wall or surface, although staff must not place themselves at risk. Vision may include haze, smoke under a door, discolouration, flickering light, sparks or flames.",
+"In a care home, early recognition is critical because residents may not report danger. A resident living with dementia may describe a bad smell, strange noise or hot room rather than saying there is a fire. A resident with sensory impairment may not hear alarms or smell smoke. Night staff may first notice a detector activation, smoky smell or unusual warmth during checks. Staff should take all observations seriously and raise the alarm if fire is suspected."
+],
+"bullet_points": [
+"Listen for crackling, roaring, hissing, popping or unusual electrical sounds.",
+"Smell for smoke, gas, burning plastic, scorched fabric or overheated equipment.",
+"Check safely for heat around doors, handles and adjoining walls.",
+"Look for haze, smoke seepage, sparks, flames, discolouration or flickering light.",
+"Take vague resident reports seriously, especially from people with dementia.",
+"Do not open a door if heat, smoke or fire may be behind it.",
+"Raise the alarm immediately when fire is suspected."
+],
+"image": {
+"expected_marker": "slide8_1.png",
+"assigned_file": "slide8_1.png"
+}
+},
+{
+"heading": "Safe First Actions When Fire Is Suspected",
+"paragraphs": [
+"When staff suspect a fire, speed and sequence matter. The first action is to raise the alarm using the nearest manual call point or the method specified in local procedure. Staff should warn nearby colleagues if safe, while avoiding uncontrolled panic among residents. The room or area of origin should be isolated by closing the door if safe. Staff must not place themselves between the fire and their escape route, collect belongings or move non-essential equipment. The priority is people, alarm and containment.",
+"After the alarm is raised, staff should move into their designated roles. This may include checking the fire panel, assisting named residents, preparing evacuation aids, closing doors and windows, sweeping a zone, or supporting the control point. Residents with dementia may need calm, simple instructions and familiar staff where possible. Staff should avoid arguing, rushing without explanation, or leaving residents unsupported in unsafe areas."
+],
+"bullet_points": [
+"Raise the alarm first; do not delay to confirm the fire alone.",
+"Warn nearby staff clearly if this can be done safely.",
+"Close the door to the affected room or area if safe.",
+"Keep yourself between the hazard and an escape route.",
+"Move residents from immediate danger only when safe and trained to do so.",
+"Use calm, short instructions for confused or distressed residents.",
+"Report the location, resident status and known hazards."
+],
+"image": {
+"expected_marker": "slide8_2.png",
+"assigned_file": "slide8_2.png"
+}
+},
+{
+"heading": "Recognising Resident-Specific Warning Signs",
+"paragraphs": [
+"Residents may show indirect signs that something is wrong before staff identify the fire source. A person living with dementia may become unusually agitated, point towards a corridor, try to leave a room, complain about a smell or repeatedly mention heat. A resident with communication difficulties may show distress through behaviour rather than words. Staff should avoid dismissing these cues as confusion or routine behaviour. In a fire safety context, unusual resident behaviour can be an early warning that requires prompt checking and escalation.",
+"Recognition also includes knowing when not to investigate further. If there is smoke, heat, a strong burning smell, or a closed door with signs of fire behind it, staff should raise the alarm and follow procedure. Opening doors, searching alone or delaying action can increase oxygen supply and worsen fire spread. The safest approach is to trust early warning signs, activate the alarm, contain the area and support residents."
+],
+"bullet_points": [
+"Treat unusual resident agitation as a possible environmental warning.",
+"Listen carefully to residents reporting smells, heat, smoke or strange sounds.",
+"Do not dismiss concerns because a resident has dementia or communication needs.",
+"Check safely, but do not enter unsafe areas.",
+"Raise the alarm if there is any reasonable suspicion of fire.",
+"Avoid opening suspect doors where heat or smoke is present.",
+"Share resident observations with the person leading the response."
+],
+"image": {
+"expected_marker": "slide8_3.png",
+"assigned_file": "slide8_3.png"
+}
+}
+]
+},
+{
+"lesson_number": 9,
+"title": "Fire Response",
+"sections": [
+{
+"heading": "The Five Steps of Fire Response",
+"paragraphs": [
+"The five steps of fire response provide a structured way to act under pressure. First, raise the alarm immediately, no matter how small the fire appears. Second, call the fire service or ensure the agreed person does so, giving the full address, premises type, fire location, evacuation status and any people unaccounted for. Third, tackle the fire only if trained, the fire is small, the correct extinguisher is available and a clear escape route remains. Fourth, evacuate according to the home’s plan. Fifth, meet and brief the fire service.",
+"This sequence connects with RACE: Rescue or remove anyone in immediate danger, Alarm, Contain, then Extinguish or Evacuate as appropriate. Staff must understand that extinguishing is not always safest. A small bin fire may be manageable by trained staff using the correct equipment, but spreading fire, smoke, cooking oil fire or an unclear escape route requires evacuation and containment. Staff should not use passenger lifts, re-enter the building, collect belongings or act outside competence."
+],
+"bullet_points": [
+"Raise the alarm immediately at any suspicion of fire.",
+"Ensure 999 is contacted according to procedure.",
+"Only tackle a fire if trained, competent and safe.",
+"Evacuate according to the local fire plan and resident PEEPs.",
+"Meet the fire service and provide accurate information.",
+"Use RACE principles to prioritise rescue, alarm, containment and evacuation.",
+"Never re-enter until the fire service confirms it is safe."
+],
+"image": {
+"expected_marker": "slide9_1.png",
+"assigned_file": "slide9_1.png"
+}
+},
+{
+"heading": "Staff Roles, Communication and Fire Service Handover",
+"paragraphs": [
+"Effective response depends on staff knowing their roles before the alarm sounds. At the start of every shift, staff should know who the fire warden or nominated lead is, where they are working, which residents need assistance, where PEEPs are kept and what evacuation aids may be required. During an incident, staff should avoid duplication and conflicting instructions. One person may check the panel, another may confirm contact with the fire service, and others may support evacuation or sweep areas.",
+"The handover to the fire and rescue service is a critical safety step. The person in charge should provide the fire location, building layout information, compartments affected, evacuation progress, oxygen cylinder locations, hazardous areas, missing persons, residents with mobility difficulties and PEEP concerns. If residents remain inside, their last known location and dependency level must be communicated. Staff should then follow fire service instructions and maintain resident safety in the place of safety or assembly area."
+],
+"bullet_points": [
+"Know your role, area, fire warden and key residents at the start of each shift.",
+"Avoid acting independently when the emergency plan assigns specific roles.",
+"Use clear, calm communication.",
+"Account for residents, staff, visitors and contractors.",
+"Tell the fire service about fire location, evacuation status and missing persons.",
+"Identify residents still inside, including mobility needs and last known locations.",
+"Continue resident supervision after evacuation."
+],
+"image": null
+}
+]
+},
+{
+"lesson_number": 10,
+"title": "Resident Safety",
+"sections": [
+{
+"heading": "Resident Dependency, Mobility Groups and PEEPs",
+"paragraphs": [
+"Resident safety is the core purpose of fire procedures in care homes. Residents should be considered according to their ability to recognise danger, respond to instruction and move to safety. Independent residents may walk unaided but still need direction, reassurance and supervision. Dependent residents may require assistance, mobility aids, wheelchairs or evacuation on a suitable bed. Highly dependent residents may need evacuation sheets, slide sheets, ski pads, evacuation chairs or movement on beds, depending on the building, equipment and care plan.",
+"Personal Emergency Evacuation Plans, or equivalent person-centred fire risk assessments, are essential for residents who may not evacuate unaided. A PEEP should reflect mobility, cognition, communication, behaviour, equipment needs, medication effects, sensory impairment and preferred support approaches. For residents with dementia, the plan should consider distress triggers, resistance to leaving, risk of returning to rooms and which staff approaches work best. PEEPs must be reviewed when needs change."
+],
+"bullet_points": [
+"Independent residents still require guidance and supervision during evacuation.",
+"Dependent residents may need beds, wheelchairs, walking aids or staff assistance.",
+"Highly dependent residents may require specialist evacuation aids and trained staff.",
+"PEEPs must reflect mobility, cognition, behaviour, communication and equipment needs.",
+"Dementia-related distress, wandering or resistance must be planned for.",
+"PEEPs must be reviewed when resident needs or risks change.",
+"Staff must know where PEEPs are stored and how to use them."
+],
+"image": {
+"expected_marker": "slide10_1.png",
+"assigned_file": "slide10_1.png"
+}
+},
+{
+"heading": "Protecting Residents During Day and Night Incidents",
+"paragraphs": [
+"Day and night fire responses can feel very different. During the day, there may be more staff, visitors, activities and managers available, but also more movement, open doors and contractors. At night, residents are more likely to be asleep, less orientated and slower to respond. Staffing levels are lower, and staff may need to manage several dependent residents at once. The fire risk assessment must justify night-time staffing against the physical task of moving residents from the largest compartment within the required time.",
+"Resident safety also means preserving dignity and clinical safety while prioritising life safety. Staff should not delay evacuation to dress residents fully, collect possessions or complete routine care tasks. Where safe and quick, staff may use blankets, footwear, mobility aids or comfort items according to policy. Residents with dementia may need familiar phrases, eye contact, gentle prompting and reassurance. Bedbound residents require safe manual handling and correct equipment; unsafe lifting can injure both resident and staff."
+],
+"bullet_points": [
+"Night-time risk is higher because residents are asleep and staffing is reduced.",
+"Do not delay evacuation for dressing, belongings or non-essential routines.",
+"Use blankets or essential items only when they do not delay safety.",
+"Support residents with dementia using calm, familiar communication.",
+"Use evacuation aids only in line with training and the resident’s plan.",
+"Avoid unsafe manual handling during urgent movement.",
+"Practise realistic drills, including reduced staffing and night scenarios."
+],
+"image": null
+}
+]
+},
+{
+"lesson_number": 11,
+"title": "Evacuation (PHE)",
+"sections": [
+{
+"heading": "Progressive Horizontal Evacuation in Care Homes",
+"paragraphs": [
+"Progressive Horizontal Evacuation is commonly the standard strategy for UK care homes because many residents cannot safely leave the building immediately by stairs. Residents are moved horizontally through fire-resisting doors into an adjacent safe compartment on the same floor. This Area of Relative Safety allows care and supervision to continue away from immediate danger while further decisions are made. The strategy depends on compartmentation, working fire doors, trained staff, suitable evacuation aids and accurate knowledge of resident dependency.",
+"When the alarm indicates fire in the local area, staff should follow the home’s procedure. This may include checking the fire panel, confirming the affected zone if safe, closing doors and windows, moving residents away from the fire and transferring them through fire doors to the next safe compartment. If that compartment becomes unsafe, residents may be moved progressively to another unaffected zone. Vertical evacuation using stairs is normally a last resort when no safe horizontal area remains or when directed by the plan or fire service."
+],
+"bullet_points": [
+"PHE moves residents horizontally into a safer compartment on the same floor.",
+"The strategy reduces reliance on stairs for non-ambulant residents.",
+"PHE depends on fire doors, compartmentation, training and evacuation aids.",
+"Move residents away from the affected area according to the plan.",
+"Continue to the next compartment if the Area of Relative Safety becomes unsafe.",
+"Vertical evacuation is usually a last resort.",
+"Staff must practise PHE for the actual layout and residents."
+],
+"image": {
+"expected_marker": "slide11_1.png",
+"assigned_file": "slide11_1.png"
+}
+},
+{
+"heading": "Continuous and Intermittent Alarms, Staffing and Evacuation Challenges",
+"paragraphs": [
+"Some care homes use different alarm tones to identify whether the fire is local or elsewhere. A continuous alarm may mean the affected area needs immediate action, while an intermittent alarm may mean staff should prepare, remain alert and be ready to support another zone. Staff must follow the local fire action notice because arrangements vary. During an intermittent alarm, staff should stop tasks that make evacuation harder, such as bathing, undressing or hoisting, and prepare residents and equipment where appropriate.",
+"Evacuation challenges must be anticipated before an incident. These include residents who resist movement, bariatric needs, narrow corridors, equipment availability, staff absence, night staffing, locked doors, visitors, oxygen cylinders, poor visibility and noise. The fire risk assessment should consider whether staff can evacuate the largest compartment quickly enough, including at night. Drills should test realistic conditions, not only easy daytime scenarios. After drills or incidents, learning should be recorded and acted upon."
+],
+"bullet_points": [
+"Know what continuous and intermittent alarms mean in your workplace.",
+"During alert conditions, stop care tasks that delay movement.",
+"Prepare evacuation aids, residents and staff support if escalation is possible.",
+"Plan for residents who resist, wander or need bariatric support.",
+"Night staffing must be sufficient for realistic horizontal evacuation.",
+"Drills should test actual risks and low-staffing conditions.",
+"Record drill learning and complete corrective actions."
+],
+"image": null
+}
+]
+},
+{
+"lesson_number": 12,
+"title": "Detection",
+"sections": [
+{
+"heading": "Smoke Detectors, Heat Detectors and Placement",
+"paragraphs": [
+"Detection systems provide the earliest practical warning of fire. Smoke detectors are commonly used throughout care homes because they detect smoke particles before flames are visible. Heat detectors are often used in kitchens or areas where normal activities could cause false smoke alarms, because they respond to temperature rise rather than smoke particles. Both types must be correctly selected, installed, tested and maintained by competent persons. Staff do not service detectors, but they must understand why detectors must never be covered, removed, obstructed or ignored.",
+"Detector placement and clearance matter. Rooms should have appropriate detection according to the fire risk assessment and system design. Detector heads should not be close to materials, fixtures or obstructions that prevent proper operation. Staff should report any detector that appears damaged, covered, loose, painted over, dusty or affected by building work. They should also know areas where steam, aerosols or cooking fumes may cause nuisance activations. The answer is not to disable protection, but to report the issue for competent assessment."
+],
+"bullet_points": [
+"Smoke detectors usually provide the earliest warning in sleeping and general areas.",
+"Heat detectors are commonly used where smoke detectors may false alarm.",
+"Detectors must never be covered, removed, painted over or obstructed.",
+"Report damaged, dusty, loose or contaminated detector heads.",
+"Maintain suitable clearance around detectors.",
+"Do not disable detection because of nuisance alarms.",
+"Testing and maintenance must be completed and recorded by competent persons."
+],
+"image": {
+"expected_marker": "slide12_1.png",
+"assigned_file": "slide12_1.png"
+}
+},
+{
+"heading": "Manual Call Points, Fire Panels and Staff Familiarity",
+"paragraphs": [
+"Manual call points allow staff or others to raise the alarm immediately when fire is discovered. They are typically small red units with a break-glass or pressable element, located on escape routes, near exits and at key points. Staff must know their locations in each area they work, including temporary or agency staff. During an emergency, seconds matter. A staff member who has to search for a call point may lose valuable time, especially in a compartment containing residents who cannot self-evacuate.",
+"The fire panel helps identify the affected zone or detector activation point, but staff should use it according to role and training. Not every staff member should crowd around the panel; the emergency plan should define who checks it, who communicates information and who begins resident support. If the system contacts the fire service automatically, staff must still confirm local procedure. If manual 999 contact is required, the caller should provide the address, premises type, fire location, evacuation status and any residents at risk."
+],
+"bullet_points": [
+"Know the location of manual call points in every area you work.",
+"Activate the nearest call point immediately if fire is suspected.",
+"Do not wait for visible flames before raising the alarm.",
+"Know who checks the fire panel during an alarm.",
+"Avoid crowding the panel or leaving residents unsupported.",
+"Confirm whether the system auto-dials or requires manual 999 contact.",
+"Give clear information about location, evacuation status and people at risk."
+],
+"image": null
+}
+]
+},
+{
+"lesson_number": 13,
+"title": "Extinguishers",
+"sections": [
+{
+"heading": "Types of Extinguishers and Correct Selection",
+"paragraphs": [
+"Fire extinguishers are provided to tackle small fires only when it is safe and staff have been trained. Using the wrong extinguisher can spread the fire, intensify the hazard or cause serious injury. Water extinguishers are commonly associated with Class A materials such as wood, paper and textiles, but must not be used on live electrical equipment or flammable liquids. Foam may be used for some flammable liquid fires but should not be used on electrical equipment unless designed and labelled for that purpose.",
+"Carbon dioxide is commonly used for electrical fires but can be dangerous in confined areas and is unsuitable for cooking oil fires. Dry powder can be effective on multiple fire classes, but it can reduce visibility and create inhalation risks, so it is not usually preferred in enclosed care home areas unless the risk assessment supports it. Wet chemical extinguishers are designed for cooking oils and fats. Staff must read local signage and follow training rather than relying on memory."
+],
+"bullet_points": [
+"Use extinguishers only if trained, competent and safe.",
+"Water is generally for wood, paper and textiles.",
+"Do not use water on electrical or flammable liquid fires.",
+"Foam may be suitable for some flammable liquids.",
+"Carbon dioxide may be used for electrical fires but not cooking oil fires.",
+"Dry powder can reduce visibility and affect breathing in enclosed areas.",
+"Wet chemical is designed for cooking oil and fat fires."
+],
+"image": {
+"expected_marker": "slide13_1.png",
+"assigned_file": "slide13_1.png"
+}
+},
+{
+"heading": "Safe Use, PASS Method and When Not to Fight Fire",
+"paragraphs": [
+"Where a trained person uses an extinguisher, the PASS method provides a simple sequence: pull the pin, aim at the base of the fire, squeeze the handle and sweep from side to side. The base is targeted because that is where the fuel is burning. Spraying the flames above the source is usually ineffective. The user must keep a safe distance, maintain a clear exit behind them and stop immediately if the fire grows, smoke increases, the extinguisher empties or they feel unsafe.",
+"There are many situations where staff should not fight a fire. These include being untrained, being alone, having no clear escape route, not knowing what is burning, seeing smoke spreading rapidly, dealing with a cooking oil fire without correct equipment, or facing fire larger than a small contained item. Staff should not delay evacuation to search for an extinguisher. Resident support and containment take priority over property protection."
+],
+"bullet_points": [
+"PASS means Pull, Aim, Squeeze and Sweep.",
+"Aim at the base of the fire, not the flames above it.",
+"Keep your escape route clear and behind you.",
+"Stop if smoke increases, the fire grows or you feel unsafe.",
+"Never use an extinguisher if you have not been trained.",
+"Do not fight fires involving unknown substances or unsafe conditions.",
+"Resident evacuation and containment take priority."
+],
+"image": {
+"expected_marker": "slide13_2.png",
+"assigned_file": "slide13_2.png"
+}
+}
+]
+},
+{
+"lesson_number": 14,
+"title": "Fire Blankets",
+"sections": [
+{
+"heading": "When Fire Blankets Are Appropriate",
+"paragraphs": [
+"A fire blanket works by smothering a small fire and removing oxygen from the Fire Triangle. Fire blankets are commonly wall-mounted in kitchens or suitable areas and may be used for small, contained pan fires or when a person’s clothing is on fire. They are not a general-purpose solution for every fire. Staff must know where blankets are located, how to release them and when use is appropriate. As with extinguishers, use depends on training, safety, fire size, escape route and whether resident evacuation is more urgent.",
+"A fire blanket can be particularly useful in kitchens where hot oil or fat may be present. Water must never be used on cooking oil fires because it can cause violent spread and serious burns. If a pan fire is small, contained and safe to approach, a blanket may be placed carefully over the pan to exclude oxygen, and the heat source should be turned off if safe. The blanket should be left in place until the pan cools. If unsafe, evacuate and close the door."
+],
+"bullet_points": [
+"Fire blankets smother fire by excluding oxygen.",
+"They may be suitable for small pan fires or clothing fires.",
+"Know where blankets are mounted and how to release them.",
+"Do not use water on cooking oil or fat fires.",
+"Turn off the heat source only if safe.",
+"Leave the blanket in place until the item has cooled.",
+"Do not use a blanket if the fire is spreading or approach is unsafe."
+],
+"image": {
+"expected_marker": "slide14_1.png",
+"assigned_file": "slide14_1.png"
+}
+},
+{
+"heading": "Drop, Wrap and Roll for Clothing Fires",
+"paragraphs": [
+"If a person’s clothing catches fire, staff must act quickly while protecting themselves. The Drop, Wrap and Roll technique stops flames rising towards the face and airway. The person should be guided or helped to drop to the ground, then wrapped fully in the fire blanket so flames are covered, and then rolled to smother remaining flames. This can be frightening for residents, especially those living with dementia, so staff should use calm, firm, simple instructions.",
+"After a clothing fire, the person needs urgent medical assessment even if flames appear extinguished. Burns, smoke inhalation and shock may not be obvious at first. Staff should follow first aid procedures, keep the person warm, preserve dignity and await emergency services. They should not remove clothing stuck to burns or apply creams unless directed by first aid guidance. The incident must be reported and investigated because it may indicate failures in smoking supervision, clothing safety, kitchen safety, oxygen management or resident risk assessment."
+],
+"bullet_points": [
+"Drop the person to the ground to stop flames rising.",
+"Wrap the person fully so no flames remain exposed.",
+"Roll the person to smother flames beneath the blanket.",
+"Use calm, simple instructions for frightened or confused residents.",
+"Raise the alarm and summon emergency help.",
+"Seek medical assessment for burns, inhalation risk and shock.",
+"Investigate the cause and update risk assessments where needed."
+],
+"image": null
+}
+]
+},
+{
+"lesson_number": 15,
+"title": "Summary",
+"sections": [
+{
+"heading": "Core Safety Messages",
+"paragraphs": [
+"Fire safety in care homes is built on prevention, early recognition, rapid alarm, containment, planned evacuation and accurate communication. Fire needs heat, fuel and oxygen, so staff reduce risk by controlling ignition sources, managing combustible materials, storing oxygen safely and maintaining equipment. Smoke is often the fastest life risk and can incapacitate residents before flames reach them. Fire spread is slowed by closed doors, intact fire doors, clear corridors and effective compartmentation.",
+"The legal and regulatory message is clear. The Regulatory Reform (Fire Safety) Order 2005 requires active fire precautions and a suitable fire risk assessment. The Fire Safety Act 2021 strengthens the importance of building features such as fire doors where relevant. CQC Safe expects providers to protect people from avoidable harm through premises safety, competent staff, training, risk management and governance. Staff support compliance through everyday decisions: reporting hazards, attending drills, following PEEPs, keeping routes clear and knowing the emergency plan."
+],
+"bullet_points": [
+"Prevent ignition by controlling heat sources, electrical risks, smoking and cooking.",
+"Reduce fuel by managing waste, storage, laundry, furniture and corridor clutter.",
+"Treat smoke as an immediate life risk.",
+"Keep fire doors closed and report defects.",
+"Raise the alarm immediately when fire is suspected.",
+"Follow PEEPs and PHE rather than improvising evacuation.",
+"Record, report and learn from hazards, drills, false alarms and incidents."
+],
+"image": null
+},
+{
+"heading": "Common Mistakes to Avoid",
+"paragraphs": [
+"Serious fire safety failures often come from ordinary shortcuts. Wedging open a fire door, leaving a trolley in a corridor, ignoring a warm smell, overloading a socket, delaying an alarm or assuming a resident will self-evacuate can all create major risk. Another common mistake is treating drills as routine rather than opportunities to test the plan. Drills should reveal whether staff know roles, evacuation aids are available, PEEPs are accurate and night staffing assumptions are realistic.",
+"Staff must also avoid overconfidence with equipment. Extinguishers and fire blankets are for trained, safe and limited use; they should never distract from raising the alarm or moving residents away from danger. Passenger lifts must not be used unless specifically designed and included in the emergency plan as evacuation lifts under trained control. Staff should not re-enter the building, collect personal belongings or silence alarms without authority. Strong fire safety culture means doing the right thing and documenting it."
+],
+"bullet_points": [
+"Do not wedge fire doors open or ignore doors that fail to close.",
+"Do not block escape routes with trolleys, waste, furniture or equipment.",
+"Do not assume repeated alarms are false.",
+"Do not rely on residents self-evacuating under stress.",
+"Do not use firefighting equipment unless trained and safe.",
+"Do not use passenger lifts unless the emergency plan specifically allows it.",
+"Do not treat missing records as minor."
+],
+"image": null
+}
+]
+},
+{
+"lesson_number": 16,
+"title": "Reflection",
+"sections": [
+{
+"heading": "Applying the Learning to Your Workplace",
+"paragraphs": [
+"Reflection helps turn training into safe practice. Staff should think about their specific work area: bedrooms, lounges, corridors, kitchens, laundry rooms, medication areas, external spaces and staff rooms. They should identify local alarm points, exits, extinguishers, fire blankets, fire doors, refuge areas, compartments and the fire panel. They should also know which residents need assistance and where PEEPs are stored. A learner who understands theory but cannot apply it to their own corridor, night shift or resident group is not fully prepared.",
+"Staff should also reflect on confidence and limits. Would they know what to do if the alarm sounded during lunch break, night shift, personal care, hoist transfer or medication round? Would they know who leads the response and which residents to prioritise? Could they support a resident with dementia who refuses to move? Would they know when not to use an extinguisher? These questions should guide preparation. Staff should raise uncertainties with a manager, fire warden or trainer before an incident occurs."
+],
+"bullet_points": [
+"Walk your work area and locate exits, call points, extinguishers and blankets.",
+"Identify fire doors, compartments and Areas of Relative Safety.",
+"Check where resident PEEPs are stored and how to access them.",
+"Think through day, night and low-staffing conditions.",
+"Consider how to support residents with dementia or communication difficulties.",
+"Ask for clarification if unsure about alarms, roles or routes.",
+"Use drills to improve confidence and identify gaps."
+],
+"image": null
+},
+{
+"heading": "Reflective Practice Questions",
+"paragraphs": [
+"A strong fire safety culture depends on staff being honest about what works and what does not. Reflection should include personal readiness, team communication and environmental safety. Staff should consider whether they would feel confident raising concerns about blocked routes, unsafe smoking, poor housekeeping, missing signs or fire door defects. They should also consider whether handovers include changes in resident dependency, oxygen use, mobility or behaviour. If needs change but the PEEP is not reviewed, the evacuation plan may no longer be safe.",
+"Managers and team leaders can use reflective questions after drills, incidents and near misses. What happened first? Was the alarm raised quickly? Did staff know their roles? Were residents moved safely? Did anyone become distressed? Were evacuation aids accessible? Did night staffing assumptions hold up? Was fire service information accurate? Were actions recorded and completed? This supports continuous improvement and demonstrates CQC Safe and good governance."
+],
+"bullet_points": [
+"What would you do first if you smelt smoke behind a bedroom door?",
+"Which residents in your area need two staff or specialist equipment?",
+"How would you support a resident with dementia who refuses to leave?",
+"Where is the nearest manual call point to your usual work area?",
+"What hazards have you noticed recently, and were they reported?",
+"Do drills test realistic staffing and resident dependency?",
+"What one action can you take today to improve fire safety?"
+],
+"image": null
+}
+]
+},
+{
+"lesson_number": 17,
+"title": "References",
+"sections": [
+{
+"heading": "Key Legal and Regulatory Sources",
+"paragraphs": [
+"This course is based on UK care home fire safety principles from the supplied training materials and compliance research. The central legal framework is the Regulatory Reform (Fire Safety) Order 2005, which requires the responsible person to assess fire risk and implement general fire precautions. The Fire Safety Act 2021 strengthened application of fire safety duties to relevant building features, including external wall systems and fire doors where applicable. Wider health and safety duties also require safe systems of work, suitable training, safe equipment and protection for residents, staff and visitors.",
+"CQC’s regulatory approach is relevant because fire safety contributes directly to the Safe key question. Providers must show that people are protected from avoidable harm through premises safety, staffing, training, risk assessment, emergency planning and governance. In care homes, legal duties must be applied through resident dependency, dementia, night staffing, PEEPs, evacuation aids and compartmentation. Local policy and the home’s current fire risk assessment remain the final operational authority."
+],
+"bullet_points": [
+"Regulatory Reform (Fire Safety) Order 2005: primary fire safety duty framework.",
+"Fire Safety Act 2021: strengthened attention to building features and fire doors.",
+"Health and Safety at Work etc. Act 1974: wider employer duty for safe systems.",
+"Health and Social Care Act 2008 framework: quality and safety governance.",
+"CQC Safe: protection from avoidable harm through risk management.",
+"Local fire risk assessment: the service-specific procedure document.",
+"Resident PEEPs: person-centred evacuation planning."
+],
+"image": null
+},
+{
+"heading": "Course Source Materials and Operational References",
+"paragraphs": [
+"The training content was mapped from the uploaded source documents: Fire Safety in Care Homes Complete Training Slide Structure, Fire Safety Training Care Homes UK, UK Adult Social Care Compliance research protocol, Topic Fire Safety in Care Homes, and the supplied fire safety course text. These materials covered the Fire Triangle, smoke and fumes, fire spread, prevention, hazards, risk assessment, false alarms, signs, recognition, response, resident safety, PHE, detectors, extinguishers, fire blankets, summary and reflection.",
+"Images were mapped only to the final approved slide image pattern slideX_Y.png. Lessons 15, 16 and 17 intentionally have no image references. Where a lesson has only one approved image, only that image is referenced. No cross-lesson image mapping is used. Operational use should always be checked against the provider’s current policies, fire risk assessment, local fire service guidance and CQC-regulated procedures."
+],
+"bullet_points": [
+"Fire_Safety_Training_Slide_Structure.pdf informed course sequence and image logic.",
+"fire_safety_training_v2.pdf provided concise topic coverage.",
+"UK Compliance Training Research Protocol documents informed legal and CQC context.",
+"TOPIC_ Fire Safety in Care Homes.pdf informed care home risk and evacuation content.",
+"fire safty.txt provided the 17-chapter structure and course language.",
+"Final image mapping follows only approved slideX_Y.png references.",
+"Operational content must align to the live fire risk assessment."
+],
+"image": null
+}
+]
+}
+]
+}

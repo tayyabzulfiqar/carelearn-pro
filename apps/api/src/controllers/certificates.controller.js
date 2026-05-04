@@ -2,7 +2,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/database');
 const { buildCertificateTemplateModel } = require('../lib/certificate-template');
 
-const CERTIFICATE_IMAGE_ROOT = 'C:/Users/HP/Desktop/uk training';
+const CERTIFICATE_IMAGE_ROOT = process.env.FIRE_SAFETY_SOURCE_ROOT || require('node:path').resolve(__dirname, '../content/fire-safety');
 
 async function getUserProfile(userId) {
   const userResult = await db.query(

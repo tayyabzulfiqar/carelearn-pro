@@ -10,22 +10,40 @@ const {
 const { buildCourseQuizPackage } = require('../lib/fire-safety-quiz');
 
 const COURSE_TITLE = 'Fire Safety Awareness';
-const SOURCE_ROOT = 'C:/Users/HP/Desktop/uk training';
+const SOURCE_ROOT = process.env.FIRE_SAFETY_SOURCE_ROOT || path.resolve(__dirname, '../content/fire-safety');
 const JSON_PATH = path.join(SOURCE_ROOT, 'fire-safety-course.json');
 const IMAGE_DIR = SOURCE_ROOT;
 const PUBLIC_IMAGE_BASE = '/api/v1/local-images';
 
-async function getCourseId() {
+async function ensureCourseId() {
   const result = await db.query(
     'SELECT id FROM courses WHERE title = $1 LIMIT 1',
     [COURSE_TITLE]
   );
 
-  if (!result.rows.length) {
-    throw new Error(`Course "${COURSE_TITLE}" was not found in the database.`);
+  if (result.rows.length) {
+    return result.rows[0].id;
   }
 
-  return result.rows[0].id;
+  const courseId = randomUUID();
+  await db.query(
+    `INSERT INTO courses
+     (id, title, description, category, cqc_reference, duration_minutes, renewal_years, pass_mark, is_mandatory, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+    [
+      courseId,
+      COURSE_TITLE,
+      'Imported Fire Safety course loaded from fire-safety-course.json with validated lesson images and deterministic generated quiz banks.',
+      'Fire Safety',
+      'CQC-HS-004',
+      85,
+      1,
+      75,
+      true,
+      'published',
+    ]
+  );
+  return courseId;
 }
 
 async function ensurePrimaryModule(courseId) {
@@ -157,7 +175,6 @@ async function refreshQuestions({ courseId, moduleId, quizPackage }) {
 }
 
 async function run() {
-  const courseId = await getCourseId();
   const source = loadFireSafetyCourseSource({
     jsonPath: JSON_PATH,
     imageDir: IMAGE_DIR,
@@ -183,6 +200,8 @@ async function run() {
   await db.query('BEGIN');
 
   try {
+    const courseId = await ensureCourseId();
+
     await db.query(
       `UPDATE courses
        SET description = $1,

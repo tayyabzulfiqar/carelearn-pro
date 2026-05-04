@@ -10,6 +10,7 @@ function resolveImageUrl(value) {
   }
   if (!value || typeof value !== 'string') return '';
   if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  if (value.startsWith('/api/v1')) return `${API_BASE}${value.replace(/^\/api\/v1/, '')}`;
   if (value.startsWith('/uploads')) return `${API_BASE}${value}`;
   return `${API_BASE}${value.startsWith('/') ? value : `/${value}`}`;
 }

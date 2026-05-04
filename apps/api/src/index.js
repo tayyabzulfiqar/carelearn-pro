@@ -44,6 +44,7 @@ const noStoreStaticHeaders = (res) => {
 };
 
 const localImageRoots = [
+  path.join(__dirname, 'content/fire-safety'),
   path.join(__dirname, '../uploads/local-images'),
   path.join(__dirname, '../uploads'),
 ];

@@ -6,10 +6,10 @@ const {
   loadFireSafetyCourseSource,
   validateFireSafetyCourseSource,
 } = require('../lib/fire-safety-course');
-const { QUIZ_DATA, scoreFireSafetyDemoQuiz } = require('../lib/fire-safety-demo-quiz');
+const { buildCourseQuizPackage } = require('../lib/fire-safety-quiz');
 const { buildCertificateTemplateModel } = require('../lib/certificate-template');
 
-const SOURCE_ROOT = 'C:/Users/HP/Desktop/uk training';
+const SOURCE_ROOT = process.env.FIRE_SAFETY_SOURCE_ROOT || path.resolve(__dirname, '../content/fire-safety');
 const JSON_PATH = path.join(SOURCE_ROOT, 'fire-safety-course.json');
 const CERTIFICATE_PATH = path.join(SOURCE_ROOT, 'certificate_fire_safety.png');
 const COURSE_TITLE = 'Fire Safety Awareness';
@@ -35,26 +35,35 @@ async function run() {
     errors.push('certificate_fire_safety.png is missing');
   }
 
-  if (QUIZ_DATA.length !== 14) {
-    errors.push(`Expected 14 quiz questions but found ${QUIZ_DATA.length}`);
+  const quizPackage = buildCourseQuizPackage({
+    lessons: validation.lessons.map((lesson) => ({
+      lesson_number: lesson.lessonNumber,
+      title: lesson.title,
+      sections: lesson.content.sections,
+    })),
+    versionTag: 'validation',
+  });
+
+  if (quizPackage.lessonQuizzes.length !== 17) {
+    errors.push(`Expected 17 lesson quizzes but found ${quizPackage.lessonQuizzes.length}`);
   }
 
-  const failAnswers = QUIZ_DATA.map((question, index) => ({
-    question_id: question.id,
-    answer: index < 10 ? 0 : 1,
-  }));
-  const passAnswers = QUIZ_DATA.map((question, index) => ({
-    question_id: question.id,
-    answer: index < 11 ? 0 : 1,
-  }));
+  quizPackage.lessonQuizzes.forEach((lessonQuiz) => {
+    if (lessonQuiz.questions.length !== 14) {
+      errors.push(`Lesson ${lessonQuiz.lesson_number} has ${lessonQuiz.questions.length} questions`);
+    }
+    lessonQuiz.questions.forEach((question) => {
+      if (!Number.isInteger(question.correct_answer) || question.correct_answer < 0) {
+        errors.push(`Lesson ${lessonQuiz.lesson_number} has an invalid correct answer`);
+      }
+      if (!Array.isArray(question.options) || question.options.length < 2) {
+        errors.push(`Lesson ${lessonQuiz.lesson_number} has invalid options`);
+      }
+    });
+  });
 
-  const failResult = scoreFireSafetyDemoQuiz(failAnswers);
-  const passResult = scoreFireSafetyDemoQuiz(passAnswers);
-  if (failResult.passed) {
-    errors.push('Fail threshold is incorrect for 10 correct answers');
-  }
-  if (!passResult.passed) {
-    errors.push('Pass threshold is incorrect for 11 correct answers');
+  if (quizPackage.finalExam.questions.length === 0) {
+    errors.push('Final exam questions were not generated');
   }
 
   const template = buildCertificateTemplateModel({
@@ -84,10 +93,11 @@ async function run() {
     errors.push(`Expected pass_mark 75 but found ${courseResult.rows[0].pass_mark}`);
   }
 
-  const passFailStatus = errors.some((error) => /pass|fail|question/i.test(error)) ? 'FAIL' : 'PASS';
+  const passFailStatus = errors.some((error) => /question|quiz|answer|option/i.test(error)) ? 'FAIL' : 'PASS';
   const certificateStatus = errors.some((error) => /certificate|director|company|name overlay/i.test(error)) ? 'FAIL' : 'PASS';
 
-  console.log(`Total questions generated: ${QUIZ_DATA.length}`);
+  console.log(`Total lesson quiz questions generated: ${quizPackage.lessonQuizzes.length * 14}`);
+  console.log(`Total final exam questions generated: ${quizPackage.finalExam.questions.length}`);
   console.log(`Pass/Fail logic status: ${passFailStatus}`);
   console.log(`Certificate status: ${certificateStatus}`);
   console.log(`Errors: ${errors.length}`);

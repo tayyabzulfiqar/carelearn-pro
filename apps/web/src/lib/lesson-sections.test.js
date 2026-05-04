@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
+process.env.NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://carelearn-pro-api.vercel.app/api/v1';
+
 const {
   getLessonSections,
   resolveImageUrl,

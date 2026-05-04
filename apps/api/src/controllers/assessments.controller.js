@@ -1,24 +1,10 @@
 const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/database');
-const {
-  getFireSafetyDemoQuiz,
-  scoreFireSafetyDemoQuiz,
-} = require('../lib/fire-safety-demo-quiz');
-
-const FIRE_SAFETY_TITLE = 'Fire Safety Awareness';
 
 function parseBoolean(value) {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') return value === 'true';
   return false;
-}
-
-async function isFireSafetyCourse(courseId) {
-  const result = await db.query(
-    'SELECT title FROM courses WHERE id = $1 LIMIT 1',
-    [courseId]
-  );
-  return result.rows[0]?.title === FIRE_SAFETY_TITLE;
 }
 
 exports.getQuestions = async (req, res, next) => {
@@ -27,14 +13,6 @@ exports.getQuestions = async (req, res, next) => {
     const { module_id, lesson_number: lessonNumberQuery, is_final } = req.query;
     const lessonNumber = Number(lessonNumberParam || lessonNumberQuery || 0) || null;
     const finalMode = parseBoolean(is_final);
-
-    if (await isFireSafetyCourse(courseId)) {
-      return res.json({
-        questions: finalMode ? getFireSafetyDemoQuiz() : [],
-        lesson_number: finalMode ? null : lessonNumber,
-        is_final: finalMode,
-      });
-    }
 
     let query = `SELECT id, course_id, module_id, lesson_number, question_text, question_type,
                         options, correct_answer, explanation, difficulty, is_final_assessment,
@@ -125,44 +103,6 @@ exports.submitAttempt = async (req, res, next) => {
     const { courseId } = req.params;
     const finalMode = !!is_final;
     const normalizedLessonNumber = finalMode ? null : Number(lesson_number || 0) || null;
-
-    if (await isFireSafetyCourse(courseId)) {
-      if (!finalMode) {
-        return res.status(400).json({ error: 'Lesson quizzes are not available for this course' });
-      }
-
-      const submittedAnswers = Array.isArray(answers) ? answers : [];
-      const result = scoreFireSafetyDemoQuiz(submittedAnswers);
-      const attemptId = uuidv4();
-
-      await db.query(
-        `INSERT INTO assessment_attempts
-         (id, enrollment_id, user_id, module_id, lesson_number, is_final, score, passed, answers)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [
-          attemptId,
-          enrollment_id,
-          req.user.id,
-          module_id || null,
-          null,
-          true,
-          result.score,
-          result.passed,
-          JSON.stringify(submittedAnswers),
-        ]
-      );
-
-      return res.json({
-        score: result.score,
-        passed: result.passed,
-        correct: result.correct,
-        total: result.total,
-        pass_mark: 75,
-        message: result.passed ? 'PASS' : 'You must achieve at least 75 percent to pass',
-        lesson_number: null,
-        is_final: true,
-      });
-    }
 
     let query = `SELECT id, correct_answer
                  FROM assessment_questions

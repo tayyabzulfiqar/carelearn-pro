@@ -9,12 +9,7 @@ import Button from '@/components/ui/Button';
 import api from '@/lib/api';
 
 const CAT_COLORS = {
-  'Health & Safety': 'bg-blue-50 text-blue-700 border-blue-100',
-  'Safeguarding Adults': 'bg-purple-50 text-purple-700 border-purple-100',
-  'Infection Control': 'bg-green-50 text-green-700 border-green-100',
   'Fire Safety': 'bg-red-50 text-red-700 border-red-100',
-  'Mental Capacity Act': 'bg-amber-50 text-amber-700 border-amber-100',
-  'Medication Awareness': 'bg-teal-50 text-teal-700 border-teal-100',
 };
 
 export default function CoursesPage() {

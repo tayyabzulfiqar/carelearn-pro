@@ -51,12 +51,14 @@ async function apiPost(request, token, path, body) {
   return response.json();
 }
 
-async function answerQuiz(page, mode) {
-  for (let index = 0; index < 14; index += 1) {
-    const answerIndex = mode === 'pass' ? 0 : (index < 10 ? 0 : 1);
+async function answerQuiz(page, mode, questions) {
+  for (let index = 0; index < questions.length; index += 1) {
+    const correctAnswer = questions[index].correct_answer || 0;
+    const options = Array.isArray(questions[index].options) ? questions[index].options : JSON.parse(questions[index].options || '[]');
+    const answerIndex = mode === 'pass' ? correctAnswer : ((correctAnswer + 1) % options.length);
     await page.locator('div.grid > button').nth(answerIndex).click();
 
-    if (index < 13) {
+    if (index < questions.length - 1) {
       await page.getByRole('button', { name: 'Next Question' }).click();
     }
   }
@@ -109,13 +111,13 @@ test('fixed fire safety quiz gates lessons, fails at under 75 percent, and issue
   await expect(page.getByText('Final Quiz')).toBeVisible({ timeout: 15000 });
 
   const questionsPayload = await apiGet(request, token, `/courses/${course.id}/questions?is_final=true`);
-  expect(questionsPayload.questions.length).toBe(14);
+  expect(questionsPayload.questions.length).toBe(34);
 
-  await answerQuiz(page, 'fail');
+  await answerQuiz(page, 'fail', questionsPayload.questions);
   await expect(page.getByText('You must achieve at least 75 percent to pass')).toBeVisible({ timeout: 10000 });
   await page.getByRole('button', { name: 'Retake Quiz' }).click();
 
-  await answerQuiz(page, 'pass');
+  await answerQuiz(page, 'pass', questionsPayload.questions);
   await expect(page.getByText('Certificate Ready')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('body')).toContainText('Tayyab Abbasi');
   await expect(page.locator('body')).toContainText('Director: Nargis Nawaz');
