@@ -1,0 +1,85 @@
+{
+  "generated_at": "2026-05-07T15:28:23.233Z",
+  "neon": {
+    "meta": {
+      "db": "neondb",
+      "usr": "neondb_owner",
+      "ver": "PostgreSQL 17.8 (ad62774) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit"
+    },
+    "users": 7,
+    "enrollments": 1,
+    "assessment_attempts": 6,
+    "progress": 17,
+    "certificates": 1
+  },
+  "vps": {
+    "meta": {
+      "db": "carelearn_production",
+      "usr": "carelearn_admin",
+      "ver": "PostgreSQL 17.9 (Debian 17.9-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit"
+    }
+  },
+  "data_integrity": {
+    "utf8_files": {
+      "users.csv": true,
+      "enrollments.csv": true,
+      "assessment_attempts.csv": true,
+      "progress.csv": true,
+      "certificates.csv": true
+    },
+    "uuid_issues": [],
+    "timestamp_issues": [],
+    "fk_issues": [],
+    "id_mapping": {
+      "course_ids_mapped": 1,
+      "module_ids_mapped": 1,
+      "lesson_ids_mapped": 17
+    },
+    "duplicate_source": {
+      "dup_user_email": 0,
+      "dup_enrollment_pair": 0,
+      "dup_progress_pair": 0,
+      "dup_certificate_number": 0
+    }
+  },
+  "dry_run": {
+    "source_rows": {
+      "users": 7,
+      "enrollments": 1,
+      "assessment_attempts": 6,
+      "progress": 17,
+      "certificates": 1
+    },
+    "before_counts": {
+      "users": 0,
+      "enrollments": 0,
+      "assessment_attempts": 0,
+      "progress": 0,
+      "certificates": 0
+    },
+    "after_counts": {
+      "users": 7,
+      "enrollments": 1,
+      "assessment_attempts": 6,
+      "progress": 17,
+      "certificates": 1
+    },
+    "delta": {
+      "users": 7,
+      "enrollments": 1,
+      "assessment_attempts": 6,
+      "progress": 17,
+      "certificates": 1
+    },
+    "mapped_foreign_keys": {
+      "enrollments_course_id": 1,
+      "assessment_attempts_module_id": 0,
+      "progress_lesson_id": 17,
+      "certificates_course_id": 1
+    },
+    "index_count_after_merge_txn": 26,
+    "constraint_count_after_merge_txn": 42,
+    "rolled_back": true
+  },
+  "blocker": null
+}

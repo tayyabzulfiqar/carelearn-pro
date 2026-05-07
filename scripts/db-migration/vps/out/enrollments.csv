@@ -1,0 +1,2 @@
+id,user_id,course_id,organisation_id,due_date,status,enrolled_at,completed_at,updated_at
+"b2304869-ad0e-4e5b-8a48-063f1c6f425c","30018a3a-b625-4f42-a518-e61760c8f603","43700813-90d4-416a-8d10-4d3aae2c2238",,,"in_progress","""2026-05-04T06:55:05.586Z""","""2026-05-04T06:55:07.496Z""","""2026-05-04T07:14:24.948Z"""

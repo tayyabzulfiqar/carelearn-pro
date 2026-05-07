@@ -1,0 +1,93 @@
+[
+  {
+    "id": "1ab8df7b-6604-4911-a62e-e1a0803c90c4",
+    "email": "admin@carelearn.pro",
+    "password_hash": "$2b$12$WwD2qEyQsUta3OliKH6HEuFD4rLY61lslR3uWAxkPsrAtdXT6mwq.",
+    "first_name": "Super",
+    "last_name": "Admin",
+    "role": "super_admin",
+    "avatar_url": null,
+    "is_active": true,
+    "last_login_at": null,
+    "created_at": "2026-05-03T22:58:27.965Z",
+    "updated_at": "2026-05-03T22:58:27.965Z"
+  },
+  {
+    "id": "30018a3a-b625-4f42-a518-e61760c8f603",
+    "email": "test@care.com",
+    "password_hash": "$2b$12$pD8d7LpwQdCwBHZPDOhsTuFNiFNxFT2K/h33DHDipl8H6QtTgbNGS",
+    "first_name": "Test",
+    "last_name": "User",
+    "role": "learner",
+    "avatar_url": null,
+    "is_active": true,
+    "last_login_at": null,
+    "created_at": "2026-05-03T22:56:53.264Z",
+    "updated_at": "2026-05-03T22:56:53.264Z"
+  },
+  {
+    "id": "6bce1ea6-c77d-4b2e-84b2-831cff8ad352",
+    "email": "verify+1777849010@care.com",
+    "password_hash": "$2b$12$uS2OHxlPw4Fmetn7Rd5vwuKmpQTbXmaqnp95cecww8nf6kOZPigs.",
+    "first_name": "Verify",
+    "last_name": "User",
+    "role": "learner",
+    "avatar_url": null,
+    "is_active": true,
+    "last_login_at": null,
+    "created_at": "2026-05-03T22:56:53.688Z",
+    "updated_at": "2026-05-03T22:56:53.688Z"
+  },
+  {
+    "id": "8a7e3e94-2c5b-4891-b9ea-3a006257f290",
+    "email": "verify1777850938381@care.com",
+    "password_hash": "$2b$12$RENONvqI.faDSIn0CnjXk.kJ.HgQZrWjwM2FjThpyOe5phPIAnPqS",
+    "first_name": "Verify",
+    "last_name": "User",
+    "role": "learner",
+    "avatar_url": null,
+    "is_active": true,
+    "last_login_at": null,
+    "created_at": "2026-05-03T23:28:59.850Z",
+    "updated_at": "2026-05-03T23:28:59.850Z"
+  },
+  {
+    "id": "cce9cdb6-bcb1-4356-b8f1-a6c51672a233",
+    "email": "ui1777849441787@care.com",
+    "password_hash": "$2b$12$WMQbII5RDwzu4nWTVPqobuu24zZbXVLYIg691FhDOQgey3XGSXWs.",
+    "first_name": "UI",
+    "last_name": "Verify",
+    "role": "learner",
+    "avatar_url": null,
+    "is_active": true,
+    "last_login_at": null,
+    "created_at": "2026-05-03T23:04:06.638Z",
+    "updated_at": "2026-05-03T23:04:06.638Z"
+  },
+  {
+    "id": "e56d683f-ef93-4e74-ab02-6f8a3d95ca5f",
+    "email": "jane@sunrise-care.co.uk",
+    "password_hash": "$2b$12$DyCpIs3EdFKSMXVAlSAMaOnFj1tTxH7AyBVVIkjemNlMgm2nUj3V2",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "role": "learner",
+    "avatar_url": null,
+    "is_active": true,
+    "last_login_at": null,
+    "created_at": "2026-05-03T22:58:28.900Z",
+    "updated_at": "2026-05-03T22:58:28.900Z"
+  },
+  {
+    "id": "f7ba5ab8-7dc8-45cb-a7e1-c98844820b61",
+    "email": "verify1777849287333@care.com",
+    "password_hash": "$2b$12$WdASZX8wdqHtZWPNK/WCRuOFhZPW25p9Afx3Irl8PIobfb2xgnS4O",
+    "first_name": "Verify",
+    "last_name": "User",
+    "role": "learner",
+    "avatar_url": null,
+    "is_active": true,
+    "last_login_at": null,
+    "created_at": "2026-05-03T23:01:29.581Z",
+    "updated_at": "2026-05-03T23:01:29.581Z"
+  }
+]

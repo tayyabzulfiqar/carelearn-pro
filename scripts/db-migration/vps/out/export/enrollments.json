@@ -1,0 +1,13 @@
+[
+  {
+    "id": "b2304869-ad0e-4e5b-8a48-063f1c6f425c",
+    "user_id": "30018a3a-b625-4f42-a518-e61760c8f603",
+    "course_id": "43700813-90d4-416a-8d10-4d3aae2c2238",
+    "organisation_id": null,
+    "due_date": null,
+    "status": "in_progress",
+    "enrolled_at": "2026-05-04T06:55:05.586Z",
+    "completed_at": "2026-05-04T06:55:07.496Z",
+    "updated_at": "2026-05-04T07:14:24.948Z"
+  }
+]

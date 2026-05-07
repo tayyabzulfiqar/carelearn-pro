@@ -4,3 +4,8 @@ test-results/
 *.log
 .frontend-pid.txt
 **/.env*.local
+
+.env.production
+backups/
+*.sql.gz
+

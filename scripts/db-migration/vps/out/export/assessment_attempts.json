@@ -1,0 +1,416 @@
+[
+  {
+    "id": "2c9d2659-4017-435d-8a85-b276f9d9b63a",
+    "enrollment_id": "b2304869-ad0e-4e5b-8a48-063f1c6f425c",
+    "user_id": "30018a3a-b625-4f42-a518-e61760c8f603",
+    "module_id": null,
+    "lesson_number": null,
+    "is_final": true,
+    "score": 36,
+    "passed": false,
+    "answers": [
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-1"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-2"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-3"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-4"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-5"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-6"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-7"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-8"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-9"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-10"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-11"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-12"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-13"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-14"
+      }
+    ],
+    "attempted_at": "2026-05-04T20:57:40.999Z"
+  },
+  {
+    "id": "379f92cf-a036-47ba-bd99-aad1938721b2",
+    "enrollment_id": "b2304869-ad0e-4e5b-8a48-063f1c6f425c",
+    "user_id": "30018a3a-b625-4f42-a518-e61760c8f603",
+    "module_id": null,
+    "lesson_number": null,
+    "is_final": true,
+    "score": 21,
+    "passed": false,
+    "answers": [
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-1"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-2"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-3"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-4"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-5"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-6"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-7"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-8"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-9"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-10"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-11"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-12"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-13"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-14"
+      }
+    ],
+    "attempted_at": "2026-05-04T20:51:17.912Z"
+  },
+  {
+    "id": "39c9e80b-ebda-4ae0-90fe-7bb8453f419a",
+    "enrollment_id": "b2304869-ad0e-4e5b-8a48-063f1c6f425c",
+    "user_id": "30018a3a-b625-4f42-a518-e61760c8f603",
+    "module_id": null,
+    "lesson_number": null,
+    "is_final": true,
+    "score": 21,
+    "passed": false,
+    "answers": [
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-1"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-2"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-3"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-4"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-5"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-6"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-7"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-8"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-9"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-10"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-11"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-12"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-13"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-14"
+      }
+    ],
+    "attempted_at": "2026-05-04T21:03:49.564Z"
+  },
+  {
+    "id": "56b9a359-4d48-4acf-8ee9-5088bf40230b",
+    "enrollment_id": "b2304869-ad0e-4e5b-8a48-063f1c6f425c",
+    "user_id": "30018a3a-b625-4f42-a518-e61760c8f603",
+    "module_id": null,
+    "lesson_number": null,
+    "is_final": true,
+    "score": 100,
+    "passed": true,
+    "answers": [
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-1"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-2"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-3"
+      },
+      {
+        "answer": 3,
+        "question_id": "fire-safety-static-4"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-5"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-6"
+      },
+      {
+        "answer": 3,
+        "question_id": "fire-safety-static-7"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-8"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-9"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-10"
+      },
+      {
+        "answer": 3,
+        "question_id": "fire-safety-static-11"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-12"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-13"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-14"
+      }
+    ],
+    "attempted_at": "2026-05-04T06:55:06.668Z"
+  },
+  {
+    "id": "68db6025-2e80-4a87-98ee-8fbb142629f2",
+    "enrollment_id": "b2304869-ad0e-4e5b-8a48-063f1c6f425c",
+    "user_id": "30018a3a-b625-4f42-a518-e61760c8f603",
+    "module_id": null,
+    "lesson_number": null,
+    "is_final": true,
+    "score": 0,
+    "passed": false,
+    "answers": [
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-1"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-2"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-3"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-4"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-5"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-6"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-7"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-8"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-9"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-10"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-11"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-12"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-13"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-14"
+      }
+    ],
+    "attempted_at": "2026-05-04T06:55:05.949Z"
+  },
+  {
+    "id": "b14d7713-5941-4699-89e5-8687e521722a",
+    "enrollment_id": "b2304869-ad0e-4e5b-8a48-063f1c6f425c",
+    "user_id": "30018a3a-b625-4f42-a518-e61760c8f603",
+    "module_id": null,
+    "lesson_number": null,
+    "is_final": true,
+    "score": 29,
+    "passed": false,
+    "answers": [
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-1"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-2"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-3"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-4"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-5"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-6"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-7"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-8"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-9"
+      },
+      {
+        "answer": 0,
+        "question_id": "fire-safety-static-10"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-11"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-12"
+      },
+      {
+        "answer": 1,
+        "question_id": "fire-safety-static-13"
+      },
+      {
+        "answer": 2,
+        "question_id": "fire-safety-static-14"
+      }
+    ],
+    "attempted_at": "2026-05-04T07:15:07.296Z"
+  }
+]

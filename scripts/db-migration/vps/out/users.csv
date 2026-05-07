@@ -1,0 +1,8 @@
+id,email,password_hash,first_name,last_name,role,avatar_url,is_active,last_login_at,created_at,updated_at
+"1ab8df7b-6604-4911-a62e-e1a0803c90c4","admin@carelearn.pro","$2b$12$WwD2qEyQsUta3OliKH6HEuFD4rLY61lslR3uWAxkPsrAtdXT6mwq.","Super","Admin","super_admin",,"true",,"""2026-05-03T22:58:27.965Z""","""2026-05-03T22:58:27.965Z"""
+"30018a3a-b625-4f42-a518-e61760c8f603","test@care.com","$2b$12$pD8d7LpwQdCwBHZPDOhsTuFNiFNxFT2K/h33DHDipl8H6QtTgbNGS","Test","User","learner",,"true",,"""2026-05-03T22:56:53.264Z""","""2026-05-03T22:56:53.264Z"""
+"6bce1ea6-c77d-4b2e-84b2-831cff8ad352","verify+1777849010@care.com","$2b$12$uS2OHxlPw4Fmetn7Rd5vwuKmpQTbXmaqnp95cecww8nf6kOZPigs.","Verify","User","learner",,"true",,"""2026-05-03T22:56:53.688Z""","""2026-05-03T22:56:53.688Z"""
+"8a7e3e94-2c5b-4891-b9ea-3a006257f290","verify1777850938381@care.com","$2b$12$RENONvqI.faDSIn0CnjXk.kJ.HgQZrWjwM2FjThpyOe5phPIAnPqS","Verify","User","learner",,"true",,"""2026-05-03T23:28:59.850Z""","""2026-05-03T23:28:59.850Z"""
+"cce9cdb6-bcb1-4356-b8f1-a6c51672a233","ui1777849441787@care.com","$2b$12$WMQbII5RDwzu4nWTVPqobuu24zZbXVLYIg691FhDOQgey3XGSXWs.","UI","Verify","learner",,"true",,"""2026-05-03T23:04:06.638Z""","""2026-05-03T23:04:06.638Z"""
+"e56d683f-ef93-4e74-ab02-6f8a3d95ca5f","jane@sunrise-care.co.uk","$2b$12$DyCpIs3EdFKSMXVAlSAMaOnFj1tTxH7AyBVVIkjemNlMgm2nUj3V2","Jane","Smith","learner",,"true",,"""2026-05-03T22:58:28.900Z""","""2026-05-03T22:58:28.900Z"""
+"f7ba5ab8-7dc8-45cb-a7e1-c98844820b61","verify1777849287333@care.com","$2b$12$WdASZX8wdqHtZWPNK/WCRuOFhZPW25p9Afx3Irl8PIobfb2xgnS4O","Verify","User","learner",,"true",,"""2026-05-03T23:01:29.581Z""","""2026-05-03T23:01:29.581Z"""
