@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+.git
+.gitignore
+.env
+.env.*
+!.env.production.example
+**/.next
+**/dist
+**/coverage
+**/*.log
+**/test-results
+**/.vercel
+**/__pycache__
