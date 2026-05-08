@@ -61,13 +61,13 @@ export default function CoursePlayerPage() {
         setCourse(courseData);
 
         const lessons = [];
-        for (const module of courseData.modules || []) {
-          for (const lesson of module.lessons || []) {
+        for (const courseModule of courseData.modules || []) {
+          for (const lesson of courseModule.lessons || []) {
             if (!lesson?.id) continue;
             lessons.push({
               ...lesson,
               content: parseLessonContent(lesson),
-              module_title: module.title,
+              module_title: courseModule.title,
             });
           }
         }

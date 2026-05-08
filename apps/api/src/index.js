@@ -13,7 +13,13 @@ const enrollmentRoutes = require('./routes/enrollments.routes');
 const certificateRoutes = require('./routes/certificates.routes');
 const certificatesController = require('./controllers/certificates.controller');
 const uploadRoutes = require('./routes/upload.routes');
+const adminRoutes = require('./routes/admin.routes');
 const errorHandler = require('./middleware/errorHandler');
+const { requestContext } = require('./middleware/requestContext');
+const { attachTenant } = require('./middleware/tenant');
+const { requestLogger } = require('./middleware/requestLogger');
+const { attachApiHelpers } = require('./utils/apiResponse');
+const { finalizeAudit } = require('./middleware/finalizeAudit');
 const { bootstrapDatabase } = require('./bootstrap');
 const { CERTIFICATE_ROOT } = require('./lib/certificate-image');
 
@@ -52,6 +58,7 @@ const localImageRoots = [
 ];
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(requestContext);
 app.use(cors({
   origin(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -63,7 +70,11 @@ app.use(cors({
   credentials: true,
 }));
 app.use(morgan('dev'));
+app.use(requestLogger);
 app.use(express.json());
+app.use(attachApiHelpers);
+app.use(attachTenant);
+app.use(finalizeAudit());
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/certificates', express.static(CERTIFICATE_ROOT, {
@@ -84,6 +95,9 @@ for (const root of localImageRoots) {
 app.get('/health', (req, res) =>
   res.json({ status: 'ok', service: 'CareLearn API', version: '1.0.0' })
 );
+app.get('/api/v1/health', (req, res) =>
+  res.json({ status: 'ok', service: 'CareLearn API', version: '1.0.0' })
+);
 
 app.use('/api/v1/auth', requireDatabaseReady, authRoutes);
 app.use('/api/v1/users', requireDatabaseReady, userRoutes);
@@ -92,6 +106,7 @@ app.use('/api/v1/courses', requireDatabaseReady, courseRoutes);
 app.use('/api/v1/enrollments', requireDatabaseReady, enrollmentRoutes);
 app.use('/api/v1/certificates', requireDatabaseReady, certificateRoutes);
 app.use('/api/v1/upload', requireDatabaseReady, uploadRoutes);
+app.use('/api/v1/admin', requireDatabaseReady, adminRoutes);
 
 app.use(errorHandler);
 

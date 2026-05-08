@@ -160,6 +160,78 @@ const createTables = async () => {
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS agencies (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name VARCHAR(255) NOT NULL,
+      slug VARCHAR(120) UNIQUE NOT NULL,
+      owner_user_id UUID REFERENCES users(id),
+      status VARCHAR(30) DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'archived')),
+      billing_email VARCHAR(255),
+      metadata JSONB DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS organisation_settings (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+      key VARCHAR(120) NOT NULL,
+      value JSONB NOT NULL DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (organisation_id, key)
+    );
+
+    CREATE TABLE IF NOT EXISTS invitations (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+      email VARCHAR(255) NOT NULL,
+      role VARCHAR(50) NOT NULL DEFAULT 'learner',
+      invited_by UUID REFERENCES users(id),
+      token VARCHAR(255) UNIQUE NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'revoked', 'expired')),
+      expires_at TIMESTAMPTZ NOT NULL,
+      accepted_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS media_assets (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+      uploaded_by UUID REFERENCES users(id),
+      file_name VARCHAR(255) NOT NULL,
+      storage_path TEXT NOT NULL,
+      mime_type VARCHAR(120),
+      file_size_bytes BIGINT DEFAULT 0,
+      tags TEXT[] DEFAULT '{}',
+      metadata JSONB DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      type VARCHAR(80) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      body TEXT,
+      channel VARCHAR(40) DEFAULT 'in_app',
+      is_read BOOLEAN DEFAULT false,
+      read_at TIMESTAMPTZ,
+      payload JSONB DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS analytics_events (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id),
+      event_name VARCHAR(120) NOT NULL,
+      event_category VARCHAR(80),
+      event_payload JSONB DEFAULT '{}',
+      occurred_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     ALTER TABLE assessment_questions
       ADD COLUMN IF NOT EXISTS lesson_number INTEGER,
       ADD COLUMN IF NOT EXISTS difficulty VARCHAR(20),
@@ -181,6 +253,10 @@ const createTables = async () => {
       ON assessment_questions(course_id, version_tag);
     CREATE INDEX IF NOT EXISTS idx_certificates_user ON certificates(user_id);
     CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
+    CREATE INDEX IF NOT EXISTS idx_org_members_org ON organisation_members(organisation_id);
+    CREATE INDEX IF NOT EXISTS idx_invites_org_email ON invitations(organisation_id, email);
+    CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read);
+    CREATE INDEX IF NOT EXISTS idx_analytics_events_org_time ON analytics_events(organisation_id, occurred_at DESC);
   `);
   console.log('All tables created successfully.');
 };
