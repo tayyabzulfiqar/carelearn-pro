@@ -27,13 +27,16 @@ async function withTemplate(certificate) {
   return {
     ...certificate,
     certificate_url: certificate.pdf_url || null,
-    template: buildCertificateTemplateModel({
-      imageRoot: CERTIFICATE_IMAGE_ROOT,
-      user,
-      issuedAt: certificate.issued_at,
-      courseTitle,
-    }),
-  };
+      template: buildCertificateTemplateModel({
+        imageRoot: CERTIFICATE_IMAGE_ROOT,
+        user,
+        issuedAt: certificate.issued_at,
+        courseTitle,
+      }),
+      verification_url: certificate.verification_token
+        ? `/api/v1/certificates/verify-token/${certificate.verification_token}`
+        : null,
+    };
 }
 
 exports.getByUser = async (req, res, next) => {
@@ -97,12 +100,13 @@ exports.issue = async (req, res, next) => {
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + renewalYears);
     const certNumber = `CLP-${Date.now()}-${Math.random().toString(36).substr(2,6).toUpperCase()}`;
+    const verificationToken = randomUUID().replace(/-/g, '').slice(0, 24);
     const id = uuidv4();
     const result = await db.query(
       `INSERT INTO certificates
-       (id, enrollment_id, user_id, course_id, organisation_id, certificate_number, pdf_url, expires_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [id, enrollment_id, user_id, course_id, organisation_id, certNumber, image.publicUrl, expiresAt]
+       (id, enrollment_id, user_id, course_id, organisation_id, certificate_number, verification_token, pdf_url, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [id, enrollment_id, user_id, course_id, organisation_id, certNumber, verificationToken, image.publicUrl, expiresAt]
     );
     await db.query(
       `UPDATE enrollments SET status='completed', completed_at=NOW() WHERE id=$1`,
@@ -127,6 +131,23 @@ exports.verify = async (req, res, next) => {
        JOIN courses c ON c.id = cert.course_id
        WHERE cert.certificate_number = $1`,
       [req.params.certNumber]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Certificate not found' });
+    const cert = result.rows[0];
+    const isValid = cert.is_valid && new Date(cert.expires_at) > new Date();
+    res.json({ certificate: await withTemplate(cert), is_valid: isValid });
+  } catch (err) { next(err); }
+};
+
+exports.verifyByToken = async (req, res, next) => {
+  try {
+    const result = await db.query(
+      `SELECT cert.*, u.first_name, u.last_name, c.title as course_title
+       FROM certificates cert
+       JOIN users u ON u.id = cert.user_id
+       JOIN courses c ON c.id = cert.course_id
+       WHERE cert.verification_token = $1`,
+      [req.params.token]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Certificate not found' });
     const cert = result.rows[0];

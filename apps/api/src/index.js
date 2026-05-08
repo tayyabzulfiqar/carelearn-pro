@@ -14,6 +14,7 @@ const certificateRoutes = require('./routes/certificates.routes');
 const certificatesController = require('./controllers/certificates.controller');
 const uploadRoutes = require('./routes/upload.routes');
 const adminRoutes = require('./routes/admin.routes');
+const trainingCmsRoutes = require('./routes/cms/trainingCms.routes');
 const errorHandler = require('./middleware/errorHandler');
 const { requestContext } = require('./middleware/requestContext');
 const { attachTenant } = require('./middleware/tenant');
@@ -107,6 +108,7 @@ app.use('/api/v1/enrollments', requireDatabaseReady, enrollmentRoutes);
 app.use('/api/v1/certificates', requireDatabaseReady, certificateRoutes);
 app.use('/api/v1/upload', requireDatabaseReady, uploadRoutes);
 app.use('/api/v1/admin', requireDatabaseReady, adminRoutes);
+app.use('/api/v1/admin/cms', requireDatabaseReady, trainingCmsRoutes);
 
 app.use(errorHandler);
 

@@ -45,8 +45,10 @@ const createTables = async () => {
     CREATE TABLE IF NOT EXISTS courses (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       title VARCHAR(255) NOT NULL,
+      slug VARCHAR(255) UNIQUE,
       description TEXT,
       category VARCHAR(100) NOT NULL,
+      thumbnail_url TEXT,
       cqc_reference VARCHAR(100),
       skills_for_care_ref VARCHAR(100),
       target_roles TEXT[],
@@ -63,8 +65,10 @@ const createTables = async () => {
     CREATE TABLE IF NOT EXISTS modules (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      parent_module_id UUID REFERENCES modules(id) ON DELETE CASCADE,
       title VARCHAR(255) NOT NULL,
       description TEXT,
+      status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
       order_index INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
@@ -74,6 +78,10 @@ const createTables = async () => {
       module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
       title VARCHAR(255) NOT NULL,
       content JSONB DEFAULT '{}',
+      status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+      is_visible BOOLEAN DEFAULT true,
+      published_at TIMESTAMPTZ,
+      metadata JSONB DEFAULT '{}',
       order_index INTEGER NOT NULL DEFAULT 0,
       duration_minutes INTEGER DEFAULT 5,
       created_at TIMESTAMPTZ DEFAULT NOW()
@@ -232,6 +240,76 @@ const createTables = async () => {
       occurred_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS training_categories (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name VARCHAR(120) UNIQUE NOT NULL,
+      slug VARCHAR(140) UNIQUE NOT NULL,
+      description TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS training_tags (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name VARCHAR(120) UNIQUE NOT NULL,
+      slug VARCHAR(140) UNIQUE NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS training_course_categories (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      category_id UUID NOT NULL REFERENCES training_categories(id) ON DELETE CASCADE,
+      UNIQUE(course_id, category_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS training_course_tags (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      tag_id UUID NOT NULL REFERENCES training_tags(id) ON DELETE CASCADE,
+      UNIQUE(course_id, tag_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS quizzes (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      module_id UUID REFERENCES modules(id) ON DELETE SET NULL,
+      title VARCHAR(255) NOT NULL,
+      quiz_type VARCHAR(20) DEFAULT 'final' CHECK (quiz_type IN ('lesson', 'module', 'final')),
+      status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+      pass_mark INTEGER DEFAULT 75,
+      retry_limit INTEGER DEFAULT 3,
+      time_limit_seconds INTEGER,
+      published_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS quiz_questions (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      quiz_id UUID NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+      question_text TEXT NOT NULL,
+      question_type VARCHAR(20) DEFAULT 'single_choice',
+      options JSONB NOT NULL DEFAULT '[]',
+      correct_answer TEXT NOT NULL,
+      explanation TEXT,
+      weight INTEGER DEFAULT 1,
+      order_index INTEGER DEFAULT 0,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS certificate_templates (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+      name VARCHAR(150) NOT NULL,
+      template_type VARCHAR(80) DEFAULT 'completion',
+      template_data JSONB NOT NULL DEFAULT '{}',
+      is_default BOOLEAN DEFAULT false,
+      status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'archived')),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     ALTER TABLE assessment_questions
       ADD COLUMN IF NOT EXISTS lesson_number INTEGER,
       ADD COLUMN IF NOT EXISTS difficulty VARCHAR(20),
@@ -242,6 +320,23 @@ const createTables = async () => {
 
     ALTER TABLE assessment_attempts
       ADD COLUMN IF NOT EXISTS lesson_number INTEGER;
+
+    ALTER TABLE courses
+      ADD COLUMN IF NOT EXISTS slug VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS thumbnail_url TEXT;
+
+    ALTER TABLE modules
+      ADD COLUMN IF NOT EXISTS parent_module_id UUID REFERENCES modules(id) ON DELETE CASCADE,
+      ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'draft';
+
+    ALTER TABLE lessons
+      ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'draft',
+      ADD COLUMN IF NOT EXISTS is_visible BOOLEAN DEFAULT true,
+      ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';
+
+    ALTER TABLE certificates
+      ADD COLUMN IF NOT EXISTS verification_token VARCHAR(120);
 
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_enrollments_user ON enrollments(user_id);
@@ -257,6 +352,12 @@ const createTables = async () => {
     CREATE INDEX IF NOT EXISTS idx_invites_org_email ON invitations(organisation_id, email);
     CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read);
     CREATE INDEX IF NOT EXISTS idx_analytics_events_org_time ON analytics_events(organisation_id, occurred_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_courses_slug ON courses(slug);
+    CREATE INDEX IF NOT EXISTS idx_modules_course_parent ON modules(course_id, parent_module_id);
+    CREATE INDEX IF NOT EXISTS idx_lessons_module_order ON lessons(module_id, order_index);
+    CREATE INDEX IF NOT EXISTS idx_quizzes_course_status ON quizzes(course_id, status);
+    CREATE INDEX IF NOT EXISTS idx_quiz_questions_quiz_order ON quiz_questions(quiz_id, order_index);
+    CREATE INDEX IF NOT EXISTS idx_certificates_verification_token ON certificates(verification_token);
   `);
   console.log('All tables created successfully.');
 };

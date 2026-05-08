@@ -3,8 +3,8 @@ import { AdminEmptyState } from '@/components/admin/AdminStates';
 export default function AgenciesPage() {
   return (
     <AdminEmptyState
-      title="Agency Management"
-      description="Multi-tenant agency entity and ownership metadata are provisioned in backend schema."
+      title="Agency Multi-Tenant Layer Enabled"
+      description="Agency schema and organization ownership foundation are ready for provisioning UI in next batch."
     />
   );
 }

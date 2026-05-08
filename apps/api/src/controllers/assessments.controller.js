@@ -7,6 +7,36 @@ exports.getQuestions = async (req, res, next) => {
     const { courseId, lessonNumber: lessonNumberParam } = req.params;
     const { lesson_number: lessonNumberQuery, is_final } = req.query;
     const lessonNumber = Number(lessonNumberParam || lessonNumberQuery || 0) || null;
+    const quizzesResult = await db.query(
+      `SELECT id, pass_mark, retry_limit
+       FROM quizzes
+       WHERE course_id = $1
+         AND status = 'published'
+         AND quiz_type = $2
+       ORDER BY updated_at DESC
+       LIMIT 1`,
+      [courseId, is_final === 'false' ? 'lesson' : 'final']
+    );
+
+    if (quizzesResult.rows.length) {
+      const quiz = quizzesResult.rows[0];
+      const questions = await db.query(
+        `SELECT id, question_text AS question, options, question_type, explanation, order_index
+         FROM quiz_questions
+         WHERE quiz_id = $1 AND is_active = true
+         ORDER BY order_index ASC`,
+        [quiz.id]
+      );
+      return res.json({
+        questions: questions.rows,
+        lesson_number: lessonNumber,
+        is_final: is_final !== 'false',
+        quiz_id: quiz.id,
+        pass_mark: quiz.pass_mark,
+        retry_limit: quiz.retry_limit,
+      });
+    }
+
     res.json({
       questions: getStaticQuizQuestions(courseId),
       lesson_number: lessonNumber,
@@ -75,8 +105,70 @@ exports.submitAttempt = async (req, res, next) => {
     const normalizedLessonNumber = finalMode ? null : Number(lesson_number || 0) || null;
 
     const submittedAnswers = Array.isArray(answers) ? answers : [];
-    const { correct, total, score, passed } = scoreStaticQuiz(submittedAnswers, courseId);
-    const passMark = 75;
+    const quizForCourse = await db.query(
+      `SELECT id, pass_mark, retry_limit
+       FROM quizzes
+       WHERE course_id = $1
+         AND status = 'published'
+         AND quiz_type = $2
+       ORDER BY updated_at DESC
+       LIMIT 1`,
+      [courseId, finalMode ? 'final' : 'lesson']
+    );
+
+    let correct = 0;
+    let total = 0;
+    let score = 0;
+    let passMark = 75;
+    let passed = false;
+
+    if (quizForCourse.rows.length) {
+      const quiz = quizForCourse.rows[0];
+      passMark = quiz.pass_mark || 75;
+      const attemptsCount = await db.query(
+        `SELECT COUNT(*)::int AS count
+         FROM assessment_attempts
+         WHERE enrollment_id = $1
+           AND is_final = $2`,
+        [enrollment_id, finalMode]
+      );
+      if (attemptsCount.rows[0].count >= (quiz.retry_limit || 3)) {
+        return res.status(429).json({
+          error: 'Retry limit exceeded for this quiz',
+          retry_limit: quiz.retry_limit || 3,
+        });
+      }
+
+      const questions = await db.query(
+        `SELECT id, correct_answer, weight
+         FROM quiz_questions
+         WHERE quiz_id = $1
+           AND is_active = true`,
+        [quiz.id]
+      );
+      total = questions.rows.length;
+      const byId = new Map(questions.rows.map((q) => [q.id, q]));
+      const totalWeight = questions.rows.reduce((sum, q) => sum + Number(q.weight || 1), 0) || 1;
+      let earned = 0;
+      for (const answer of submittedAnswers) {
+        const q = byId.get(answer.question_id);
+        if (!q) continue;
+        const isCorrect = String(answer.answer).trim() === String(q.correct_answer).trim();
+        if (isCorrect) {
+          correct += 1;
+          earned += Number(q.weight || 1);
+        }
+      }
+      score = Number(((earned / totalWeight) * 100).toFixed(2));
+      passed = score >= passMark;
+    } else {
+      const scored = scoreStaticQuiz(submittedAnswers, courseId);
+      correct = scored.correct;
+      total = scored.total;
+      score = scored.score;
+      passed = scored.passed;
+      passMark = 75;
+    }
     const attemptId = uuidv4();
 
     await db.query(

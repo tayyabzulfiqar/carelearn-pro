@@ -1,42 +1,190 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import api from '@/lib/api';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdminTable from '@/components/admin/AdminTable';
-import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@/components/admin/AdminStates';
+import { AdminErrorState, AdminLoadingState } from '@/components/admin/AdminStates';
+import { AdminModal } from '@/components/admin/AdminOverlays';
+import AdminFilterBar from '@/components/admin/AdminFilterBar';
+import AdminFormField from '@/components/admin/AdminFormField';
+import { cmsDelete, cmsGet, cmsPost, cmsPut } from '@/lib/admin/cmsApi';
+
+const EMPTY_FORM = {
+  id: '',
+  title: '',
+  description: '',
+  category: 'general',
+  tags: '',
+  thumbnail_url: '',
+  duration_minutes: 30,
+  pass_mark: 75,
+  status: 'draft',
+};
 
 export default function TrainingsPage() {
-  const [courses, setCourses] = useState([]);
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const loadRows = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await cmsGet('/trainings', {
+        params: {
+          q: search || undefined,
+          status: status || undefined,
+          sort: 'updated_desc',
+        },
+      });
+      setRows(data?.trainings || []);
+    } catch (_err) {
+      setError('Unable to load trainings.');
+    } finally {
+      setLoading(false);
+    }
+  }, [search, status]);
 
   useEffect(() => {
-    async function loadCourses() {
-      try {
-        const response = await api.get('/courses?status=published');
-        setCourses(response.data?.courses || []);
-      } catch (_err) {
-        setError('Failed to load training catalog.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadCourses();
-  }, []);
+    loadRows();
+  }, [loadRows]);
 
-  if (loading) return <AdminLoadingState title="Loading trainings..." />;
-  if (error) return <AdminErrorState message={error} />;
-  if (!courses.length) return <AdminEmptyState title="No trainings yet" description="Create your first training in Course Builder." />;
+  const filters = useMemo(() => ([
+    {
+      key: 'status',
+      value: status,
+      onChange: setStatus,
+      options: [
+        { label: 'All statuses', value: '' },
+        { label: 'Draft', value: 'draft' },
+        { label: 'Published', value: 'published' },
+        { label: 'Archived', value: 'archived' },
+      ],
+    },
+  ]), [status]);
+
+  const openCreate = () => {
+    setForm(EMPTY_FORM);
+    setOpen(true);
+  };
+
+  const openEdit = (row) => {
+    setForm({
+      ...EMPTY_FORM,
+      ...row,
+      tags: Array.isArray(row.tags) ? row.tags.join(', ') : '',
+    });
+    setOpen(true);
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+        thumbnail_url: form.thumbnail_url || null,
+        duration_minutes: Number(form.duration_minutes || 30),
+        pass_mark: Number(form.pass_mark || 75),
+        status: form.status,
+      };
+
+      if (form.id) {
+        await cmsPut(`/trainings/${form.id}`, payload);
+      } else {
+        await cmsPost('/trainings', payload);
+      }
+
+      setOpen(false);
+      await loadRows();
+    } catch (_err) {
+      setError('Failed to save training.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (row) => {
+    if (!window.confirm(`Delete training "${row.title}"?`)) return;
+    try {
+      await cmsDelete(`/trainings/${row.id}`);
+      await loadRows();
+    } catch (_err) {
+      setError('Failed to delete training.');
+    }
+  };
+
+  const applyFilters = async () => {
+    await loadRows();
+  };
+
+  if (loading) return <AdminLoadingState title="Loading training management..." />;
+  if (error && !rows.length) return <AdminErrorState message={error} onRetry={loadRows} />;
 
   return (
-    <AdminTable
-      columns={[
-        { key: 'title', label: 'Course' },
-        { key: 'category', label: 'Category' },
-        { key: 'duration_minutes', label: 'Duration (min)' },
-        { key: 'status', label: 'Status' },
-      ]}
-      rows={courses}
-    />
+    <div>
+      <AdminFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        filters={filters}
+        actions={(
+          <>
+            <button type="button" className="btn-secondary" onClick={applyFilters}>Apply</button>
+            <button type="button" className="btn-primary" onClick={openCreate}>New Training</button>
+          </>
+        )}
+      />
+
+      <AdminTable
+        columns={[
+          { key: 'title', label: 'Title' },
+          { key: 'category', label: 'Category' },
+          { key: 'status', label: 'Status' },
+          { key: 'duration_minutes', label: 'Duration' },
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (row) => (
+              <div className="flex gap-2">
+                <button type="button" className="btn-secondary" onClick={() => openEdit(row)}>Edit</button>
+                <button type="button" className="btn-secondary" onClick={() => remove(row)}>Delete</button>
+              </div>
+            ),
+          },
+        ]}
+        rows={rows}
+      />
+
+      <AdminModal open={open} title={form.id ? 'Edit Training' : 'Create Training'} onClose={() => setOpen(false)}>
+        <form className="space-y-3" onSubmit={submit}>
+          <AdminFormField label="Title"><input className="field-input" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required /></AdminFormField>
+          <AdminFormField label="Description"><textarea className="field-input" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} /></AdminFormField>
+          <div className="grid grid-cols-2 gap-3">
+            <AdminFormField label="Category"><input className="field-input" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} /></AdminFormField>
+            <AdminFormField label="Status">
+              <select className="field-input" value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </AdminFormField>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <AdminFormField label="Duration (min)"><input className="field-input" type="number" value={form.duration_minutes} onChange={(e) => setForm((f) => ({ ...f, duration_minutes: e.target.value }))} /></AdminFormField>
+            <AdminFormField label="Pass Mark"><input className="field-input" type="number" value={form.pass_mark} onChange={(e) => setForm((f) => ({ ...f, pass_mark: e.target.value }))} /></AdminFormField>
+          </div>
+          <AdminFormField label="Tags (comma separated)"><input className="field-input" value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} /></AdminFormField>
+          <AdminFormField label="Thumbnail URL"><input className="field-input" value={form.thumbnail_url} onChange={(e) => setForm((f) => ({ ...f, thumbnail_url: e.target.value }))} /></AdminFormField>
+          <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Training'}</button>
+        </form>
+      </AdminModal>
+    </div>
   );
 }
