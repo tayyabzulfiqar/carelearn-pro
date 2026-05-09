@@ -20,6 +20,15 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('carelearn:api-error', {
+        detail: {
+          status: err?.response?.status || 0,
+          path: err?.config?.url || '',
+          message: err?.message || 'Request failed',
+        },
+      }));
+    }
     if (err.response?.status === 401) {
       Cookies.remove('cl_token');
       Cookies.remove('cl_user');

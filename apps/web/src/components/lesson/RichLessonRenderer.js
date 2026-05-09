@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { resolveAssetUrl, BLOCK_TYPES } from '@/lib/lesson-blocks';
 
 function RichText({ payload }) {
@@ -12,23 +13,27 @@ function Heading({ payload }) {
 }
 
 function ImageBlock({ payload }) {
+  const [failed, setFailed] = useState(false);
   const src = resolveAssetUrl(payload.src);
-  if (!src) return null;
+  if (!src || failed) {
+    return <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">Image unavailable</div>;
+  }
   const width = Math.min(100, Math.max(20, Number(payload.width || 100)));
   const alignClass = payload.align === 'left' ? 'mr-auto' : payload.align === 'right' ? 'ml-auto' : 'mx-auto';
 
   return (
     <figure className={`${alignClass} my-5`} style={{ width: `${width}%` }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={payload.alt || ''} className="w-full rounded-lg border border-stone-200 object-cover" loading="lazy" />
+      <img src={src} alt={payload.alt || ''} className="w-full rounded-lg border border-stone-200 object-cover" loading="lazy" onError={() => setFailed(true)} />
       {payload.caption ? <figcaption className="mt-2 text-xs text-stone-500">{payload.caption}</figcaption> : null}
     </figure>
   );
 }
 
 function VideoBlock({ payload }) {
+  const [loaded, setLoaded] = useState(false);
   const src = resolveAssetUrl(payload.src);
-  if (!src) return null;
+  if (!src) return <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">Video unavailable</div>;
 
   if (/youtube\.com|youtu\.be|vimeo\.com/i.test(src)) {
     return (
@@ -39,9 +44,12 @@ function VideoBlock({ payload }) {
   }
 
   return (
-    <video controls preload="metadata" className="w-full rounded-xl border border-stone-200" src={src}>
-      <track kind="captions" />
-    </video>
+    <div className="relative">
+      {!loaded ? <div className="absolute inset-0 grid place-items-center rounded-xl bg-slate-100 text-xs text-slate-500">Loading video...</div> : null}
+      <video controls preload="metadata" className="w-full rounded-xl border border-stone-200" src={src} onLoadedData={() => setLoaded(true)} onError={() => setLoaded(true)}>
+        <track kind="captions" />
+      </video>
+    </div>
   );
 }
 
@@ -95,7 +103,9 @@ function Cta({ payload }) {
 
 function Embed({ payload }) {
   const src = resolveAssetUrl(payload.src);
-  if (!src) return null;
+  if (!src || !/^https?:\/\//i.test(src)) {
+    return <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">Embed URL is invalid or unavailable.</div>;
+  }
   return <iframe src={src} title={payload.title || 'Embedded content'} className="w-full rounded-xl border border-stone-200" style={{ minHeight: `${payload.height || 360}px` }} loading="lazy" />;
 }
 

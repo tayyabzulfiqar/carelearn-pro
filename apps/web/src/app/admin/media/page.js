@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import AdminTable from '@/components/admin/AdminTable';
 import { AdminErrorState, AdminLoadingState } from '@/components/admin/AdminStates';
 import AdminFormField from '@/components/admin/AdminFormField';
 import { cmsDelete, cmsGet, cmsPost } from '@/lib/admin/cmsApi';
+import api from '@/lib/api';
 
 const EMPTY = {
   file_name: '',
@@ -19,6 +21,13 @@ export default function MediaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [form, setForm] = useState(EMPTY);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState('');
+  const [lastUpload, setLastUpload] = useState(null);
+  const [abortController, setAbortController] = useState(null);
 
   const loadRows = async () => {
     setLoading(true);
@@ -49,6 +58,48 @@ export default function MediaPage() {
     await loadRows();
   };
 
+  const beginUpload = async () => {
+    if (!uploadFile) return;
+    setUploadError('');
+    setUploading(true);
+    setUploadProgress(0);
+    const controller = new AbortController();
+    setAbortController(controller);
+    try {
+      const payload = new FormData();
+      payload.append('images', uploadFile);
+      const response = await api.post('/upload/images', payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        signal: controller.signal,
+        onUploadProgress: (event) => {
+          if (!event.total) return;
+          setUploadProgress(Math.round((event.loaded / event.total) * 100));
+        },
+      });
+      const first = response?.data?.images?.[0];
+      if (first?.filename) {
+        const next = {
+          file_name: first.filename,
+          storage_path: first.url,
+          mime_type: uploadFile.type || '',
+          file_size_bytes: uploadFile.size || 0,
+          tags: [],
+          metadata: {},
+        };
+        await cmsPost('/media-assets', next);
+        setLastUpload(next);
+      }
+      await loadRows();
+    } catch (err) {
+      if (!axios.isCancel(err) && err.name !== 'CanceledError') {
+        setUploadError('Upload failed. You can retry with the same file.');
+      }
+    } finally {
+      setUploading(false);
+      setAbortController(null);
+    }
+  };
+
   const remove = async (row) => {
     if (!window.confirm(`Delete media asset "${row.file_name}"?`)) return;
     await cmsDelete(`/media-assets/${row.id}`);
@@ -68,6 +119,39 @@ export default function MediaPage() {
         <AdminFormField label="Tags"><input className="field-input" value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="image, onboarding" /></AdminFormField>
         <div className="flex items-end"><button type="submit" className="btn-primary">Register Asset</button></div>
       </form>
+      <div className="surface-card space-y-3 p-4">
+        <p className="text-sm font-semibold text-slate-900">Direct Upload</p>
+        <input
+          type="file"
+          accept="image/*,video/*,.pdf"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            setUploadFile(file || null);
+            setUploadError('');
+            if (file?.type?.startsWith('image/')) {
+              setPreviewUrl(URL.createObjectURL(file));
+            } else {
+              setPreviewUrl('');
+            }
+          }}
+        />
+        {previewUrl ? <img src={previewUrl} alt="Media preview" className="max-h-48 rounded-lg border border-slate-200 object-contain" /> : null}
+        {uploading ? (
+          <div className="space-y-2">
+            <div className="h-2 rounded bg-slate-200">
+              <div className="h-2 rounded bg-blue-600 transition-all" style={{ width: `${uploadProgress}%` }} />
+            </div>
+            <p className="text-xs text-slate-500">Uploading {uploadProgress}%</p>
+          </div>
+        ) : null}
+        {uploadError ? <p className="text-sm text-rose-600">{uploadError}</p> : null}
+        {lastUpload ? <p className="text-xs text-emerald-700">Uploaded: {lastUpload.file_name}</p> : null}
+        <div className="flex gap-2">
+          <button type="button" className="btn-primary" disabled={!uploadFile || uploading} onClick={beginUpload}>Upload</button>
+          <button type="button" className="btn-secondary" disabled={!uploadError || uploading} onClick={beginUpload}>Retry</button>
+          <button type="button" className="btn-secondary" disabled={!uploading} onClick={() => abortController?.abort()}>Cancel Upload</button>
+        </div>
+      </div>
 
       <AdminTable
         columns={[

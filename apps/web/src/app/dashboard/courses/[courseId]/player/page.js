@@ -44,6 +44,8 @@ export default function CoursePlayerPage() {
   const [quizResult, setQuizResult] = useState(null);
   const [certificate, setCertificate] = useState(null);
   const [error, setError] = useState('');
+  const [transitioning, setTransitioning] = useState(false);
+  const resumeKey = `carelearn-player-resume-${courseId}`;
 
   const allLessonsCompleted = allLessons.length > 0 && allLessons.every((lesson) => completedLessonIds.has(lesson.id));
 
@@ -95,7 +97,9 @@ export default function CoursePlayerPage() {
         setCompletedLessonIds(doneIds);
 
         const nextIncomplete = lessons.findIndex((lesson) => !doneIds.has(lesson.id));
-        setCurrentIndex(nextIncomplete === -1 ? Math.max(lessons.length - 1, 0) : nextIncomplete);
+        const persisted = Number(localStorage.getItem(resumeKey));
+        const safePersisted = Number.isInteger(persisted) && persisted >= 0 && persisted < lessons.length ? persisted : null;
+        setCurrentIndex(safePersisted ?? (nextIncomplete === -1 ? Math.max(lessons.length - 1, 0) : nextIncomplete));
         setPhase(PHASE.SLIDES);
       } catch (err) {
         console.error(err);
@@ -104,7 +108,11 @@ export default function CoursePlayerPage() {
     };
 
     init();
-  }, [user, courseId]);
+  }, [user, courseId, resumeKey]);
+
+  useEffect(() => {
+    localStorage.setItem(resumeKey, String(currentIndex));
+  }, [currentIndex, resumeKey]);
 
   const markLessonComplete = useCallback(async (lessonId) => {
     if (!enrollment?.id || completedLessonIds.has(lessonId)) return;
@@ -137,7 +145,9 @@ export default function CoursePlayerPage() {
     }
 
     if (currentIndex < allLessons.length - 1) {
+      setTransitioning(true);
       setCurrentIndex((index) => index + 1);
+      setTimeout(() => setTransitioning(false), 220);
       return;
     }
 
@@ -145,7 +155,11 @@ export default function CoursePlayerPage() {
   }, [allLessons, completedLessonIds, currentIndex, loadQuiz, markLessonComplete]);
 
   const handlePrev = () => {
-    if (currentIndex > 0) setCurrentIndex((index) => index - 1);
+    if (currentIndex > 0) {
+      setTransitioning(true);
+      setCurrentIndex((index) => index - 1);
+      setTimeout(() => setTransitioning(false), 220);
+    }
   };
 
   const handleLessonSelect = (index) => {
@@ -207,9 +221,11 @@ export default function CoursePlayerPage() {
   if (phase === PHASE.LOADING) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-[#0D1F3C] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">Loading course...</p>
+        <div className="w-full max-w-xl space-y-3 p-4">
+          <div className="h-7 w-2/3 animate-pulse rounded bg-slate-200" />
+          <div className="h-20 animate-pulse rounded bg-slate-200" />
+          <div className="h-20 animate-pulse rounded bg-slate-200" />
+          <p className="text-gray-400 text-sm">Preparing your learning session...</p>
         </div>
       </div>
     );
@@ -217,20 +233,22 @@ export default function CoursePlayerPage() {
 
   if (phase === PHASE.SLIDES) {
     return (
-      <SlideView
-        course={course}
-        modules={course?.modules || []}
-        lessons={allLessons}
-        currentIndex={currentIndex}
-        completedLessonIds={completedLessonIds}
-        isThresholdReached={allLessonsCompleted}
-        hasQuiz={allLessonsCompleted}
-        onNext={handleNext}
-        onPrev={handlePrev}
-        onLessonSelect={handleLessonSelect}
-        onGoToQuiz={handleGoToQuiz}
-        onExit={() => router.push('/dashboard/courses')}
-      />
+      <div className={`transition-opacity duration-200 ${transitioning ? 'opacity-60' : 'opacity-100'}`}>
+        <SlideView
+          course={course}
+          modules={course?.modules || []}
+          lessons={allLessons}
+          currentIndex={currentIndex}
+          completedLessonIds={completedLessonIds}
+          isThresholdReached={allLessonsCompleted}
+          hasQuiz={allLessonsCompleted}
+          onNext={handleNext}
+          onPrev={handlePrev}
+          onLessonSelect={handleLessonSelect}
+          onGoToQuiz={handleGoToQuiz}
+          onExit={() => router.push('/dashboard/courses')}
+        />
+      </div>
     );
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AdminTable from '@/components/admin/AdminTable';
 import { AdminErrorState, AdminLoadingState } from '@/components/admin/AdminStates';
 import AdminFilterBar from '@/components/admin/AdminFilterBar';
@@ -67,6 +67,13 @@ export default function CoursesBuilderPage() {
   const [editingLesson, setEditingLesson] = useState(null);
   const [lessonDraft, setLessonDraft] = useState(null);
   const [lessonSaving, setLessonSaving] = useState(false);
+  const [lessonDirty, setLessonDirty] = useState(false);
+  const [lessonAutosaveAt, setLessonAutosaveAt] = useState(0);
+  const [lessonAutosaving, setLessonAutosaving] = useState(false);
+  const [previewMode, setPreviewMode] = useState('split');
+  const [moduleSaving, setModuleSaving] = useState(false);
+  const [lessonOrderSaving, setLessonOrderSaving] = useState(false);
+  const autosaveTimerRef = useRef(null);
   const lessonDraftKey = useMemo(() => (
     editingLesson?.id ? `carelearn-lesson-draft-v3-${editingLesson.id}` : ''
   ), [editingLesson?.id]);
@@ -139,6 +146,7 @@ export default function CoursesBuilderPage() {
       order_index: index,
     }));
     setModules(next);
+    setModuleSaving(true);
     try {
       const saveRes = await cmsPost(`/trainings/${selected}/modules/tree`, { modules: payload, expectedVersion: builderVersion });
       if (typeof saveRes?.version === 'number') setBuilderVersion(saveRes.version);
@@ -152,12 +160,15 @@ export default function CoursesBuilderPage() {
     if (withHistory) {
       setHistoryEntries((prev) => [{ id: `local-${Date.now()}`, saved_at: new Date().toISOString(), modules: payload }, ...prev].slice(0, 20));
     }
+    setModuleSaving(false);
     toast.info('Module tree saved');
   }, [selected, toast, builderVersion]);
 
   const persistLessonOrder = useCallback(async (next) => {
     setLessons(next);
+    setLessonOrderSaving(true);
     await cmsPost(`/modules/${selectedModuleId}/lessons/reorder`, { orderedLessonIds: next.map((l) => l.id) });
+    setLessonOrderSaving(false);
     toast.info('Lesson order saved');
   }, [selectedModuleId, toast]);
 
@@ -166,6 +177,7 @@ export default function CoursesBuilderPage() {
     setEditingLesson(lesson);
     setLessonDraft(doc);
     setLessonEditorOpen(true);
+    setLessonDirty(false);
   };
 
   const saveLessonContent = useCallback(async () => {
@@ -181,15 +193,34 @@ export default function CoursesBuilderPage() {
       if (lessonDraftKey) localStorage.removeItem(lessonDraftKey);
       await loadLessons(selectedModuleId);
       setLessonEditorOpen(false);
+      setLessonDirty(false);
     } finally {
       setLessonSaving(false);
     }
   }, [editingLesson, lessonDraft, lessonDraftKey, loadLessons, selectedModuleId, toast]);
 
+  const saveLessonAutosave = useCallback(async () => {
+    if (!editingLesson || !selectedModuleId || !lessonDraft || lessonSaving || !lessonDirty) return;
+    setLessonAutosaving(true);
+    try {
+      await cmsPut(`/modules/${selectedModuleId}/lessons/${editingLesson.id}`, {
+        title: editingLesson.title,
+        content: serializeLessonDocument(lessonDraft, editingLesson.title),
+      });
+      setLessonAutosaveAt(Date.now());
+      setLessonDirty(false);
+    } catch {
+      toast.error('Autosave failed. Your local draft is still retained.');
+    } finally {
+      setLessonAutosaving(false);
+    }
+  }, [editingLesson, lessonDraft, selectedModuleId, lessonSaving, lessonDirty, toast]);
+
   useEffect(() => {
     if (!lessonEditorOpen || !lessonDraftKey || !lessonDraft) return undefined;
     const timer = setTimeout(() => {
       localStorage.setItem(lessonDraftKey, JSON.stringify(lessonDraft));
+      setLessonDirty(true);
     }, 400);
     return () => clearTimeout(timer);
   }, [lessonDraft, lessonDraftKey, lessonEditorOpen]);
@@ -208,6 +239,17 @@ export default function CoursesBuilderPage() {
   }, [editingLesson, lessonDraftKey, lessonEditorOpen, toast]);
 
   useEffect(() => {
+    if (!lessonEditorOpen || !lessonDirty) return undefined;
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => {
+      saveLessonAutosave();
+    }, 1500);
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [lessonDirty, lessonEditorOpen, saveLessonAutosave]);
+
+  useEffect(() => {
     if (!lessonEditorOpen) return undefined;
     const onKeyDown = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
@@ -218,6 +260,17 @@ export default function CoursesBuilderPage() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [lessonEditorOpen, saveLessonContent]);
+
+  useEffect(() => {
+    if (!lessonEditorOpen) return undefined;
+    const onBeforeUnload = (event) => {
+      if (!lessonDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [lessonDirty, lessonEditorOpen]);
 
   const snapshotUndo = useCallback(() => {
     setUndoStack((prev) => [...prev, modules]);
@@ -286,6 +339,7 @@ export default function CoursesBuilderPage() {
         filters={moduleFilters}
         actions={(
           <div className="flex gap-2">
+            {moduleSaving ? <span className="text-xs text-slate-500">Saving module tree...</span> : null}
             <button type="button" className="btn-secondary" onClick={undo} disabled={!undoStack.length}>Undo</button>
             <button type="button" className="btn-secondary" onClick={redo} disabled={!redoStack.length}>Redo</button>
           </div>
@@ -386,6 +440,7 @@ export default function CoursesBuilderPage() {
 
         <section className="surface-card p-4">
           <h3 className="mb-3 text-base font-semibold">Lessons</h3>
+          {lessonOrderSaving ? <p className="mb-2 text-xs text-slate-500">Saving lesson order...</p> : null}
           <div className="mb-3 flex gap-2">
             <input className="field-input" value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} placeholder="New lesson title" />
             <button type="button" className="btn-primary" onClick={addLesson}>Add</button>
@@ -436,13 +491,30 @@ export default function CoursesBuilderPage() {
       <AdminModal open={lessonEditorOpen} onClose={() => setLessonEditorOpen(false)} title={`Lesson Editor${editingLesson?.title ? ` - ${editingLesson.title}` : ''}`} size="xl">
         {lessonDraft ? (
           <div className="space-y-4">
-            <LessonBlockEditor document={lessonDraft} onChange={setLessonDraft} />
-            <div className="rounded-xl border border-slate-200 p-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Preview</p>
-              <RichLessonRenderer blocks={lessonDraft.blocks || []} />
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div className="flex gap-2">
+                <button type="button" className={`btn-secondary ${previewMode === 'editor' ? 'border-blue-400' : ''}`} onClick={() => setPreviewMode('editor')}>Editor</button>
+                <button type="button" className={`btn-secondary ${previewMode === 'split' ? 'border-blue-400' : ''}`} onClick={() => setPreviewMode('split')}>Split</button>
+                <button type="button" className={`btn-secondary ${previewMode === 'preview' ? 'border-blue-400' : ''}`} onClick={() => setPreviewMode('preview')}>Preview</button>
+              </div>
+              <p className="text-xs text-slate-500">
+                {lessonAutosaving ? 'Autosaving...' : lessonDirty ? 'Unsaved changes' : lessonAutosaveAt ? `Autosaved ${new Date(lessonAutosaveAt).toLocaleTimeString()}` : 'No changes yet'}
+              </p>
+            </div>
+            <div className={`grid gap-4 ${previewMode === 'split' ? 'lg:grid-cols-2' : ''}`}>
+              {previewMode !== 'preview' ? <LessonBlockEditor document={lessonDraft} onChange={setLessonDraft} /> : null}
+              {previewMode !== 'editor' ? (
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Preview</p>
+                  <RichLessonRenderer blocks={lessonDraft.blocks || []} />
+                </div>
+              ) : null}
             </div>
             <div className="flex justify-end gap-2">
-              <button type="button" className="btn-secondary" onClick={() => setLessonEditorOpen(false)}>Cancel</button>
+              <button type="button" className="btn-secondary" onClick={() => {
+                if (lessonDirty && !window.confirm('You have unsaved changes. Close anyway?')) return;
+                setLessonEditorOpen(false);
+              }}>Cancel</button>
               <button type="button" className="btn-primary" disabled={lessonSaving} onClick={saveLessonContent}>
                 {lessonSaving ? 'Saving...' : 'Save Lesson'}
               </button>

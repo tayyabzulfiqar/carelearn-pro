@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { BLOCK_TYPES, emptyBlock } from '@/lib/lesson-blocks';
 
 const BLOCK_OPTIONS = [
@@ -30,6 +30,9 @@ function textInput(value, onChange, placeholder = '') {
 
 export default function LessonBlockEditor({ document, onChange }) {
   const blocks = useMemo(() => document?.blocks || [], [document]);
+  const [draggingBlockId, setDraggingBlockId] = useState('');
+  const [dropTargetId, setDropTargetId] = useState('');
+  const [insertType, setInsertType] = useState(BLOCK_TYPES.RICH_TEXT);
 
   const patchBlock = (id, updater) => {
     const next = blocks.map((block) => (block.id === id ? updater(block) : block));
@@ -56,8 +59,29 @@ export default function LessonBlockEditor({ document, onChange }) {
     onChange({ ...document, blocks: next });
   };
 
+  const reorderBlocks = (fromId, toId) => {
+    const from = blocks.findIndex((block) => block.id === fromId);
+    const to = blocks.findIndex((block) => block.id === toId);
+    if (from === -1 || to === -1 || from === to) return;
+    onChange({
+      ...document,
+      blocks: move(blocks, from, to).map((item, idx) => ({ ...item, order: idx })),
+    });
+  };
+
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Insert Block</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <select className="field-input max-w-xs" value={insertType} onChange={(e) => setInsertType(e.target.value)}>
+            {BLOCK_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+          <button type="button" className="btn-primary" onClick={() => appendBlock(insertType)}>Add Block</button>
+          <p className="text-xs text-slate-500">Tip: drag by handle to reorder, Ctrl/Cmd+S to save lesson.</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
         {BLOCK_OPTIONS.map((option) => (
           <button key={option.value} type="button" className="btn-secondary" onClick={() => appendBlock(option.value)}>{option.label}</button>
@@ -66,10 +90,25 @@ export default function LessonBlockEditor({ document, onChange }) {
 
       <div className="space-y-3">
         {blocks.map((block, index) => (
-          <div key={block.id} className="rounded-xl border border-slate-200 p-3">
+          <div
+            key={block.id}
+            draggable
+            onDragStart={() => setDraggingBlockId(block.id)}
+            onDragOver={(e) => { e.preventDefault(); setDropTargetId(block.id); }}
+            onDrop={() => {
+              reorderBlocks(draggingBlockId, block.id);
+              setDraggingBlockId('');
+              setDropTargetId('');
+            }}
+            onDragEnd={() => { setDraggingBlockId(''); setDropTargetId(''); }}
+            className={`rounded-xl border p-3 transition ${draggingBlockId === block.id ? 'border-blue-400 bg-blue-50' : dropTargetId === block.id ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200'} group`}
+          >
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">{block.type}</p>
-              <div className="flex gap-1">
+              <div className="flex items-center gap-2">
+                <span className="cursor-grab rounded border border-slate-300 px-2 py-1 text-xs text-slate-500 active:cursor-grabbing">::</span>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">{block.type}</p>
+              </div>
+              <div className="flex gap-1 opacity-80 group-hover:opacity-100">
                 <button type="button" className="btn-secondary" onClick={() => onChange({ ...document, blocks: move(blocks, index, index - 1).map((item, idx) => ({ ...item, order: idx })) })}>Up</button>
                 <button type="button" className="btn-secondary" onClick={() => onChange({ ...document, blocks: move(blocks, index, index + 1).map((item, idx) => ({ ...item, order: idx })) })}>Down</button>
                 <button type="button" className="btn-secondary" onClick={() => duplicateBlock(block.id)}>Duplicate</button>
@@ -95,7 +134,10 @@ export default function LessonBlockEditor({ document, onChange }) {
                 {textInput(block.payload?.src, (value) => patchBlock(block.id, (current) => ({ ...current, payload: { ...current.payload, src: value } })), 'Source URL')}
                 {textInput(block.payload?.title || block.payload?.alt, (value) => patchBlock(block.id, (current) => ({ ...current, payload: { ...current.payload, title: value, alt: value } })), 'Title / Alt')}
                 {block.type === BLOCK_TYPES.IMAGE ? (
-                  <input className="field-input" type="number" value={block.payload?.width || 100} onChange={(e) => patchBlock(block.id, (current) => ({ ...current, payload: { ...current.payload, width: Number(e.target.value) } }))} placeholder="Width %" />
+                  <div className="space-y-1">
+                    <input className="field-input" type="number" value={block.payload?.width || 100} onChange={(e) => patchBlock(block.id, (current) => ({ ...current, payload: { ...current.payload, width: Number(e.target.value) } }))} placeholder="Width %" />
+                    <input type="range" min={25} max={100} value={block.payload?.width || 100} onChange={(e) => patchBlock(block.id, (current) => ({ ...current, payload: { ...current.payload, width: Number(e.target.value) } }))} />
+                  </div>
                 ) : null}
               </div>
             ) : null}

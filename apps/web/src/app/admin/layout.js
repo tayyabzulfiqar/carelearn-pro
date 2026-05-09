@@ -7,6 +7,8 @@ import api from '@/lib/api';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import { AdminLoadingState, AdminErrorState } from '@/components/admin/AdminStates';
+import { ToastProvider } from '@/components/admin/providers/ToastProvider';
+import { GlobalLoadingProvider } from '@/components/admin/providers/GlobalLoadingProvider';
 
 export default function AdminLayout({ children }) {
   const router = useRouter();
@@ -51,12 +53,16 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className="page-shell flex min-h-screen">
-      <AdminSidebar permissions={permissions} />
-      <div className="flex min-h-screen flex-1 flex-col">
-        <AdminTopbar user={user} />
-        <main className="page-container flex-1 py-6">{children}</main>
-      </div>
-    </div>
+    <ToastProvider>
+      <GlobalLoadingProvider>
+        <div className="page-shell flex min-h-screen">
+          <AdminSidebar permissions={permissions} />
+          <div className="flex min-h-screen flex-1 flex-col">
+            <AdminTopbar user={user} />
+            <main className="page-container flex-1 py-6">{children}</main>
+          </div>
+        </div>
+      </GlobalLoadingProvider>
+    </ToastProvider>
   );
 }

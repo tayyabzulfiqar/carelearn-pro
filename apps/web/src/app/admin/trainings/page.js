@@ -29,6 +29,7 @@ export default function TrainingsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const loadRows = useCallback(async () => {
     setLoading(true);
@@ -125,6 +126,18 @@ export default function TrainingsPage() {
     await loadRows();
   };
 
+  const bulkArchiveDrafts = async () => {
+    const draftRows = rows.filter((row) => row.status === 'draft');
+    if (!draftRows.length) return;
+    setBulkBusy(true);
+    try {
+      await Promise.all(draftRows.map((row) => cmsPut(`/trainings/${row.id}`, { ...row, status: 'archived' })));
+      await loadRows();
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   if (loading) return <AdminLoadingState title="Loading training management..." />;
   if (error && !rows.length) return <AdminErrorState message={error} onRetry={loadRows} />;
 
@@ -137,6 +150,7 @@ export default function TrainingsPage() {
         actions={(
           <>
             <button type="button" className="btn-secondary" onClick={applyFilters}>Apply</button>
+            <button type="button" className="btn-secondary" disabled={bulkBusy} onClick={bulkArchiveDrafts}>{bulkBusy ? 'Archiving...' : 'Archive Drafts'}</button>
             <button type="button" className="btn-primary" onClick={openCreate}>New Training</button>
           </>
         )}
@@ -154,6 +168,7 @@ export default function TrainingsPage() {
             render: (row) => (
               <div className="flex gap-2">
                 <button type="button" className="btn-secondary" onClick={() => openEdit(row)}>Edit</button>
+                <a className="btn-secondary" href={`/dashboard/courses/${row.id}/player`} target="_blank" rel="noreferrer">Preview</a>
                 <button type="button" className="btn-secondary" onClick={() => remove(row)}>Delete</button>
               </div>
             ),
@@ -182,6 +197,9 @@ export default function TrainingsPage() {
           </div>
           <AdminFormField label="Tags (comma separated)"><input className="field-input" value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} /></AdminFormField>
           <AdminFormField label="Thumbnail URL"><input className="field-input" value={form.thumbnail_url} onChange={(e) => setForm((f) => ({ ...f, thumbnail_url: e.target.value }))} /></AdminFormField>
+          {form.thumbnail_url ? (
+            <img src={form.thumbnail_url} alt="Thumbnail preview" className="h-32 w-full rounded-lg border border-slate-200 object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          ) : null}
           <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Training'}</button>
         </form>
       </AdminModal>
