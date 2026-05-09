@@ -6,7 +6,9 @@ const {
   validateStructuredLessonContent,
 } = require('./lesson-content');
 
-test('normalizes structured fire safety lesson content without legacy fallback data', () => {
+const { markdownToBlocks } = require('./rich-content');
+
+test('normalizes legacy section lesson content into schema v3 blocks', () => {
   const normalized = normalizeLessonContent({
     title: 'Learning Outcomes',
     content: {
@@ -27,19 +29,24 @@ test('normalizes structured fire safety lesson content without legacy fallback d
   });
 
   assert.equal(normalized.title, 'Learning Outcomes');
-  assert.equal(normalized.schema_version, 2);
-  assert.equal(normalized.sections.length, 2);
-  assert.equal(normalized.sections[0].heading, 'Fire safety responsibilities');
+  assert.equal(normalized.schema_version, 3);
+  assert.ok(Array.isArray(normalized.blocks));
+  assert.ok(normalized.blocks.length >= 4);
+  assert.equal(normalized.blocks[0].type, 'heading');
 });
 
-test('validation fails weak non-structured content instead of generating legacy lessons', () => {
+test('validation fails empty content payloads', () => {
   const result = validateStructuredLessonContent({
     title: 'Fallback Topic',
-    content: {
-      body: 'Short source text for a fallback lesson.',
-    },
+    content: {},
   });
 
   assert.equal(result.passed, false);
-  assert.equal(result.normalized.sections.length, 0);
+  assert.equal(result.normalized.blocks.length, 0);
+});
+
+test('converts markdown into block list safely', () => {
+  const blocks = markdownToBlocks('# Heading\n\nParagraph content here\n\n- item one');
+  assert.ok(blocks.length >= 3);
+  assert.equal(blocks[0].type, 'heading');
 });

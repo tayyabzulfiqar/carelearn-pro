@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import lessonSectionUtils from '@/lib/lesson-sections';
+import { normalizeEditorDocument } from '@/lib/lesson-blocks';
+import RichLessonRenderer from '@/components/lesson/RichLessonRenderer';
 
 const MIN_SECONDS = 15;
 const MIN_SCROLL_PERCENT = 80;
@@ -78,6 +80,7 @@ export default function SlideView({
   const lesson = lessons[currentIndex];
   const content = lesson?.content || {};
   const sections = useMemo(() => getLessonSections(content), [content]);
+  const blockDocument = useMemo(() => normalizeEditorDocument(content, lesson?.title || ''), [content, lesson?.title]);
   const completedSet = useMemo(() => new Set(completedLessonIds || []), [completedLessonIds]);
   const totalLessons = lessons.length;
   const completedCount = lessons.filter((item) => completedSet.has(item.id)).length;
@@ -285,7 +288,9 @@ export default function SlideView({
                 className="flex-1 overflow-y-auto px-6 py-6 md:px-8"
               >
                 <div className="mx-auto max-w-4xl space-y-8">
-                  {sections.map((section, index) => {
+                  {Array.isArray(blockDocument.blocks) && blockDocument.blocks.length > 0 ? (
+                    <RichLessonRenderer blocks={blockDocument.blocks} />
+                  ) : sections.map((section, index) => {
                     const imageSrc = resolveImageUrl(section.image);
 
                     return (

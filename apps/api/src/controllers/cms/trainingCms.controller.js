@@ -1,6 +1,9 @@
 const { randomUUID } = require('crypto');
 const db = require('../../config/database');
 const { toSlug } = require('../../lib/slug');
+const { normalizeLessonDocument, validateLessonDocument } = require('../../lib/rich-content');
+const { getProvider } = require('../../services/storage');
+const { parsePagination } = require('../../utils/pagination');
 
 async function replaceCourseLinks({ courseId, categories = [], tags = [] }) {
   await db.query('DELETE FROM training_course_categories WHERE course_id = $1', [courseId]);
@@ -44,9 +47,8 @@ exports.listTrainings = async (req, res, next) => {
       status,
       category,
       sort = 'updated_desc',
-      limit = 50,
-      offset = 0,
     } = req.query;
+    const { limit, offset } = parsePagination(req.query, { limit: 50, offset: 0, maxLimit: 200 });
 
     const params = [];
     const where = ['1=1'];
@@ -330,6 +332,113 @@ exports.reorderModules = async (req, res, next) => {
   }
 };
 
+exports.saveModuleTree = async (req, res, next) => {
+  try {
+    const { modules = [] } = req.body;
+    const courseId = req.params.courseId;
+    const { expectedVersion } = req.body;
+    if (!Array.isArray(modules) || !modules.length) {
+      return res.fail('No modules supplied', 'INVALID_INPUT', 422);
+    }
+
+    const versionKey = `builder_version_${courseId}`;
+    const versionRow = await db.query(
+      `SELECT value FROM organisation_settings
+       WHERE organisation_id = $1 AND key = $2
+       LIMIT 1`,
+      [req.tenant.organisationId, versionKey]
+    );
+    const currentVersion = Number(versionRow.rows[0]?.value?.version || 0);
+    if (expectedVersion !== undefined && Number(expectedVersion) !== currentVersion) {
+      return res.status(409).json({
+        success: false,
+        error: {
+          code: 'BUILDER_VERSION_CONFLICT',
+          message: 'Builder has changed in another session. Refresh to reconcile.',
+          details: { currentVersion },
+        },
+      });
+    }
+
+    await db.query('BEGIN');
+    for (const moduleNode of modules) {
+      await db.query(
+        `UPDATE modules
+         SET parent_module_id = $1, order_index = $2
+         WHERE id = $3 AND course_id = $4`,
+        [moduleNode.parent_module_id || null, Number(moduleNode.order_index || 0), moduleNode.id, courseId]
+      );
+    }
+
+    const historyKey = `builder_history_${courseId}`;
+    const previousHistory = await db.query(
+      `SELECT value FROM organisation_settings
+       WHERE organisation_id = $1 AND key = $2
+       LIMIT 1`,
+      [req.tenant.organisationId, historyKey]
+    );
+    const entries = previousHistory.rows[0]?.value?.entries || [];
+    const nextEntries = [
+      {
+        id: randomUUID(),
+        saved_at: new Date().toISOString(),
+        user_id: req.user.id,
+        modules,
+      },
+      ...entries,
+    ].slice(0, 20);
+
+    await db.query(
+      `INSERT INTO organisation_settings (id, organisation_id, key, value)
+       VALUES ($1,$2,$3,$4)
+       ON CONFLICT (organisation_id, key)
+       DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [randomUUID(), req.tenant.organisationId, historyKey, { entries: nextEntries }]
+    );
+    await db.query(
+      `INSERT INTO organisation_settings (id, organisation_id, key, value)
+       VALUES ($1,$2,$3,$4)
+       ON CONFLICT (organisation_id, key)
+       DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [randomUUID(), req.tenant.organisationId, versionKey, { version: currentVersion + 1 }]
+    );
+
+    await db.query('COMMIT');
+    return res.success({ saved: true, entries: nextEntries.length, version: currentVersion + 1 });
+  } catch (err) {
+    await db.query('ROLLBACK');
+    return next(err);
+  }
+};
+
+exports.getBuilderHistory = async (req, res, next) => {
+  try {
+    const courseId = req.params.courseId;
+    const historyKey = `builder_history_${courseId}`;
+    const result = await db.query(
+      `SELECT value
+       FROM organisation_settings
+       WHERE organisation_id = $1 AND key = $2
+       LIMIT 1`,
+      [req.tenant.organisationId, historyKey]
+    );
+    const versionKey = `builder_version_${courseId}`;
+    const versionRow = await db.query(
+      `SELECT value
+       FROM organisation_settings
+       WHERE organisation_id = $1 AND key = $2
+       LIMIT 1`,
+      [req.tenant.organisationId, versionKey]
+    );
+    return res.success({
+      entries: result.rows[0]?.value?.entries || [],
+      version: Number(versionRow.rows[0]?.value?.version || 0),
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 exports.deleteModule = async (req, res, next) => {
   try {
     await db.query('DELETE FROM modules WHERE id = $1', [req.params.moduleId]);
@@ -347,7 +456,15 @@ exports.listLessons = async (req, res, next) => {
        ORDER BY order_index ASC, created_at ASC`,
       [req.params.moduleId]
     );
-    return res.success({ lessons: result.rows });
+    return res.success({
+      lessons: result.rows.map((lesson) => ({
+        ...lesson,
+        content: normalizeLessonDocument({
+          title: lesson.title,
+          content: lesson.content || {},
+        }),
+      })),
+    });
   } catch (err) {
     return next(err);
   }
@@ -364,6 +481,10 @@ exports.createLesson = async (req, res, next) => {
       is_visible = true,
       metadata = {},
     } = req.body;
+    const validation = validateLessonDocument({ title, content });
+    if (!validation.passed) {
+      return res.fail('Lesson content is invalid', 'INVALID_LESSON_CONTENT', 422, validation.checks);
+    }
 
     const lessonId = randomUUID();
     const created = await db.query(
@@ -375,7 +496,7 @@ exports.createLesson = async (req, res, next) => {
         lessonId,
         req.params.moduleId,
         title,
-        content,
+        validation.normalized,
         order_index,
         duration_minutes,
         status,
@@ -402,6 +523,12 @@ exports.updateLesson = async (req, res, next) => {
       is_visible,
       metadata,
     } = req.body;
+    const contentValidation = content !== undefined
+      ? validateLessonDocument({ title: title || '', content })
+      : null;
+    if (contentValidation && !contentValidation.passed) {
+      return res.fail('Lesson content is invalid', 'INVALID_LESSON_CONTENT', 422, contentValidation.checks);
+    }
 
     const updated = await db.query(
       `UPDATE lessons SET
@@ -415,7 +542,16 @@ exports.updateLesson = async (req, res, next) => {
          published_at = CASE WHEN COALESCE($5, status) = 'published' THEN NOW() ELSE published_at END
        WHERE id = $8
        RETURNING *`,
-      [title, content, order_index, duration_minutes, status, is_visible, metadata, lessonId]
+      [
+        title,
+        contentValidation ? contentValidation.normalized : content,
+        order_index,
+        duration_minutes,
+        status,
+        is_visible,
+        metadata,
+        lessonId,
+      ]
     );
 
     if (!updated.rows.length) return res.fail('Lesson not found', 'NOT_FOUND', 404);
@@ -741,7 +877,15 @@ exports.listMediaAssets = async (req, res, next) => {
 
 exports.registerMediaAsset = async (req, res, next) => {
   try {
-    const { file_name, storage_path, mime_type, file_size_bytes = 0, tags = [], metadata = {} } = req.body;
+    const {
+      file_name,
+      storage_path,
+      mime_type,
+      file_size_bytes = 0,
+      tags = [],
+      visibility = 'private',
+      metadata = {},
+    } = req.body;
     const id = randomUUID();
     const organisationId = req.tenant?.organisationId || null;
 
@@ -760,7 +904,7 @@ exports.registerMediaAsset = async (req, res, next) => {
         mime_type || null,
         file_size_bytes,
         tags,
-        metadata,
+        { ...metadata, visibility },
       ]
     );
 
@@ -774,6 +918,194 @@ exports.deleteMediaAsset = async (req, res, next) => {
   try {
     await db.query('DELETE FROM media_assets WHERE id = $1', [req.params.assetId]);
     return res.success({ deleted: true });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.uploadMediaAsset = async (req, res, next) => {
+  try {
+    if (!req.file) return res.fail('No file uploaded', 'NO_FILE', 400);
+    const provider = getProvider();
+    const saved = await provider.save(req.file.buffer, req.file.originalname, req.file.mimetype);
+
+    const id = randomUUID();
+    const organisationId = req.tenant?.organisationId || null;
+    const created = await db.query(
+      `INSERT INTO media_assets (
+         id, organisation_id, uploaded_by, file_name, storage_path, mime_type,
+         file_size_bytes, tags, metadata
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       RETURNING *`,
+      [
+        id,
+        organisationId,
+        req.user.id,
+        saved.fileName,
+        saved.publicPath,
+        saved.mimeType,
+        req.file.size,
+        [],
+        { original_name: req.file.originalname, visibility: req.body.visibility || 'private' },
+      ]
+    );
+
+    return res.success({ asset: created.rows[0] }, {}, 201);
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.listOrganisationMembers = async (req, res, next) => {
+  try {
+    const orgId = req.tenant.organisationId;
+    const result = await db.query(
+      `SELECT om.id, om.role, om.joined_at, u.id AS user_id, u.email, u.first_name, u.last_name
+       FROM organisation_members om
+       JOIN users u ON u.id = om.user_id
+       WHERE om.organisation_id = $1
+       ORDER BY om.joined_at DESC`,
+      [orgId]
+    );
+    return res.success({ members: result.rows });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.createInvitation = async (req, res, next) => {
+  try {
+    const orgId = req.tenant.organisationId;
+    const { email, role = 'learner', expires_in_days = 7 } = req.body;
+    const token = randomUUID().replace(/-/g, '');
+    const id = randomUUID();
+    const expiresAt = new Date(Date.now() + Number(expires_in_days) * 24 * 3600 * 1000);
+
+    const created = await db.query(
+      `INSERT INTO invitations (id, organisation_id, email, role, invited_by, token, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       RETURNING *`,
+      [id, orgId, email, role, req.user.id, token, expiresAt]
+    );
+    return res.success({ invitation: created.rows[0], invite_link: `/invite/${token}` }, {}, 201);
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.listInvitations = async (req, res, next) => {
+  try {
+    const orgId = req.tenant.organisationId;
+    const result = await db.query(
+      `SELECT * FROM invitations
+       WHERE organisation_id = $1
+       ORDER BY created_at DESC`,
+      [orgId]
+    );
+    return res.success({ invitations: result.rows });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.revokeInvitation = async (req, res, next) => {
+  try {
+    const updated = await db.query(
+      `UPDATE invitations
+       SET status = 'revoked'
+       WHERE id = $1
+         AND organisation_id = $2
+       RETURNING *`,
+      [req.params.invitationId, req.tenant.organisationId]
+    );
+    if (!updated.rows.length) return res.fail('Invitation not found', 'NOT_FOUND', 404);
+    return res.success({ invitation: updated.rows[0] });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.reissueInvitation = async (req, res, next) => {
+  try {
+    const id = req.params.invitationId;
+    const token = randomUUID().replace(/-/g, '');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+    const updated = await db.query(
+      `UPDATE invitations
+       SET status = 'pending',
+           token = $1,
+           expires_at = $2,
+           accepted_at = NULL
+       WHERE id = $3
+         AND organisation_id = $4
+       RETURNING *`,
+      [token, expiresAt, id, req.tenant.organisationId]
+    );
+    if (!updated.rows.length) return res.fail('Invitation not found', 'NOT_FOUND', 404);
+    return res.success({ invitation: updated.rows[0], invite_link: `/invite/${token}` });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.acceptInvitation = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const invite = await db.query(
+      `SELECT * FROM invitations
+       WHERE token = $1
+         AND status = 'pending'
+         AND expires_at > NOW()
+       LIMIT 1`,
+      [token]
+    );
+    if (!invite.rows.length) return res.fail('Invitation is invalid or expired', 'INVITE_INVALID', 404);
+
+    const row = invite.rows[0];
+    await db.query(
+      `INSERT INTO organisation_members (id, organisation_id, user_id, role)
+       VALUES ($1,$2,$3,$4)
+       ON CONFLICT (organisation_id, user_id) DO NOTHING`,
+      [randomUUID(), row.organisation_id, req.user.id, row.role]
+    );
+    await db.query(
+      `UPDATE invitations
+       SET status = 'accepted', accepted_at = NOW()
+       WHERE id = $1`,
+      [row.id]
+    );
+    return res.success({ accepted: true, organisation_id: row.organisation_id });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.listOrganisationSettings = async (req, res, next) => {
+  try {
+    const result = await db.query(
+      `SELECT key, value
+       FROM organisation_settings
+       WHERE organisation_id = $1`,
+      [req.tenant.organisationId]
+    );
+    return res.success({ settings: result.rows });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.upsertOrganisationSetting = async (req, res, next) => {
+  try {
+    const { key, value } = req.body;
+    const result = await db.query(
+      `INSERT INTO organisation_settings (id, organisation_id, key, value)
+       VALUES ($1,$2,$3,$4)
+       ON CONFLICT (organisation_id, key)
+       DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+       RETURNING *`,
+      [randomUUID(), req.tenant.organisationId, key, value]
+    );
+    return res.success({ setting: result.rows[0] });
   } catch (err) {
     return next(err);
   }
