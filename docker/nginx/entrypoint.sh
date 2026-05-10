@@ -2,8 +2,7 @@
 set -eu
 
 if [ -z "${DOMAIN:-}" ]; then
-  echo "DOMAIN env var is required"
-  exit 1
+  DOMAIN="_"
 fi
 
 envsubst '${DOMAIN}' < /etc/nginx/conf.d/carelearn.conf.template > /etc/nginx/conf.d/default.conf
