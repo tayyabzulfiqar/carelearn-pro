@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/verify-build-prereqs.js",
     "dev": "next dev -p 8081",
     "build": "next build",
     "start": "next start -p 8081",

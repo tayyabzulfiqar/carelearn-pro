@@ -4,18 +4,20 @@ WORKDIR /app
 
 COPY package*.json ./
 COPY apps/web/package*.json ./apps/web/
-COPY apps/api/package*.json ./apps/api/
 COPY packages/shared/package*.json ./packages/shared/
-RUN npm ci
+# Ensure frontend build dependencies (Tailwind/PostCSS/Next toolchain) are always present.
+RUN npm ci --include=dev --workspace @carelearn/web --workspace @carelearn/shared
 
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY package*.json ./
 COPY apps/web ./apps/web
+COPY packages/shared ./packages/shared
 WORKDIR /app/apps/web
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+RUN node -e "require.resolve('next/package.json');require.resolve('tailwindcss/package.json');require.resolve('postcss/package.json');require.resolve('autoprefixer/package.json')"
 RUN npm run build
 
 FROM node:20-bookworm-slim AS runtime

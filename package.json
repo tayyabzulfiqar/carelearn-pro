@@ -10,6 +10,9 @@
     "dev": "npm run dev --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
+    "web:prebuild": "npm run prebuild --workspace @carelearn/web",
+    "web:build": "npm run build --workspace @carelearn/web",
+    "web:verify": "npm run web:prebuild && npm run web:build",
     "fire-safety:import": "node apps/api/src/scripts/import-fire-safety-course.js",
     "fire-safety:validate": "node apps/api/src/scripts/validate-fire-safety-system.js",
     "fire-safety:test": "node --test apps/api/src/lib/fire-safety-course.test.js apps/api/src/lib/quiz-data.test.js apps/api/src/lib/certificate-template.test.js apps/web/src/lib/coursePlayerState.test.js apps/web/src/lib/quizSession.test.js apps/web/src/lib/lesson-sections.test.js"
