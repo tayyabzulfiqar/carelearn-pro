@@ -11,6 +11,8 @@ RUN npm ci --include=dev --workspace @carelearn/web --workspace @carelearn/share
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+# tailwindcss/postcss are not hoisted to root — copy workspace-specific node_modules from deps
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY package*.json ./
 COPY apps/web ./apps/web
 COPY packages/shared ./packages/shared
