@@ -53,9 +53,10 @@ export default function AdminLayout({ children }) {
   }
 
   const hasAdminAccess = permissions.includes('*')
-    || permissions.includes('training.read')
     || permissions.includes('training.write')
-    || permissions.includes('media.write');
+    || permissions.includes('media.write')
+    || permissions.includes('user.read')
+    || permissions.includes('settings.write');
 
   if (!hasAdminAccess) {
     return (
