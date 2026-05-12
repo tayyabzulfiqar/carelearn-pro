@@ -112,4 +112,4 @@ app.use('/api/v1/admin/cms', requireDatabaseReady, trainingCmsRoutes);
 
 app.use(errorHandler);
 
-module.exports = (req, res) => app(req, res);
+module.exports = app;
