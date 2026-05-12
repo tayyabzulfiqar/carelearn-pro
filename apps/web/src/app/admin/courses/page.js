@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AdminTable from '@/components/admin/AdminTable';
-import { AdminErrorState, AdminLoadingState } from '@/components/admin/AdminStates';
+import { AdminErrorState, AdminLoadingState, AdminEmptyState } from '@/components/admin/AdminStates';
+import Link from 'next/link';
 import AdminFilterBar from '@/components/admin/AdminFilterBar';
 import { AdminModal } from '@/components/admin/AdminOverlays';
 import LessonBlockEditor from '@/components/admin/lesson/LessonBlockEditor';
@@ -330,6 +331,16 @@ export default function CoursesBuilderPage() {
 
   if (loading) return <AdminLoadingState title="Loading course builder..." />;
   if (error && !trainings.length) return <AdminErrorState message={error} onRetry={bootstrap} />;
+  if (!trainings.length) {
+    return (
+      <AdminEmptyState
+        title="No Training Drafts Available"
+        description="Create your first healthcare training draft before building modules and lessons."
+      >
+        <Link href="/admin/trainings/new" className="btn-primary">Open Training Wizard</Link>
+      </AdminEmptyState>
+    );
+  }
 
   return (
     <div className="space-y-6">

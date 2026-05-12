@@ -19,11 +19,12 @@ export function AdminErrorState({ message = 'Something went wrong.', onRetry }) 
   );
 }
 
-export function AdminEmptyState({ title = 'No data yet', description = 'Create your first record to get started.' }) {
+export function AdminEmptyState({ title = 'No data yet', description = 'Create your first record to get started.', children = null }) {
   return (
     <div className="surface-card p-8 text-center">
       <p className="text-base font-semibold text-slate-900">{title}</p>
       <p className="mt-2 text-sm text-gray-500">{description}</p>
+      {children ? <div className="mt-4">{children}</div> : null}
     </div>
   );
 }

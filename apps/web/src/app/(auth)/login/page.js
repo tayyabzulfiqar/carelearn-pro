@@ -80,15 +80,6 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-400 text-center mb-2">Test credentials</p>
-            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 font-mono space-y-1">
-              <div>admin@carelearn.pro / Admin1234!</div>
-              <div>jane@sunrise-care.co.uk / Learner1234!</div>
-              <div>test@care.com / Test1234!</div>
-            </div>
-          </div>
         </Card>
       </div>
     </main>

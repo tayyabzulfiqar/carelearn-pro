@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import AdminTable from '@/components/admin/AdminTable';
 import { AdminErrorState, AdminLoadingState } from '@/components/admin/AdminStates';
 import { AdminModal } from '@/components/admin/AdminOverlays';
@@ -165,7 +166,13 @@ export default function TrainingsPage() {
   if (error && !rows.length) return <AdminErrorState message={error} onRetry={loadRows} />;
 
   return (
-    <div>
+    <div className="space-y-4">
+      <section className="surface-card p-5">
+        <h1 className="text-xl font-semibold text-slate-900">Training Catalogue</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Manage healthcare training drafts, publication state, and learner-ready course availability.
+        </p>
+      </section>
       <AdminFilterBar
         search={search}
         onSearchChange={setSearch}
@@ -174,7 +181,8 @@ export default function TrainingsPage() {
           <>
             <button type="button" className="btn-secondary" onClick={applyFilters}>Apply</button>
             <button type="button" className="btn-secondary" disabled={bulkBusy} onClick={bulkArchiveDrafts}>{bulkBusy ? 'Archiving...' : 'Archive Drafts'}</button>
-            <button type="button" className="btn-primary" onClick={openCreate}>New Training</button>
+            <Link href="/admin/trainings/new" className="btn-primary">Create Training Wizard</Link>
+            <button type="button" className="btn-secondary" onClick={openCreate}>Quick Create</button>
           </>
         )}
       />

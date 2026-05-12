@@ -18,6 +18,7 @@ const EMPTY = {
 
 export default function MediaPage() {
   const [rows, setRows] = useState([]);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [form, setForm] = useState(EMPTY);
@@ -121,8 +122,20 @@ export default function MediaPage() {
   if (loading) return <AdminLoadingState title="Loading media library..." />;
   if (error) return <AdminErrorState message={error} onRetry={loadRows} />;
 
+  const filteredRows = rows.filter((row) => {
+    const hay = `${row.file_name || ''} ${row.mime_type || ''} ${(row.tags || []).join(' ')}`.toLowerCase();
+    return hay.includes(search.toLowerCase());
+  });
+
   return (
     <div className="space-y-4">
+      <section className="surface-card p-5">
+        <h1 className="text-xl font-semibold text-slate-900">Media Library</h1>
+        <p className="mt-1 text-sm text-slate-600">Store and reuse compliant training assets including images, PDFs, and videos.</p>
+      </section>
+      <section className="surface-card p-4">
+        <input className="field-input" placeholder="Search assets by name, type, or tag" value={search} onChange={(e) => setSearch(e.target.value)} />
+      </section>
       <form className="surface-card grid gap-3 p-4 md:grid-cols-2" onSubmit={addAsset}>
         <AdminFormField label="File Name"><input className="field-input" value={form.file_name} onChange={(e) => setForm((f) => ({ ...f, file_name: e.target.value }))} required /></AdminFormField>
         <AdminFormField label="Storage Path"><input className="field-input" value={form.storage_path} onChange={(e) => setForm((f) => ({ ...f, storage_path: e.target.value }))} required /></AdminFormField>
@@ -198,8 +211,11 @@ export default function MediaPage() {
             ),
           },
         ]}
-        rows={rows}
+        rows={filteredRows}
       />
+      {!filteredRows.length ? (
+        <div className="surface-card p-6 text-sm text-slate-500">No media assets match your search. Upload new files or adjust filters.</div>
+      ) : null}
     </div>
   );
 }
