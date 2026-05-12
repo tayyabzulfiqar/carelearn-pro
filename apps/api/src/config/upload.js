@@ -32,6 +32,18 @@ const jsonStorage = multer.diskStorage({
   }
 });
 
+const mediaStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const dir = path.join(__dirname, '../../uploads/media');
+    ensureDir(dir);
+    cb(null, dir);
+  },
+  filename: (_req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, unique + path.extname(file.originalname));
+  }
+});
+
 const imageFilter = (req, file, cb) => {
   const allowed = ['.jpg','.jpeg','.png','.webp','.gif'];
   const ext = path.extname(file.originalname).toLowerCase();
@@ -43,6 +55,12 @@ const jsonFilter = (req, file, cb) => {
   ext === '.json' ? cb(null, true) : cb(new Error('JSON only'), false);
 };
 
+const mediaFilter = (_req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf', '.mp4', '.mov', '.webm'];
+  allowed.includes(ext) ? cb(null, true) : cb(new Error('Unsupported media type'), false);
+};
+
 exports.uploadImages = multer({
   storage: imageStorage, fileFilter: imageFilter,
   limits: { fileSize: 10 * 1024 * 1024, files: 50 }
@@ -51,4 +69,9 @@ exports.uploadImages = multer({
 exports.uploadJson = multer({
   storage: jsonStorage, fileFilter: jsonFilter,
   limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+exports.uploadMedia = multer({
+  storage: mediaStorage, fileFilter: mediaFilter,
+  limits: { fileSize: 200 * 1024 * 1024, files: 20 }
 });

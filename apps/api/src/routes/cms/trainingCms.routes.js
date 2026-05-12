@@ -23,7 +23,9 @@ router.delete('/trainings/:id', requirePermission('training.write'), ctrl.delete
 router.post('/trainings/:id/status', requirePermission('training.write'), ctrl.transitionTrainingStatus);
 
 router.get('/trainings/:courseId/modules', requirePermission('training.read'), ctrl.listModules);
+router.get('/trainings/:courseId/modules/history', requirePermission('training.read'), ctrl.getBuilderHistory);
 router.post('/trainings/:courseId/modules', requirePermission('training.write'), ctrl.createModule);
+router.post('/trainings/:courseId/modules/tree', requirePermission('training.write'), ctrl.saveModuleTree);
 router.put('/trainings/:courseId/modules/:moduleId', requirePermission('training.write'), ctrl.updateModule);
 router.post('/trainings/:courseId/modules/reorder', requirePermission('training.write'), ctrl.reorderModules);
 router.delete('/trainings/:courseId/modules/:moduleId', requirePermission('training.write'), ctrl.deleteModule);

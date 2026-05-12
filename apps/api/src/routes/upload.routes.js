@@ -1,17 +1,23 @@
 const router = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth');
-const { uploadImages, uploadJson } = require('../config/upload');
+const { uploadImages, uploadJson, uploadMedia } = require('../config/upload');
 const ctrl = require('../controllers/upload.controller');
-const superAdmin = authorize('super_admin');
+const adminOrHigher = authorize('super_admin', 'org_admin');
 
 router.post('/images',
-  authenticate, superAdmin,
+  authenticate, adminOrHigher,
   uploadImages.array('images', 50),
   ctrl.uploadImages
 );
 
+router.post('/media',
+  authenticate, adminOrHigher,
+  uploadMedia.array('files', 20),
+  ctrl.uploadMedia
+);
+
 router.post('/courses/:courseId/content',
-  authenticate, superAdmin,
+  authenticate, adminOrHigher,
   uploadJson.single('content'),
   ctrl.bulkUploadContent
 );

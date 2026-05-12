@@ -124,6 +124,23 @@ exports.uploadImages = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.uploadMedia = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const uploaded = req.files.map((file) => ({
+      originalName: file.originalname,
+      filename: file.filename,
+      url: `${baseUrl}/uploads/media/${file.filename}`,
+      size: file.size,
+      mimeType: file.mimetype,
+    }));
+    return res.json({ files: uploaded, count: uploaded.length });
+  } catch (err) { return next(err); }
+};
+
 exports.bulkUploadContent = async (req, res, next) => {
   try {
     const { courseId } = req.params;

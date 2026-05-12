@@ -79,8 +79,8 @@ export default function MediaPage() {
     setAbortController(controller);
     try {
       const payload = new FormData();
-      payload.append('images', uploadFile);
-      const response = await api.post('/upload/images', payload, {
+      payload.append('files', uploadFile);
+      const response = await api.post('/upload/media', payload, {
         headers: { 'Content-Type': 'multipart/form-data' },
         signal: controller.signal,
         onUploadProgress: (event) => {
@@ -88,7 +88,7 @@ export default function MediaPage() {
           setUploadProgress(Math.round((event.loaded / event.total) * 100));
         },
       });
-      const first = response?.data?.images?.[0];
+      const first = response?.data?.files?.[0];
       if (first?.filename) {
         const next = {
           file_name: first.filename,

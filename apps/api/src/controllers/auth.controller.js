@@ -62,3 +62,25 @@ exports.me = async (req, res, next) => {
     res.json({ user: result.rows[0] });
   } catch (err) { next(err); }
 };
+
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword || String(newPassword).length < 8) {
+      return res.status(400).json({ error: 'Current password and a new password (min 8 chars) are required' });
+    }
+
+    const current = await db.query(
+      'SELECT id, password_hash FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    if (!current.rows.length) return res.status(404).json({ error: 'User not found' });
+
+    const valid = await bcrypt.compare(currentPassword, current.rows[0].password_hash);
+    if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+
+    const nextHash = await bcrypt.hash(newPassword, 12);
+    await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [nextHash, req.user.id]);
+    return res.json({ success: true });
+  } catch (err) { next(err); }
+};
