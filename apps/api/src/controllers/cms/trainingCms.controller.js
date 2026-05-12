@@ -341,12 +341,27 @@ exports.saveModuleTree = async (req, res, next) => {
       return res.fail('No modules supplied', 'INVALID_INPUT', 422);
     }
 
+    const orgId = req.tenant?.organisationId || null;
+    if (!orgId) {
+      await db.query('BEGIN');
+      for (const moduleNode of modules) {
+        await db.query(
+          `UPDATE modules
+           SET parent_module_id = $1, order_index = $2
+           WHERE id = $3 AND course_id = $4`,
+          [moduleNode.parent_module_id || null, Number(moduleNode.order_index || 0), moduleNode.id, courseId]
+        );
+      }
+      await db.query('COMMIT');
+      return res.success({ saved: true, entries: 0, version: 0 });
+    }
+
     const versionKey = `builder_version_${courseId}`;
     const versionRow = await db.query(
       `SELECT value FROM organisation_settings
        WHERE organisation_id = $1 AND key = $2
        LIMIT 1`,
-      [req.tenant.organisationId, versionKey]
+      [orgId, versionKey]
     );
     const currentVersion = Number(versionRow.rows[0]?.value?.version || 0);
     if (expectedVersion !== undefined && Number(expectedVersion) !== currentVersion) {
@@ -375,7 +390,7 @@ exports.saveModuleTree = async (req, res, next) => {
       `SELECT value FROM organisation_settings
        WHERE organisation_id = $1 AND key = $2
        LIMIT 1`,
-      [req.tenant.organisationId, historyKey]
+      [orgId, historyKey]
     );
     const entries = previousHistory.rows[0]?.value?.entries || [];
     const nextEntries = [
@@ -393,14 +408,14 @@ exports.saveModuleTree = async (req, res, next) => {
        VALUES ($1,$2,$3,$4)
        ON CONFLICT (organisation_id, key)
        DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-      [randomUUID(), req.tenant.organisationId, historyKey, { entries: nextEntries }]
+      [randomUUID(), orgId, historyKey, { entries: nextEntries }]
     );
     await db.query(
       `INSERT INTO organisation_settings (id, organisation_id, key, value)
        VALUES ($1,$2,$3,$4)
        ON CONFLICT (organisation_id, key)
        DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-      [randomUUID(), req.tenant.organisationId, versionKey, { version: currentVersion + 1 }]
+      [randomUUID(), orgId, versionKey, { version: currentVersion + 1 }]
     );
 
     await db.query('COMMIT');
@@ -414,13 +429,17 @@ exports.saveModuleTree = async (req, res, next) => {
 exports.getBuilderHistory = async (req, res, next) => {
   try {
     const courseId = req.params.courseId;
+    const orgId = req.tenant?.organisationId || null;
+    if (!orgId) {
+      return res.success({ entries: [], version: 0 });
+    }
     const historyKey = `builder_history_${courseId}`;
     const result = await db.query(
       `SELECT value
        FROM organisation_settings
        WHERE organisation_id = $1 AND key = $2
        LIMIT 1`,
-      [req.tenant.organisationId, historyKey]
+      [orgId, historyKey]
     );
     const versionKey = `builder_version_${courseId}`;
     const versionRow = await db.query(
@@ -428,7 +447,7 @@ exports.getBuilderHistory = async (req, res, next) => {
        FROM organisation_settings
        WHERE organisation_id = $1 AND key = $2
        LIMIT 1`,
-      [req.tenant.organisationId, versionKey]
+      [orgId, versionKey]
     );
     return res.success({
       entries: result.rows[0]?.value?.entries || [],
@@ -486,7 +505,7 @@ exports.createLesson = async (req, res, next) => {
       : {
         schema_version: 3,
         title,
-        blocks: [{ id: randomUUID(), type: 'rich_text', order: 0, payload: { text: `${title} content.` } }],
+        blocks: [{ id: randomUUID(), type: 'rich_text', order: 0, payload: { text: `${title} content placeholder. Add your lesson narrative and media blocks here.` } }],
         metadata: { locale: 'en', tags: [], readingMinutes: 5 },
       };
     const validation = validateLessonDocument({ title, content: normalizedContentInput });
