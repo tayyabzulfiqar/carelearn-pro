@@ -52,9 +52,11 @@ export default function NewTrainingWizardPage() {
   }
 
   async function handleThumbnailUpload() {
-    if (!thumbnailFile) return;
+    if (!thumbnailFile) return '';
     const uploadedThumb = await uploadFile(thumbnailFile);
-    setForm((prev) => ({ ...prev, thumbnail_url: uploadedThumb.url }));
+    const url = uploadedThumb?.url || '';
+    if (url) setForm((prev) => ({ ...prev, thumbnail_url: url }));
+    return url;
   }
 
   async function handleCreateTraining() {
@@ -62,8 +64,14 @@ export default function NewTrainingWizardPage() {
     setError('');
     setSubmitting(true);
     try {
-      if (thumbnailFile && !form.thumbnail_url) {
-        await handleThumbnailUpload();
+      let thumbnailUrl = form.thumbnail_url;
+      if (thumbnailFile && !thumbnailUrl) {
+        try {
+          thumbnailUrl = await handleThumbnailUpload();
+        } catch (_thumbErr) {
+          // Continue draft creation even when thumbnail upload fails.
+          thumbnailUrl = '';
+        }
       }
 
       const payload = {
@@ -72,13 +80,16 @@ export default function NewTrainingWizardPage() {
         category: form.category,
         duration_minutes: Number(form.duration_minutes || 45),
         status: 'draft',
-        thumbnail_url: form.thumbnail_url || null,
+        thumbnail_url: thumbnailUrl || null,
         tags: form.tags.split(',').map((item) => item.trim()).filter(Boolean).concat([source]).slice(0, 10),
       };
 
       const response = await cmsPost('/trainings', payload);
       const training = response?.training || response?.data?.training;
-      setCreatedTrainingId(training?.id || '');
+      if (!training?.id) {
+        throw new Error('Training create response did not include an ID.');
+      }
+      setCreatedTrainingId(training.id);
       setStep(2);
     } catch (err) {
       setError(err?.response?.data?.error?.message || 'Unable to create training draft.');
