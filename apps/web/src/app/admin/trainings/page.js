@@ -30,6 +30,8 @@ export default function TrainingsPage() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const loadRows = useCallback(async () => {
     setLoading(true);
@@ -126,6 +128,27 @@ export default function TrainingsPage() {
     await loadRows();
   };
 
+  const duplicateTraining = async (row) => {
+    const payload = {
+      ...row,
+      title: `${row.title} (Copy)`,
+      status: 'draft',
+      tags: Array.isArray(row.tags) ? row.tags : [],
+    };
+    delete payload.id;
+    await cmsPost('/trainings', payload);
+    await loadRows();
+  };
+
+  const togglePublish = async (row) => {
+    const statusValue = row.status === 'published' ? 'draft' : 'published';
+    await cmsPost(`/trainings/${row.id}/status`, { status: statusValue });
+    await loadRows();
+  };
+
+  const paginatedRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+
   const bulkArchiveDrafts = async () => {
     const draftRows = rows.filter((row) => row.status === 'draft');
     if (!draftRows.length) return;
@@ -169,13 +192,22 @@ export default function TrainingsPage() {
               <div className="flex gap-2">
                 <button type="button" className="btn-secondary" onClick={() => openEdit(row)}>Edit</button>
                 <a className="btn-secondary" href={`/dashboard/courses/${row.id}/player`} target="_blank" rel="noreferrer">Preview</a>
+                <button type="button" className="btn-secondary" onClick={() => duplicateTraining(row)}>Duplicate</button>
+                <button type="button" className="btn-secondary" onClick={() => togglePublish(row)}>{row.status === 'published' ? 'Unpublish' : 'Publish'}</button>
                 <button type="button" className="btn-secondary" onClick={() => remove(row)}>Delete</button>
               </div>
             ),
           },
         ]}
-        rows={rows}
+        rows={paginatedRows}
       />
+      <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
+        <p>Page {page} of {totalPages}</p>
+        <div className="flex gap-2">
+          <button type="button" className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
+          <button type="button" className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
+        </div>
+      </div>
 
       <AdminModal open={open} title={form.id ? 'Edit Training' : 'Create Training'} onClose={() => setOpen(false)}>
         <form className="space-y-3" onSubmit={submit}>

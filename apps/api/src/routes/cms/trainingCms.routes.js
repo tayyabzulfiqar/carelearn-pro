@@ -54,4 +54,13 @@ router.get('/media-assets', requirePermission('media.write'), ctrl.listMediaAsse
 router.post('/media-assets', requirePermission('media.write'), ctrl.registerMediaAsset);
 router.delete('/media-assets/:assetId', requirePermission('media.write'), ctrl.deleteMediaAsset);
 
+router.get('/members', requirePermission('user.read'), ctrl.listOrganisationMembers);
+router.get('/invitations', requirePermission('user.read'), ctrl.listInvitations);
+router.post('/invitations', requirePermission('user.write'), ctrl.createInvitation);
+router.post('/invitations/:invitationId/reissue', requirePermission('user.write'), ctrl.reissueInvitation);
+router.post('/invitations/:invitationId/revoke', requirePermission('user.write'), ctrl.revokeInvitation);
+
+router.get('/settings', requirePermission('settings.write'), ctrl.listOrganisationSettings);
+router.post('/settings', requirePermission('settings.write'), ctrl.upsertOrganisationSetting);
+
 module.exports = router;

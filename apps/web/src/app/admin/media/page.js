@@ -28,6 +28,8 @@ export default function MediaPage() {
   const [uploadError, setUploadError] = useState('');
   const [lastUpload, setLastUpload] = useState(null);
   const [abortController, setAbortController] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [copied, setCopied] = useState('');
 
   const loadRows = async () => {
     setLoading(true);
@@ -60,6 +62,16 @@ export default function MediaPage() {
 
   const beginUpload = async () => {
     if (!uploadFile) return;
+    const maxBytes = 100 * 1024 * 1024;
+    const allowed = ['image/', 'video/', 'application/pdf'];
+    if (!allowed.some((token) => (uploadFile.type || '').startsWith(token))) {
+      setUploadError('Unsupported file type. Upload image, video, or PDF.');
+      return;
+    }
+    if ((uploadFile.size || 0) > maxBytes) {
+      setUploadError('File too large. Max size is 100MB.');
+      return;
+    }
     setUploadError('');
     setUploading(true);
     setUploadProgress(0);
@@ -121,20 +133,35 @@ export default function MediaPage() {
       </form>
       <div className="surface-card space-y-3 p-4">
         <p className="text-sm font-semibold text-slate-900">Direct Upload</p>
-        <input
-          type="file"
-          accept="image/*,video/*,.pdf"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
+        <div
+          className={`rounded-xl border-2 border-dashed p-4 ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-300'}`}
+          onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragActive(false);
+            const file = e.dataTransfer.files?.[0];
             setUploadFile(file || null);
             setUploadError('');
-            if (file?.type?.startsWith('image/')) {
-              setPreviewUrl(URL.createObjectURL(file));
-            } else {
-              setPreviewUrl('');
-            }
+            if (file?.type?.startsWith('image/')) setPreviewUrl(URL.createObjectURL(file));
           }}
-        />
+        >
+          <input
+            type="file"
+            accept="image/*,video/*,.pdf"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              setUploadFile(file || null);
+              setUploadError('');
+              if (file?.type?.startsWith('image/')) {
+                setPreviewUrl(URL.createObjectURL(file));
+              } else {
+                setPreviewUrl('');
+              }
+            }}
+          />
+          <p className="mt-2 text-xs text-slate-500">Drag and drop supported. Max 100MB.</p>
+        </div>
         {previewUrl ? <img src={previewUrl} alt="Media preview" className="max-h-48 rounded-lg border border-slate-200 object-contain" /> : null}
         {uploading ? (
           <div className="space-y-2">
@@ -160,7 +187,16 @@ export default function MediaPage() {
           { key: 'mime_type', label: 'Type' },
           { key: 'file_size_bytes', label: 'Size' },
           { key: 'tags', label: 'Tags', render: (row) => Array.isArray(row.tags) ? row.tags.join(', ') : '' },
-          { key: 'actions', label: 'Actions', render: (row) => <button type="button" className="btn-secondary" onClick={() => remove(row)}>Delete</button> },
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (row) => (
+              <div className="flex gap-2">
+                <button type="button" className="btn-secondary" onClick={() => { navigator.clipboard.writeText(row.storage_path); setCopied(row.id); setTimeout(() => setCopied(''), 1200); }}>{copied === row.id ? 'Copied' : 'Copy URL'}</button>
+                <button type="button" className="btn-secondary" onClick={() => remove(row)}>Delete</button>
+              </div>
+            ),
+          },
         ]}
         rows={rows}
       />

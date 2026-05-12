@@ -8,6 +8,9 @@ const nav = [
   { href: '/dashboard/courses', label: 'My Courses', short: 'MC' },
   { href: '/dashboard/certificates', label: 'Certificates', short: 'CF' },
   { href: '/dashboard/profile', label: 'Profile', short: 'PR' },
+  { href: '/dashboard/trainings', label: 'Admin Trainings', short: 'AT' },
+  { href: '/dashboard/media-library', label: 'Media Library', short: 'ML' },
+  { href: '/dashboard/course-builder', label: 'Course Builder', short: 'CB' },
 ];
 
 export default function Sidebar() {
