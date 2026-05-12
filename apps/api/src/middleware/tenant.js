@@ -29,14 +29,21 @@ async function attachTenant(req, _res, next) {
   }
 }
 
-function requireTenant(req, res, next) {
-  if (!req.tenant?.organisationId && req.user?.role !== 'super_admin') {
-    return res.status(400).json({
-      success: false,
-      error: { code: 'TENANT_REQUIRED', message: 'Organisation context is required' },
-    });
+async function requireTenant(req, res, next) {
+  if (req.tenant?.organisationId || req.user?.role === 'super_admin') return next();
+
+  try {
+    // Allow first-run environments with no organisations to operate in global mode.
+    const orgs = await db.query('SELECT id FROM organisations LIMIT 1');
+    if (!orgs.rows.length) return next();
+  } catch (err) {
+    return next(err);
   }
-  return next();
+
+  return res.status(400).json({
+    success: false,
+    error: { code: 'TENANT_REQUIRED', message: 'Organisation context is required' },
+  });
 }
 
 module.exports = { attachTenant, requireTenant };

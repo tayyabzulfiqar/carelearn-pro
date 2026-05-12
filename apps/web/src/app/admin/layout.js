@@ -52,6 +52,19 @@ export default function AdminLayout({ children }) {
     return <div className="page-container py-8"><AdminErrorState message={permError} /></div>;
   }
 
+  const hasAdminAccess = permissions.includes('*')
+    || permissions.includes('training.read')
+    || permissions.includes('training.write')
+    || permissions.includes('media.write');
+
+  if (!hasAdminAccess) {
+    return (
+      <div className="page-container py-8">
+        <AdminErrorState message="Your account does not have admin workspace access. Sign in with an admin/trainer account." />
+      </div>
+    );
+  }
+
   return (
     <ToastProvider>
       <GlobalLoadingProvider>
