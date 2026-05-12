@@ -91,7 +91,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
       - ./docker/nginx/includes:/etc/nginx/includes:ro
       - ./docker/nginx/entrypoint.sh:/entrypoint.sh:ro
       - certbot_www:/var/www/certbot
