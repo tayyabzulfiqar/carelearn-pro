@@ -92,7 +92,7 @@ function createAmbiguousPdfRaw(filePath) {
     '50 780 Td',
     '(## Fire Safety) Tj',
     '0 -20 Td',
-    '(Bad \\000 glyph) Tj',
+    '<FEFF004200610064001B00200067006C007900700068> Tj',
     'ET',
   ].join('\n');
 
@@ -178,7 +178,7 @@ async function main() {
   assertOk(okDocx.data?.data?.extraction?.canonical?.sections?.length >= 1, 'valid DOCX canonical missing');
 
   const okPdf = await callFile(validPdf, ['IMAGE_1.jpg', 'IMAGE_2.jpg']);
-  assertOk(okPdf.status === 200, `valid PDF failed (${okPdf.status})`);
+  assertOk(okPdf.status === 200, `valid PDF failed (${okPdf.status}) body=${JSON.stringify(okPdf.data)}`);
   assertOk(okPdf.data?.data?.extraction?.canonical?.sections?.length >= 1, 'valid PDF canonical missing');
 
   const persisted = await db.query(
@@ -210,7 +210,7 @@ async function main() {
   assertOk(preHeadingContent.status === 422, 'content before heading did not fail 422');
 
   const ocrAmbiguous = await callFile(ocrPdf, ['IMAGE_1.jpg']);
-  assertOk(ocrAmbiguous.status === 422, 'OCR ambiguity did not fail 422');
+  assertOk(ocrAmbiguous.status === 422, `OCR ambiguity did not fail 422 body=${JSON.stringify(ocrAmbiguous.data)}`);
 
   const invalidHeadingStructure = await callFile(noHeadingPdf, []);
   assertOk(invalidHeadingStructure.status === 422, 'invalid heading structure did not fail 422');

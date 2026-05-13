@@ -15,6 +15,20 @@ test('fails on OCR ambiguity glyph', () => {
   );
 });
 
+test('fails on detached glyph extraction ambiguity', () => {
+  assert.throws(
+    () => parseStrictPdfTextToBlocks('## Intro\nB a d\ng l y p h'),
+    /PDF_OCR_AMBIGUITY/
+  );
+});
+
+test('fails on consecutive single-letter line ambiguity', () => {
+  assert.throws(
+    () => parseStrictPdfTextToBlocks('## Intro\nB\na\nd\ng\nl\ny\np\nh'),
+    /PDF_OCR_AMBIGUITY/
+  );
+});
+
 test('fails malformed/invalid pdf buffer hard', async () => {
   await assert.rejects(
     () => extractPdfStructured({ buffer: Buffer.from('not-a-pdf') }),

@@ -10,9 +10,27 @@ async function getPdfjs() {
 function parseStrictPdfTextToBlocks(rawText) {
   const lines = String(rawText || '').replace(/\r/g, '').split('\n').map((line) => line.trimEnd());
   const blocks = [];
+  let consecutiveSingleLetterLines = 0;
   for (const line of lines) {
     const text = line.trim();
     if (!text) continue;
+    if (/^\p{L}$/u.test(text)) {
+      consecutiveSingleLetterLines += 1;
+      if (consecutiveSingleLetterLines >= 4) {
+        const err = new Error('PDF_OCR_AMBIGUITY');
+        err.code = 'PDF_OCR_AMBIGUITY';
+        throw err;
+      }
+    } else {
+      consecutiveSingleLetterLines = 0;
+    }
+    const words = text.split(/\s+/).filter(Boolean);
+    const detachedGlyphWordCount = words.filter((word) => /^\p{L}$/u.test(word)).length;
+    if (detachedGlyphWordCount >= 4 && detachedGlyphWordCount === words.length) {
+      const err = new Error('PDF_OCR_AMBIGUITY');
+      err.code = 'PDF_OCR_AMBIGUITY';
+      throw err;
+    }
     if (/[\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(text)) {
       const err = new Error('PDF_OCR_AMBIGUITY');
       err.code = 'PDF_OCR_AMBIGUITY';
