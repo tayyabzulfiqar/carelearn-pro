@@ -23,6 +23,16 @@ router.post('/trainings', requirePermission('training.write'), validate([body('t
 router.put('/trainings/:id', requirePermission('training.write'), ctrl.updateTraining);
 router.delete('/trainings/:id', requirePermission('training.write'), ctrl.deleteTraining);
 router.post('/trainings/:id/status', requirePermission('training.write'), ctrl.transitionTrainingStatus);
+router.post(
+  '/ingestion/contract/validate',
+  requirePermission('training.write'),
+  validate([
+    body('sourceText').isString().isLength({ min: 1 }),
+    body('imageFiles').optional().isArray(),
+    body('documentType').optional().isIn(['normalized_text']),
+  ]),
+  ctrl.validateIngestionContract
+);
 
 router.get('/media-assets', requirePermission('media.write'), ctrl.listMediaAssets);
 router.post('/media-assets', requirePermission('media.write'), ctrl.registerMediaAsset);

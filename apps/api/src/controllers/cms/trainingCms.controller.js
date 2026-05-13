@@ -2,6 +2,7 @@ const { randomUUID } = require('crypto');
 const db = require('../../config/database');
 const { toSlug } = require('../../lib/slug');
 const { normalizeLessonDocument, validateLessonDocument } = require('../../lib/rich-content');
+const { buildValidationResult } = require('../../lib/training-ingestion-contract');
 const { getProvider } = require('../../services/storage');
 const { parsePagination } = require('../../utils/pagination');
 
@@ -98,6 +99,61 @@ exports.listTrainings = async (req, res, next) => {
     );
 
     return res.success({ trainings: result.rows });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.validateIngestionContract = async (req, res, next) => {
+  try {
+    const { sourceText = '', imageFiles = [], documentType = 'normalized_text' } = req.body;
+    const organisationId = req.tenant?.organisationId || null;
+
+    if (!organisationId) {
+      return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    }
+    if (documentType !== 'normalized_text') {
+      return res.fail(
+        'Layer 2A only accepts normalized_text contract validation',
+        'UNSUPPORTED_DOCUMENT_TYPE',
+        422
+      );
+    }
+
+    const validation = buildValidationResult({ sourceText, imageFiles });
+    const payload = {
+      document_type: documentType,
+      validated_at: new Date().toISOString(),
+      passed: validation.passed,
+      errors: validation.errors,
+      canonical: validation.canonical || null,
+      image_files: imageFiles,
+      source_length: String(sourceText || '').length,
+    };
+
+    await db.query(
+      `INSERT INTO organisation_settings (id, organisation_id, key, value)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (organisation_id, key)
+       DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [randomUUID(), organisationId, 'layer2_ingestion_contract_last_validation', payload]
+    );
+
+    if (!validation.passed) {
+      return res.fail(
+        'Deterministic ingestion contract validation failed',
+        'INGESTION_CONTRACT_INVALID',
+        422,
+        validation.errors
+      );
+    }
+
+    return res.success({
+      validation: {
+        ...validation,
+        persisted: true,
+      },
+    });
   } catch (err) {
     return next(err);
   }
