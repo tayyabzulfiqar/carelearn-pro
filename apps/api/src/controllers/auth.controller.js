@@ -3,12 +3,16 @@ const jwt = require('jsonwebtoken');
 const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecure123';
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES = process.env.JWT_EXPIRES || '24h';
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is required');
+}
 
 exports.register = async (req, res, next) => {
   try {
-    const { email, password, first_name, last_name, role = 'learner' } = req.body;
+    const { email, password, first_name, last_name } = req.body;
     if (!email || !password || !first_name || !last_name) {
       return res.status(400).json({ error: 'Email, password, first name, and last name are required' });
     }
@@ -22,7 +26,7 @@ exports.register = async (req, res, next) => {
       `INSERT INTO users (id, email, password_hash, first_name, last_name, role)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, email, first_name, last_name, role, created_at`,
-      [id, email, password_hash, first_name, last_name, role]
+      [id, email, password_hash, first_name, last_name, 'learner']
     );
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES });

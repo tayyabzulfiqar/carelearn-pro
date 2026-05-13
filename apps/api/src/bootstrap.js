@@ -5,23 +5,31 @@ const { createTables } = require('./models');
 
 let bootstrapPromise;
 
-async function ensureDemoUser() {
-  const passwordHash = await bcrypt.hash('Test1234!', 12);
+async function ensureSuperAdminFromEnv() {
+  const email = process.env.SUPER_ADMIN_EMAIL;
+  const password = process.env.SUPER_ADMIN_PASSWORD;
+  if (!email || !password) return;
+
+  const passwordHash = await bcrypt.hash(password, 12);
   await db.query(
-    `INSERT INTO users (id, email, password_hash, first_name, last_name, role)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (email) DO NOTHING`,
-    [uuidv4(), 'test@care.com', passwordHash, 'Test', 'User', 'learner']
+    `INSERT INTO users (id, email, password_hash, first_name, last_name, role, is_active)
+     VALUES ($1, $2, $3, $4, $5, 'super_admin', true)
+     ON CONFLICT (email)
+     DO UPDATE SET role = 'super_admin', is_active = true`,
+    [
+      uuidv4(),
+      email.toLowerCase().trim(),
+      passwordHash,
+      process.env.SUPER_ADMIN_FIRST_NAME || 'Super',
+      process.env.SUPER_ADMIN_LAST_NAME || 'Admin',
+    ]
   );
 }
 
 function bootstrapDatabase() {
   if (!bootstrapPromise) {
-    bootstrapPromise = ensureDemoUser().catch(async (err) => {
-      if (err.code !== '42P01') throw err;
-      await createTables();
-      await ensureDemoUser();
-    });
+    bootstrapPromise = createTables()
+      .then(() => ensureSuperAdminFromEnv());
   }
   return bootstrapPromise;
 }

@@ -10,8 +10,9 @@ export const login = async (email, password) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('cl_token', token);
   }
-  Cookies.set('cl_token', token, { expires: 1, secure: true, sameSite: 'lax' });
-  Cookies.set('cl_user', JSON.stringify(user), { expires: 1, secure: true, sameSite: 'lax' });
+  const secure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  Cookies.set('cl_token', token, { expires: 1, secure, sameSite: 'lax' });
+  Cookies.set('cl_user', JSON.stringify(user), { expires: 1, secure, sameSite: 'lax' });
   return { user, token };
 };
 

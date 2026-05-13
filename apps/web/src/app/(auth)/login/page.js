@@ -25,8 +25,8 @@ export default function LoginPage() {
   const onSubmit = async (data) => {
     setError('');
     try {
-      await login(data.email, data.password);
-      router.push('/dashboard');
+      const { user } = await login(data.email, data.password);
+      router.push(user?.role === 'super_admin' ? '/admin' : '/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
     }

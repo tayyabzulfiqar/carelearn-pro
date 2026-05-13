@@ -90,16 +90,14 @@ export default function MediaPage() {
         },
       });
       const first = response?.data?.files?.[0];
+      const firstAsset = response?.data?.assets?.[0];
       if (first?.filename) {
         const next = {
-          file_name: first.filename,
-          storage_path: first.url,
-          mime_type: uploadFile.type || '',
-          file_size_bytes: uploadFile.size || 0,
-          tags: [],
-          metadata: {},
+          file_name: firstAsset?.file_name || first.filename,
+          storage_path: firstAsset?.storage_path || first.url,
+          mime_type: firstAsset?.mime_type || uploadFile.type || '',
+          file_size_bytes: firstAsset?.file_size_bytes || uploadFile.size || 0,
         };
-        await cmsPost('/media-assets', next);
         setLastUpload(next);
       }
       await loadRows();

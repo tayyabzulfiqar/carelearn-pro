@@ -1,6 +1,20 @@
 const db = require('../config/database');
+const jwt = require('jsonwebtoken');
+
+function attachUserFromToken(req) {
+  if (req.user) return;
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return;
+  const token = authHeader.slice(7);
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (_err) {
+    // Ignore invalid token here; auth middleware will reject protected routes.
+  }
+}
 
 async function attachTenant(req, _res, next) {
+  attachUserFromToken(req);
   if (!req.user) return next();
 
   const explicitTenant = req.context?.tenantId || req.headers['x-org-id'];

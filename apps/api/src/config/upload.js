@@ -21,17 +21,6 @@ const imageStorage = multer.diskStorage({
   }
 });
 
-const jsonStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../../uploads/slides');
-    ensureDir(dir);
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  }
-});
-
 const mediaStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     const dir = path.join(__dirname, '../../uploads/media');
@@ -50,11 +39,6 @@ const imageFilter = (req, file, cb) => {
   allowed.includes(ext) ? cb(null, true) : cb(new Error('Images only'), false);
 };
 
-const jsonFilter = (req, file, cb) => {
-  const ext = path.extname(file.originalname).toLowerCase();
-  ext === '.json' ? cb(null, true) : cb(new Error('JSON only'), false);
-};
-
 const mediaFilter = (_req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf', '.mp4', '.mov', '.webm'];
@@ -64,11 +48,6 @@ const mediaFilter = (_req, file, cb) => {
 exports.uploadImages = multer({
   storage: imageStorage, fileFilter: imageFilter,
   limits: { fileSize: 10 * 1024 * 1024, files: 50 }
-});
-
-exports.uploadJson = multer({
-  storage: jsonStorage, fileFilter: jsonFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 exports.uploadMedia = multer({

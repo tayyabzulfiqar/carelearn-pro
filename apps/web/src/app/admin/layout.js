@@ -58,10 +58,10 @@ export default function AdminLayout({ children }) {
     || permissions.includes('user.read')
     || permissions.includes('settings.write');
 
-  if (!hasAdminAccess) {
+  if (!hasAdminAccess || user?.role !== 'super_admin') {
     return (
       <div className="page-container py-8">
-        <AdminErrorState message="Your account does not have admin workspace access. Sign in with an admin/trainer account." />
+        <AdminErrorState message="Your account does not have super admin workspace access." />
       </div>
     );
   }

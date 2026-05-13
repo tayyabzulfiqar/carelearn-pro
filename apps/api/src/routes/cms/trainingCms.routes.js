@@ -1,12 +1,14 @@
 const router = require('express').Router();
 const { body, query } = require('express-validator');
 const ctrl = require('../../controllers/cms/trainingCms.controller');
-const { authenticate } = require('../../middleware/auth');
+const { authenticate, authorize } = require('../../middleware/auth');
 const { requirePermission } = require('../../middleware/permissions');
 const { requireTenant } = require('../../middleware/tenant');
 const { validate } = require('../../middleware/validation');
 
-router.use(authenticate, requireTenant);
+const superAdminOnly = authorize('super_admin');
+
+router.use(authenticate, superAdminOnly, requireTenant);
 
 router.get(
   '/trainings',
