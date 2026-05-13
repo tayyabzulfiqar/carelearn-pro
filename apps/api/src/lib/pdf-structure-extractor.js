@@ -13,7 +13,7 @@ function parseStrictPdfTextToBlocks(rawText) {
   for (const line of lines) {
     const text = line.trim();
     if (!text) continue;
-    if (/[\uFFFD]/.test(text)) {
+    if (/[\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(text)) {
       const err = new Error('PDF_OCR_AMBIGUITY');
       err.code = 'PDF_OCR_AMBIGUITY';
       throw err;
@@ -36,7 +36,9 @@ function parseStrictPdfTextToBlocks(rawText) {
 async function extractPdfStructured({ buffer }) {
   try {
     const pdfjs = await getPdfjs();
-    const loadingTask = pdfjs.getDocument({ data: buffer });
+    const source = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+    const bytes = new Uint8Array(source.buffer, source.byteOffset, source.byteLength);
+    const loadingTask = pdfjs.getDocument({ data: bytes });
     const pdf = await loadingTask.promise;
     let content = '';
     for (let p = 1; p <= pdf.numPages; p += 1) {

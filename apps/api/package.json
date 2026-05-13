@@ -10,6 +10,7 @@
     "seed": "node src/seed.js",
     "test": "node --test src/lib/lesson-content.test.js src/lib/rich-content.test.js src/lib/training-ingestion-contract.test.js src/lib/docx-structure-extractor.test.js src/lib/marker-extraction.test.js src/lib/extraction-normalizer.test.js src/lib/pdf-structure-extractor.test.js src/lib/ingestion-contract-adapter.test.js",
     "smoke": "node src/scripts/smoke-api.js",
+    "validate:layer2b:auth-e2e": "node src/scripts/layer2b-authenticated-e2e.js",
     "validate:layer2b": "node src/scripts/validate-extraction-runtime.js",
     "verify:health": "node src/scripts/verify-health.js",
     "verify:workflow": "node src/scripts/workflow-checks.js"
@@ -18,6 +19,7 @@
     "@napi-rs/canvas": "^0.1.100",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
+    "docx": "^9.5.1",
     "dotenv": "^17.4.2",
     "express": "^4.22.1",
     "express-validator": "^7.3.2",
@@ -27,6 +29,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "pdfjs-dist": "^4.8.69",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.20.0",
     "uuid": "^14.0.0"
   },
