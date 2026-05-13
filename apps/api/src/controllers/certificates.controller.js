@@ -2,10 +2,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const db = require('../config/database');
-const { buildCertificateTemplateModel } = require('../lib/certificate-template');
 const { CERTIFICATE_ROOT, generateCertificateImage } = require('../lib/certificate-image');
-
-const CERTIFICATE_IMAGE_ROOT = process.env.FIRE_SAFETY_SOURCE_ROOT || require('node:path').resolve(__dirname, '../content/fire-safety');
 
 async function getUserProfile(userId) {
   const userResult = await db.query(
@@ -27,12 +24,11 @@ async function withTemplate(certificate) {
   return {
     ...certificate,
     certificate_url: certificate.pdf_url || null,
-      template: buildCertificateTemplateModel({
-        imageRoot: CERTIFICATE_IMAGE_ROOT,
-        user,
-        issuedAt: certificate.issued_at,
+      template: {
+        recipientName: getUserName(user),
         courseTitle,
-      }),
+        issuedAt: certificate.issued_at,
+      },
       verification_url: certificate.verification_token
         ? `/api/v1/certificates/verify-token/${certificate.verification_token}`
         : null,

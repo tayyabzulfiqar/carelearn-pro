@@ -1,6 +1,5 @@
 const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/database');
-const { getStaticQuizQuestions, scoreStaticQuiz } = require('../lib/quiz-data');
 
 exports.getQuestions = async (req, res, next) => {
   try {
@@ -38,7 +37,7 @@ exports.getQuestions = async (req, res, next) => {
     }
 
     res.json({
-      questions: getStaticQuizQuestions(courseId),
+      questions: [],
       lesson_number: lessonNumber,
       is_final: is_final !== 'false',
     });
@@ -162,11 +161,10 @@ exports.submitAttempt = async (req, res, next) => {
       score = Number(((earned / totalWeight) * 100).toFixed(2));
       passed = score >= passMark;
     } else {
-      const scored = scoreStaticQuiz(submittedAnswers, courseId);
-      correct = scored.correct;
-      total = scored.total;
-      score = scored.score;
-      passed = scored.passed;
+      correct = 0;
+      total = 0;
+      score = 0;
+      passed = false;
       passMark = 75;
     }
     const attemptId = uuidv4();

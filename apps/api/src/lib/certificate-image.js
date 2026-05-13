@@ -4,7 +4,6 @@ const path = require('node:path');
 const { createCanvas, loadImage } = require('@napi-rs/canvas');
 
 const CERTIFICATE_ROOT = path.join(os.tmpdir(), 'carelearn-certificates');
-const TEMPLATE_PATH = path.resolve(__dirname, '../content/fire-safety/certificate_fire_safety.png');
 
 function safeSlug(value) {
   return String(value || 'certificate')
@@ -35,13 +34,25 @@ function fitText(ctx, text, maxWidth, startSize, family = 'Georgia') {
 async function generateCertificateImage({ userId, userName, courseTitle, issuedAt }) {
   await fs.mkdir(CERTIFICATE_ROOT, { recursive: true });
 
-  const template = await loadImage(TEMPLATE_PATH);
-  const width = template.width;
-  const height = template.height;
+  let template = null;
+  try {
+    const templatePath = path.resolve(__dirname, '../uploads/certificate-template.png');
+    template = await loadImage(templatePath);
+  } catch {}
+  const width = template?.width || 1800;
+  const height = template?.height || 1273;
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
-  ctx.drawImage(template, 0, 0, width, height);
+  if (template) {
+    ctx.drawImage(template, 0, 0, width, height);
+  } else {
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(40, 40, width - 80, height - 80);
+  }
   ctx.fillStyle = '#3b2418';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';

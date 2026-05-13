@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import AdminTable from '@/components/admin/AdminTable';
 import { AdminErrorState, AdminLoadingState } from '@/components/admin/AdminStates';
 import { AdminModal } from '@/components/admin/AdminOverlays';
@@ -181,7 +180,6 @@ export default function TrainingsPage() {
           <>
             <button type="button" className="btn-secondary" onClick={applyFilters}>Apply</button>
             <button type="button" className="btn-secondary" disabled={bulkBusy} onClick={bulkArchiveDrafts}>{bulkBusy ? 'Archiving...' : 'Archive Drafts'}</button>
-            <Link href="/admin/trainings/new" className="btn-primary">Create Training Wizard</Link>
             <button type="button" className="btn-secondary" onClick={openCreate}>Quick Create</button>
           </>
         )}

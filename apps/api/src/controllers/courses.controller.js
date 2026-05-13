@@ -1,7 +1,6 @@
 const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/database');
 const { normalizeLessonContent } = require('../lib/lesson-content');
-const { getStaticQuizQuestions } = require('../lib/quiz-data');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -34,7 +33,7 @@ exports.getById = async (req, res, next) => {
         ...course.rows[0],
         modules: modules.rows.map((module) => ({
           ...module,
-          lessons: Array.isArray(module.lessons)
+        lessons: Array.isArray(module.lessons)
             ? module.lessons.map((lesson) => ({
                 ...lesson,
                 content: normalizeLessonContent({
@@ -44,7 +43,7 @@ exports.getById = async (req, res, next) => {
               }))
             : [],
         })),
-        questions: getStaticQuizQuestions(req.params.id),
+        questions: [],
       }
     });
   } catch (err) { next(err); }
