@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const { body, query } = require('express-validator');
+const multer = require('multer');
 const ctrl = require('../../controllers/cms/trainingCms.controller');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { requirePermission } = require('../../middleware/permissions');
@@ -7,6 +8,7 @@ const { requireTenant } = require('../../middleware/tenant');
 const { validate } = require('../../middleware/validation');
 
 const superAdminOnly = authorize('super_admin');
+const uploadDocument = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024, files: 1 } });
 
 router.use(authenticate, superAdminOnly, requireTenant);
 
@@ -32,6 +34,12 @@ router.post(
     body('documentType').optional().isIn(['normalized_text']),
   ]),
   ctrl.validateIngestionContract
+);
+router.post(
+  '/ingestion/extract/validate',
+  requirePermission('training.write'),
+  uploadDocument.single('document'),
+  ctrl.extractAndValidateDocument
 );
 
 router.get('/media-assets', requirePermission('media.write'), ctrl.listMediaAssets);

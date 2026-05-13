@@ -3,6 +3,9 @@ const db = require('../../config/database');
 const { toSlug } = require('../../lib/slug');
 const { normalizeLessonDocument, validateLessonDocument } = require('../../lib/rich-content');
 const { buildValidationResult } = require('../../lib/training-ingestion-contract');
+const { extractDocxStructured } = require('../../lib/docx-structure-extractor');
+const { extractPdfStructured } = require('../../lib/pdf-structure-extractor');
+const { adaptExtractedBlocksToCanonical } = require('../../lib/ingestion-contract-adapter');
 const { getProvider } = require('../../services/storage');
 const { parsePagination } = require('../../utils/pagination');
 
@@ -156,6 +159,81 @@ exports.validateIngestionContract = async (req, res, next) => {
     });
   } catch (err) {
     return next(err);
+  }
+};
+
+exports.extractAndValidateDocument = async (req, res, next) => {
+  try {
+    if (!req.file) return res.fail('No document uploaded', 'NO_DOCUMENT', 400);
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) {
+      return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    }
+
+    const ext = (req.file.originalname.split('.').pop() || '').toLowerCase();
+    let extracted;
+    let sourceType;
+    if (ext === 'docx') {
+      sourceType = 'docx';
+      extracted = await extractDocxStructured({ buffer: req.file.buffer });
+    } else if (ext === 'pdf') {
+      sourceType = 'pdf';
+      extracted = await extractPdfStructured({ buffer: req.file.buffer });
+    } else {
+      return res.fail('Unsupported document type', 'UNSUPPORTED_DOCUMENT_TYPE', 422);
+    }
+
+    const rawImageFiles = req.body?.imageFiles;
+    let imageFiles = [];
+    if (Array.isArray(rawImageFiles)) imageFiles = rawImageFiles;
+    if (typeof rawImageFiles === 'string' && rawImageFiles.trim()) {
+      try {
+        const parsed = JSON.parse(rawImageFiles);
+        if (Array.isArray(parsed)) imageFiles = parsed;
+      } catch (_error) {
+        return res.fail('imageFiles must be a JSON array', 'INVALID_IMAGE_MANIFEST', 422);
+      }
+    }
+
+    const adapted = adaptExtractedBlocksToCanonical({
+      blocks: extracted.blocks,
+      imageFiles,
+    });
+
+    const persisted = {
+      source_type: sourceType,
+      file_name: req.file.originalname,
+      extracted_block_count: extracted.blocks.length,
+      image_files: imageFiles,
+      normalized_text: adapted.normalizedText,
+      canonical: adapted.canonical,
+      validated_at: new Date().toISOString(),
+    };
+
+    await db.query(
+      `INSERT INTO organisation_settings (id, organisation_id, key, value)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (organisation_id, key)
+       DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [randomUUID(), organisationId, 'layer2_ingestion_extraction_last', persisted]
+    );
+
+    return res.success({
+      extraction: {
+        sourceType,
+        blocks: extracted.blocks,
+        normalizedText: adapted.normalizedText,
+        canonical: adapted.canonical,
+        persisted: true,
+      },
+    });
+  } catch (error) {
+    return res.fail(
+      'Deterministic extraction failed',
+      error.code || 'EXTRACTION_FAILED',
+      422,
+      [{ code: error.code || 'EXTRACTION_FAILED', message: error.message, details: error.details || null }]
+    );
   }
 };
 
