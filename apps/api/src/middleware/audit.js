@@ -1,11 +1,14 @@
 const db = require('../config/database');
 
-function withAudit(action, resourceType) {
+function withAudit(action, resourceType, options = {}) {
   return async (req, _res, next) => {
     req.auditMeta = {
       action,
       resourceType,
       startedAt: Date.now(),
+      metadata: typeof options.metadata === 'function'
+        ? options.metadata(req)
+        : (options.metadata || {}),
     };
     next();
   };
@@ -16,6 +19,7 @@ async function recordAudit(req, statusCode, metadata = {}) {
 
   const payload = {
     ...metadata,
+    ...(req.auditMeta.metadata || {}),
     duration_ms: Date.now() - req.auditMeta.startedAt,
     request_id: req.context?.requestId,
     status_code: statusCode,

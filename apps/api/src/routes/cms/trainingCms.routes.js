@@ -5,6 +5,7 @@ const ctrl = require('../../controllers/cms/trainingCms.controller');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { requirePermission } = require('../../middleware/permissions');
 const { requireTenant } = require('../../middleware/tenant');
+const { withAudit } = require('../../middleware/audit');
 const { validate } = require('../../middleware/validation');
 
 const superAdminOnly = authorize('super_admin');
@@ -15,29 +16,34 @@ router.use(authenticate, superAdminOnly, requireTenant);
 router.get(
   '/trainings',
   requirePermission('training.read'),
+  withAudit('training_list', 'training'),
   validate([
     query('limit').optional().isInt({ min: 1, max: 200 }),
     query('offset').optional().isInt({ min: 0 }),
   ]),
   ctrl.listTrainings
 );
-router.post('/trainings', requirePermission('training.write'), validate([body('title').isString().isLength({ min: 3 })]), ctrl.createTraining);
-router.put('/trainings/:id', requirePermission('training.write'), ctrl.updateTraining);
-router.delete('/trainings/:id', requirePermission('training.write'), ctrl.deleteTraining);
-router.post('/trainings/:id/status', requirePermission('training.write'), ctrl.transitionTrainingStatus);
-router.get('/trainings/:id/preview', requirePermission('training.read'), ctrl.getTrainingPreview);
-router.post('/trainings/:id/preview/load-latest', requirePermission('training.write'), ctrl.loadLatestExtractionToPreview);
+router.post('/trainings', requirePermission('training.write'), withAudit('training_create', 'training'), validate([body('title').isString().isLength({ min: 3 })]), ctrl.createTraining);
+router.put('/trainings/:id', requirePermission('training.write'), withAudit('training_update', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.updateTraining);
+router.delete('/trainings/:id', requirePermission('training.write'), withAudit('training_delete', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.deleteTraining);
+router.post('/trainings/:id/status', requirePermission('training.write'), withAudit('training_status_transition', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.transitionTrainingStatus);
+router.get('/trainings/:id/preview', requirePermission('training.read'), withAudit('training_preview_view', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.getTrainingPreview);
+router.post('/trainings/:id/preview/load-latest', requirePermission('training.write'), withAudit('training_preview_load_latest', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.loadLatestExtractionToPreview);
 router.post(
   '/trainings/:id/approval',
   requirePermission('training.write'),
+  withAudit('training_approval_set', 'training', { metadata: (req) => ({ training_id: req.params.id }) }),
   validate([body('action').isIn(['approved', 'rejected']), body('reason').optional().isString()]),
   ctrl.setTrainingApproval
 );
-router.post('/trainings/:id/publish', requirePermission('training.write'), ctrl.publishTrainingDeterministic);
-router.get('/trainings/:id/published-runtime', requirePermission('training.read'), ctrl.getPublishedTrainingRuntime);
+router.post('/trainings/:id/publish', requirePermission('training.write'), withAudit('training_publish', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.publishTrainingDeterministic);
+router.get('/trainings/:id/published-runtime', requirePermission('training.read'), withAudit('training_published_runtime_view', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.getPublishedTrainingRuntime);
+router.get('/trainings/:id/publish-history', requirePermission('training.read'), withAudit('training_publish_history_view', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.getTrainingPublishHistory);
+router.get('/ingestion/diagnostics', requirePermission('training.read'), withAudit('ingestion_diagnostics_view', 'ingestion'), ctrl.getIngestionDiagnostics);
 router.post(
   '/ingestion/contract/validate',
   requirePermission('training.write'),
+  withAudit('ingestion_contract_validate', 'ingestion'),
   validate([
     body('sourceText').isString().isLength({ min: 1 }),
     body('imageFiles').optional().isArray(),
@@ -48,6 +54,7 @@ router.post(
 router.post(
   '/ingestion/extract/validate',
   requirePermission('training.write'),
+  withAudit('ingestion_extract_validate', 'ingestion'),
   uploadDocument.single('document'),
   ctrl.extractAndValidateDocument
 );

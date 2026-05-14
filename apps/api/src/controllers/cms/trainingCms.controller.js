@@ -31,6 +31,19 @@ async function getOrgSetting({ organisationId, key }) {
   return result.rows[0]?.value || null;
 }
 
+async function appendOrgEvent({ organisationId, event }) {
+  if (!organisationId || !event) return;
+  const key = 'layer3_group1_events';
+  const existing = await getOrgSetting({ organisationId, key });
+  const events = Array.isArray(existing?.events) ? existing.events : [];
+  const next = [event, ...events].slice(0, 200);
+  await upsertOrgSetting({
+    organisationId,
+    key,
+    value: { events: next, updated_at: new Date().toISOString() },
+  });
+}
+
 function buildImageManifest(imageFiles = []) {
   const map = {};
   for (const file of imageFiles) {
@@ -250,6 +263,19 @@ exports.extractAndValidateDocument = async (req, res, next) => {
        DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
       [randomUUID(), organisationId, 'layer2_ingestion_extraction_last', persisted]
     );
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'ingestion.extract.success',
+        at: new Date().toISOString(),
+        actor_id: req.user?.id || null,
+        file_name: req.file.originalname,
+        source_type: sourceType,
+        training_id: req.body?.trainingId || null,
+        extracted_block_count: extracted.blocks.length,
+      },
+    });
 
     return res.success({
       extraction: {
@@ -261,6 +287,19 @@ exports.extractAndValidateDocument = async (req, res, next) => {
       },
     });
   } catch (error) {
+    const organisationId = req.tenant?.organisationId || null;
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'ingestion.extract.failed',
+        at: new Date().toISOString(),
+        actor_id: req.user?.id || null,
+        file_name: req.file?.originalname || null,
+        error_code: error.code || 'EXTRACTION_FAILED',
+        message: error.message,
+      },
+    });
     return res.fail(
       'Deterministic extraction failed',
       error.code || 'EXTRACTION_FAILED',
@@ -314,8 +353,33 @@ exports.loadLatestExtractionToPreview = async (req, res, next) => {
       key: `layer2_publish_workflow_${req.params.id}`,
       value: workflow,
     });
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'preview.load_latest.success',
+        at: new Date().toISOString(),
+        actor_id: req.user?.id || null,
+        training_id: req.params.id,
+        source_type: workflow.source_type,
+        section_count: workflow.canonical?.sections?.length || 0,
+      },
+    });
     return res.success({ preview: workflow });
   } catch (error) {
+    const organisationId = req.tenant?.organisationId || null;
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'preview.load_latest.failed',
+        at: new Date().toISOString(),
+        actor_id: req.user?.id || null,
+        training_id: req.params.id,
+        error_code: error.code || 'PREVIEW_LOAD_FAILED',
+        message: error.message,
+      },
+    });
     return res.fail(
       'Failed to load preview payload',
       error.code || 'PREVIEW_LOAD_FAILED',
@@ -351,6 +415,18 @@ exports.setTrainingApproval = async (req, res, next) => {
       },
     };
     await upsertOrgSetting({ organisationId, key: workflowKey, value: nextWorkflow });
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'preview.approval.changed',
+        at: new Date().toISOString(),
+        actor_id: req.user?.id || null,
+        training_id: req.params.id,
+        action,
+        reason: String(reason || '').trim(),
+      },
+    });
     return res.success({ preview: nextWorkflow });
   } catch (err) {
     return next(err);
@@ -397,6 +473,16 @@ exports.publishTrainingDeterministic = async (req, res, next) => {
       key: `layer2_publish_workflow_${trainingId}`,
       value: { ...workflow, state: 'published', published_at: publishedAt },
     });
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'publish.success',
+        at: publishedAt,
+        actor_id: req.user?.id || null,
+        training_id: trainingId,
+      },
+    });
     await db.query('COMMIT');
     return res.success({ published: true, snapshot });
   } catch (err) {
@@ -415,6 +501,65 @@ exports.getPublishedTrainingRuntime = async (req, res, next) => {
     });
     if (!snapshot) return res.fail('Published snapshot not found', 'PUBLISHED_SNAPSHOT_NOT_FOUND', 404);
     return res.success({ runtime: snapshot });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.getTrainingPublishHistory = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const snapshot = await getOrgSetting({
+      organisationId,
+      key: `layer2_publish_snapshot_${req.params.id}`,
+    });
+    const workflow = await getOrgSetting({
+      organisationId,
+      key: `layer2_publish_workflow_${req.params.id}`,
+    });
+    const eventsState = await getOrgSetting({ organisationId, key: 'layer3_group1_events' });
+    const events = Array.isArray(eventsState?.events) ? eventsState.events : [];
+    const related = events.filter((e) => String(e.training_id || '') === String(req.params.id)).slice(0, 100);
+    return res.success({
+      publish_history: {
+        training_id: req.params.id,
+        published_snapshot: snapshot || null,
+        workflow: workflow || null,
+        events: related,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.getIngestionDiagnostics = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const eventsState = await getOrgSetting({ organisationId, key: 'layer3_group1_events' });
+    const events = Array.isArray(eventsState?.events) ? eventsState.events : [];
+    const extraction = await getOrgSetting({ organisationId, key: 'layer2_ingestion_extraction_last' });
+
+    const latest = events.slice(0, 100);
+    const counters = latest.reduce(
+      (acc, e) => {
+        acc.total += 1;
+        if (String(e.type || '').endsWith('.failed')) acc.failed += 1;
+        if (String(e.type || '').endsWith('.success')) acc.succeeded += 1;
+        return acc;
+      },
+      { total: 0, failed: 0, succeeded: 0 }
+    );
+
+    return res.success({
+      diagnostics: {
+        counters,
+        latest_extraction: extraction || null,
+        events: latest,
+      },
+    });
   } catch (err) {
     return next(err);
   }

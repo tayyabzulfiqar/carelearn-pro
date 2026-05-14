@@ -41,6 +41,16 @@ function hasPermission(user, permission) {
 function requirePermission(permission) {
   return (req, res, next) => {
     if (!hasPermission(req.user, permission)) {
+      req.auditMeta = {
+        action: 'permission_denied',
+        resourceType: 'security',
+        startedAt: Date.now(),
+        metadata: {
+          required_permission: permission,
+          role: req.user?.role || 'anonymous',
+        },
+      };
+      recordAudit(req, 403, { outcome: 'error', code: 'FORBIDDEN' }).catch(() => {});
       return res.status(403).json({
         success: false,
         error: { code: 'FORBIDDEN', message: 'Insufficient permissions' },
@@ -56,3 +66,4 @@ module.exports = {
   hasPermission,
   requirePermission,
 };
+const { recordAudit } = require('./audit');

@@ -12,6 +12,11 @@
     "smoke": "node src/scripts/smoke-api.js",
     "validate:layer2b:auth-e2e": "node src/scripts/layer2b-authenticated-e2e.js",
     "validate:layer2c2g:e2e": "node src/scripts/layer2c2g-deterministic-publish-e2e.js",
+    "validate:layer3e:performance": "node src/scripts/layer3e-performance-concurrency.js",
+    "validate:layer3f:security-audit": "node src/scripts/layer3f-security-audit-hardening.js",
+    "validate:layer3g:freeze": "node src/scripts/layer3g-final-freeze-validation.js",
+    "validate:layer3a:real-workflow": "node src/scripts/layer3a-real-training-workflow-e2e.js",
+    "validate:layer3b:messy-docs": "node src/scripts/layer3b-messy-docs-e2e.js",
     "validate:layer2b": "node src/scripts/validate-extraction-runtime.js",
     "verify:health": "node src/scripts/verify-health.js",
     "verify:workflow": "node src/scripts/workflow-checks.js"

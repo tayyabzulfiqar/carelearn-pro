@@ -35,8 +35,17 @@ export default function TrainingsPage() {
   const [previewError, setPreviewError] = useState('');
   const [previewRow, setPreviewRow] = useState(null);
   const [previewData, setPreviewData] = useState(null);
+  const [diagnostics, setDiagnostics] = useState(null);
+  const [diagBusy, setDiagBusy] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
+
+  const toErrorText = (err, fallback) => {
+    const payload = err?.response?.data || {};
+    const code = payload?.error || payload?.code || '';
+    const message = payload?.message || fallback;
+    return code ? `${message} (${code})` : message;
+  };
 
   const loadRows = useCallback(async () => {
     setLoading(true);
@@ -60,6 +69,22 @@ export default function TrainingsPage() {
   useEffect(() => {
     loadRows();
   }, [loadRows]);
+
+  const loadDiagnostics = useCallback(async () => {
+    setDiagBusy(true);
+    try {
+      const data = await cmsGet('/ingestion/diagnostics');
+      setDiagnostics(data?.diagnostics || null);
+    } catch (_err) {
+      setDiagnostics(null);
+    } finally {
+      setDiagBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDiagnostics();
+  }, [loadDiagnostics]);
 
   const filters = useMemo(() => ([
     {
@@ -113,7 +138,7 @@ export default function TrainingsPage() {
       setOpen(false);
       await loadRows();
     } catch (_err) {
-      setError('Failed to save training.');
+      setError(toErrorText(_err, 'Failed to save training.'));
     } finally {
       setSaving(false);
     }
@@ -125,7 +150,7 @@ export default function TrainingsPage() {
       await cmsDelete(`/trainings/${row.id}`);
       await loadRows();
     } catch (_err) {
-      setError('Failed to delete training.');
+      setError(toErrorText(_err, 'Failed to delete training.'));
     }
   };
 
@@ -153,6 +178,7 @@ export default function TrainingsPage() {
     }
     await cmsPost(`/trainings/${row.id}/publish`, {});
     await loadRows();
+    await loadDiagnostics();
   };
 
   const openPreview = async (row) => {
@@ -170,8 +196,8 @@ export default function TrainingsPage() {
         preview = got?.preview;
       }
       setPreviewData(preview || null);
-    } catch (_err) {
-      setPreviewError('Unable to load deterministic preview payload.');
+    } catch (err) {
+      setPreviewError(toErrorText(err, 'Unable to load deterministic preview payload.'));
       setPreviewData(null);
     } finally {
       setPreviewBusy(false);
@@ -186,8 +212,26 @@ export default function TrainingsPage() {
       const result = await cmsPost(`/trainings/${previewRow.id}/approval`, { action });
       setPreviewData(result?.preview || null);
       await loadRows();
-    } catch (_err) {
-      setPreviewError('Approval action failed.');
+    } catch (err) {
+      setPreviewError(toErrorText(err, 'Approval action failed.'));
+    } finally {
+      setPreviewBusy(false);
+    }
+  };
+
+  const approveAndPublish = async () => {
+    if (!previewRow?.id) return;
+    setPreviewBusy(true);
+    setPreviewError('');
+    try {
+      await cmsPost(`/trainings/${previewRow.id}/approval`, { action: 'approved' });
+      await cmsPost(`/trainings/${previewRow.id}/publish`, {});
+      const refreshed = await cmsGet(`/trainings/${previewRow.id}/preview`);
+      setPreviewData(refreshed?.preview || null);
+      await loadRows();
+      await loadDiagnostics();
+    } catch (err) {
+      setPreviewError(toErrorText(err, 'Approve + publish failed.'));
     } finally {
       setPreviewBusy(false);
     }
@@ -219,6 +263,15 @@ export default function TrainingsPage() {
           Manage healthcare training drafts, publication state, and learner-ready course availability.
         </p>
       </section>
+      <section className="surface-card p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-900">Ingestion Diagnostics</h2>
+          <button type="button" className="btn-secondary" disabled={diagBusy} onClick={loadDiagnostics}>{diagBusy ? 'Refreshing...' : 'Refresh'}</button>
+        </div>
+        <p className="mt-2 text-xs text-slate-600">
+          Success: {diagnostics?.counters?.succeeded || 0} | Failed: {diagnostics?.counters?.failed || 0} | Total: {diagnostics?.counters?.total || 0}
+        </p>
+      </section>
       <AdminFilterBar
         search={search}
         onSearchChange={setSearch}
@@ -244,8 +297,8 @@ export default function TrainingsPage() {
             render: (row) => (
               <div className="flex gap-2">
                 <button type="button" className="btn-secondary" onClick={() => openEdit(row)}>Edit</button>
-                <button type="button" className="btn-secondary" onClick={() => openPreview(row)}>Preview</button>
-                <a className="btn-secondary" href={`/dashboard/courses/${row.id}/player`} target="_blank" rel="noreferrer">Preview</a>
+                <button type="button" className="btn-secondary" onClick={() => openPreview(row)}>Workflow</button>
+                <a className="btn-secondary" href={`/dashboard/courses/${row.id}/player`} target="_blank" rel="noreferrer">Learner View</a>
                 <button type="button" className="btn-secondary" onClick={() => duplicateTraining(row)}>Duplicate</button>
                 <button type="button" className="btn-secondary" onClick={() => togglePublish(row)}>{row.status === 'published' ? 'Unpublish' : 'Publish'}</button>
                 <button type="button" className="btn-secondary" onClick={() => remove(row)}>Delete</button>
@@ -304,6 +357,7 @@ export default function TrainingsPage() {
             <div className="flex gap-2">
               <button type="button" className="btn-secondary" onClick={() => setApproval('approved')}>Approve</button>
               <button type="button" className="btn-secondary" onClick={() => setApproval('rejected')}>Reject</button>
+              <button type="button" className="btn-primary" onClick={approveAndPublish}>Approve + Publish</button>
             </div>
           </div>
         ) : null}
