@@ -62,15 +62,29 @@ export default function CoursePlayerPage() {
         const courseData = courseRes.data.course;
         setCourse(courseData);
 
-        const lessons = [];
-        for (const courseModule of courseData.modules || []) {
-          for (const lesson of courseModule.lessons || []) {
-            if (!lesson?.id) continue;
-            lessons.push({
-              ...lesson,
-              content: parseLessonContent(lesson),
-              module_title: courseModule.title,
-            });
+        let lessons = [];
+        if (courseData?.runtime_snapshot?.render?.lessonBlocks?.length) {
+          lessons = [{
+            id: `published-runtime-${courseId}`,
+            title: courseData.runtime_snapshot?.canonical?.title || courseData.title || 'Published Lesson',
+            module_title: 'Published Runtime',
+            content: {
+              schema_version: 3,
+              title: courseData.runtime_snapshot?.canonical?.title || courseData.title || 'Published Lesson',
+              blocks: courseData.runtime_snapshot.render.lessonBlocks,
+              metadata: { deterministic: true, source: 'published_snapshot' },
+            },
+          }];
+        } else {
+          for (const courseModule of courseData.modules || []) {
+            for (const lesson of courseModule.lessons || []) {
+              if (!lesson?.id) continue;
+              lessons.push({
+                ...lesson,
+                content: parseLessonContent(lesson),
+                module_title: courseModule.title,
+              });
+            }
           }
         }
         setAllLessons(lessons);

@@ -6,8 +6,41 @@ const { buildValidationResult } = require('../../lib/training-ingestion-contract
 const { extractDocxStructured } = require('../../lib/docx-structure-extractor');
 const { extractPdfStructured } = require('../../lib/pdf-structure-extractor');
 const { adaptExtractedBlocksToCanonical } = require('../../lib/ingestion-contract-adapter');
+const { renderCanonicalDeterministic } = require('../../lib/deterministic-render-engine');
 const { getProvider } = require('../../services/storage');
 const { parsePagination } = require('../../utils/pagination');
+
+async function upsertOrgSetting({ organisationId, key, value }) {
+  await db.query(
+    `INSERT INTO organisation_settings (id, organisation_id, key, value)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (organisation_id, key)
+     DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+    [randomUUID(), organisationId, key, value]
+  );
+}
+
+async function getOrgSetting({ organisationId, key }) {
+  const result = await db.query(
+    `SELECT value
+     FROM organisation_settings
+     WHERE organisation_id = $1 AND key = $2
+     LIMIT 1`,
+    [organisationId, key]
+  );
+  return result.rows[0]?.value || null;
+}
+
+function buildImageManifest(imageFiles = []) {
+  const map = {};
+  for (const file of imageFiles) {
+    const str = String(file || '').trim();
+    const base = str.split('/').pop().split('.')[0].toUpperCase();
+    if (!base) continue;
+    map[base] = str.startsWith('/') ? str : `/uploads/${str}`;
+  }
+  return map;
+}
 
 async function replaceCourseLinks({ courseId, categories = [], tags = [] }) {
   await db.query('DELETE FROM training_course_categories WHERE course_id = $1', [courseId]);
@@ -237,6 +270,156 @@ exports.extractAndValidateDocument = async (req, res, next) => {
   }
 };
 
+exports.getTrainingPreview = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const workflowKey = `layer2_publish_workflow_${req.params.id}`;
+    const workflow = await getOrgSetting({ organisationId, key: workflowKey });
+    if (!workflow) return res.fail('No extraction workflow attached to training', 'PREVIEW_NOT_READY', 404);
+    return res.success({ preview: workflow });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.loadLatestExtractionToPreview = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+
+    const extraction = await getOrgSetting({ organisationId, key: 'layer2_ingestion_extraction_last' });
+    if (!extraction?.canonical) {
+      return res.fail('No extracted canonical payload available', 'NO_EXTRACTION_AVAILABLE', 422);
+    }
+
+    const imageManifest = buildImageManifest(extraction.image_files || []);
+    const render = renderCanonicalDeterministic({
+      canonical: extraction.canonical,
+      imageManifest,
+    });
+    const workflow = {
+      training_id: req.params.id,
+      state: 'extracted',
+      extracted_at: extraction.validated_at || new Date().toISOString(),
+      source_type: extraction.source_type || null,
+      canonical: extraction.canonical,
+      image_manifest: imageManifest,
+      render,
+      validation_errors: [],
+      approval: null,
+    };
+    await upsertOrgSetting({
+      organisationId,
+      key: `layer2_publish_workflow_${req.params.id}`,
+      value: workflow,
+    });
+    return res.success({ preview: workflow });
+  } catch (error) {
+    return res.fail(
+      'Failed to load preview payload',
+      error.code || 'PREVIEW_LOAD_FAILED',
+      422,
+      [{ code: error.code || 'PREVIEW_LOAD_FAILED', message: error.message }]
+    );
+  }
+};
+
+exports.setTrainingApproval = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const { action, reason = '' } = req.body;
+    if (!['approved', 'rejected'].includes(action)) {
+      return res.fail('Invalid approval action', 'INVALID_APPROVAL_ACTION', 422);
+    }
+
+    const workflowKey = `layer2_publish_workflow_${req.params.id}`;
+    const workflow = await getOrgSetting({ organisationId, key: workflowKey });
+    if (!workflow?.canonical || !workflow?.render) {
+      return res.fail('Preview must be loaded before approval', 'PREVIEW_NOT_READY', 422);
+    }
+
+    const nextWorkflow = {
+      ...workflow,
+      state: action,
+      approval: {
+        action,
+        reason: String(reason || '').trim(),
+        acted_by: req.user.id,
+        acted_at: new Date().toISOString(),
+      },
+    };
+    await upsertOrgSetting({ organisationId, key: workflowKey, value: nextWorkflow });
+    return res.success({ preview: nextWorkflow });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.publishTrainingDeterministic = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const trainingId = req.params.id;
+    const workflow = await getOrgSetting({
+      organisationId,
+      key: `layer2_publish_workflow_${trainingId}`,
+    });
+    if (!workflow || workflow.state !== 'approved') {
+      return res.fail('Training must be approved before publishing', 'PUBLISH_NOT_APPROVED', 422);
+    }
+
+    const publishedAt = new Date().toISOString();
+    const snapshot = {
+      training_id: trainingId,
+      published_at: publishedAt,
+      published_by: req.user.id,
+      canonical: workflow.canonical,
+      image_manifest: workflow.image_manifest,
+      render: workflow.render,
+      approval: workflow.approval,
+    };
+    await db.query('BEGIN');
+    await db.query(
+      `UPDATE courses
+       SET status = 'published', updated_at = NOW()
+       WHERE id = $1`,
+      [trainingId]
+    );
+    await upsertOrgSetting({
+      organisationId,
+      key: `layer2_publish_snapshot_${trainingId}`,
+      value: snapshot,
+    });
+    await upsertOrgSetting({
+      organisationId,
+      key: `layer2_publish_workflow_${trainingId}`,
+      value: { ...workflow, state: 'published', published_at: publishedAt },
+    });
+    await db.query('COMMIT');
+    return res.success({ published: true, snapshot });
+  } catch (err) {
+    await db.query('ROLLBACK');
+    return next(err);
+  }
+};
+
+exports.getPublishedTrainingRuntime = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const snapshot = await getOrgSetting({
+      organisationId,
+      key: `layer2_publish_snapshot_${req.params.id}`,
+    });
+    if (!snapshot) return res.fail('Published snapshot not found', 'PUBLISHED_SNAPSHOT_NOT_FOUND', 404);
+    return res.success({ runtime: snapshot });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 exports.createTraining = async (req, res, next) => {
   try {
     const {
@@ -383,6 +566,13 @@ exports.transitionTrainingStatus = async (req, res, next) => {
     const { status } = req.body;
     if (!['draft', 'published', 'archived'].includes(status)) {
       return res.fail('Invalid status', 'INVALID_STATUS', 422);
+    }
+    if (status === 'published') {
+      return res.fail(
+        'Use deterministic publish pipeline endpoint for publishing',
+        'PUBLISH_PIPELINE_REQUIRED',
+        422
+      );
     }
 
     const updated = await db.query(

@@ -2,6 +2,30 @@ const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/database');
 const { normalizeLessonContent } = require('../lib/lesson-content');
 
+async function getUserOrganisationId(userId) {
+  const membership = await db.query(
+    `SELECT organisation_id
+     FROM organisation_members
+     WHERE user_id = $1
+     ORDER BY joined_at ASC
+     LIMIT 1`,
+    [userId]
+  );
+  return membership.rows[0]?.organisation_id || null;
+}
+
+async function getPublishedRuntimeSnapshot({ organisationId, courseId }) {
+  if (!organisationId) return null;
+  const row = await db.query(
+    `SELECT value
+     FROM organisation_settings
+     WHERE organisation_id = $1 AND key = $2
+     LIMIT 1`,
+    [organisationId, `layer2_publish_snapshot_${courseId}`]
+  );
+  return row.rows[0]?.value || null;
+}
+
 exports.getAll = async (req, res, next) => {
   try {
     const { category, status = 'published', search } = req.query;
@@ -22,6 +46,11 @@ exports.getById = async (req, res, next) => {
   try {
     const course = await db.query('SELECT * FROM courses WHERE id = $1', [req.params.id]);
     if (!course.rows.length) return res.status(404).json({ error: 'Course not found' });
+    const organisationId = await getUserOrganisationId(req.user?.id);
+    const runtimeSnapshot = await getPublishedRuntimeSnapshot({
+      organisationId,
+      courseId: req.params.id,
+    });
     const modules = await db.query(
       `SELECT m.*, json_agg(l.* ORDER BY l.order_index) FILTER (WHERE l.id IS NOT NULL) as lessons
        FROM modules m LEFT JOIN lessons l ON l.module_id = m.id
@@ -31,6 +60,7 @@ exports.getById = async (req, res, next) => {
     res.json({
       course: {
         ...course.rows[0],
+        runtime_snapshot: runtimeSnapshot,
         modules: modules.rows.map((module) => ({
           ...module,
         lessons: Array.isArray(module.lessons)

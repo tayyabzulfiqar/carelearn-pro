@@ -25,6 +25,16 @@ router.post('/trainings', requirePermission('training.write'), validate([body('t
 router.put('/trainings/:id', requirePermission('training.write'), ctrl.updateTraining);
 router.delete('/trainings/:id', requirePermission('training.write'), ctrl.deleteTraining);
 router.post('/trainings/:id/status', requirePermission('training.write'), ctrl.transitionTrainingStatus);
+router.get('/trainings/:id/preview', requirePermission('training.read'), ctrl.getTrainingPreview);
+router.post('/trainings/:id/preview/load-latest', requirePermission('training.write'), ctrl.loadLatestExtractionToPreview);
+router.post(
+  '/trainings/:id/approval',
+  requirePermission('training.write'),
+  validate([body('action').isIn(['approved', 'rejected']), body('reason').optional().isString()]),
+  ctrl.setTrainingApproval
+);
+router.post('/trainings/:id/publish', requirePermission('training.write'), ctrl.publishTrainingDeterministic);
+router.get('/trainings/:id/published-runtime', requirePermission('training.read'), ctrl.getPublishedTrainingRuntime);
 router.post(
   '/ingestion/contract/validate',
   requirePermission('training.write'),

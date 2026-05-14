@@ -30,6 +30,11 @@ export default function TrainingsPage() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const [previewError, setPreviewError] = useState('');
+  const [previewRow, setPreviewRow] = useState(null);
+  const [previewData, setPreviewData] = useState(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -141,9 +146,51 @@ export default function TrainingsPage() {
   };
 
   const togglePublish = async (row) => {
-    const statusValue = row.status === 'published' ? 'draft' : 'published';
-    await cmsPost(`/trainings/${row.id}/status`, { status: statusValue });
+    if (row.status === 'published') {
+      await cmsPost(`/trainings/${row.id}/status`, { status: 'draft' });
+      await loadRows();
+      return;
+    }
+    await cmsPost(`/trainings/${row.id}/publish`, {});
     await loadRows();
+  };
+
+  const openPreview = async (row) => {
+    setPreviewOpen(true);
+    setPreviewRow(row);
+    setPreviewError('');
+    setPreviewBusy(true);
+    try {
+      let preview;
+      try {
+        const loaded = await cmsPost(`/trainings/${row.id}/preview/load-latest`, {});
+        preview = loaded?.preview;
+      } catch (_err) {
+        const got = await cmsGet(`/trainings/${row.id}/preview`);
+        preview = got?.preview;
+      }
+      setPreviewData(preview || null);
+    } catch (_err) {
+      setPreviewError('Unable to load deterministic preview payload.');
+      setPreviewData(null);
+    } finally {
+      setPreviewBusy(false);
+    }
+  };
+
+  const setApproval = async (action) => {
+    if (!previewRow?.id) return;
+    setPreviewBusy(true);
+    setPreviewError('');
+    try {
+      const result = await cmsPost(`/trainings/${previewRow.id}/approval`, { action });
+      setPreviewData(result?.preview || null);
+      await loadRows();
+    } catch (_err) {
+      setPreviewError('Approval action failed.');
+    } finally {
+      setPreviewBusy(false);
+    }
   };
 
   const paginatedRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -197,6 +244,7 @@ export default function TrainingsPage() {
             render: (row) => (
               <div className="flex gap-2">
                 <button type="button" className="btn-secondary" onClick={() => openEdit(row)}>Edit</button>
+                <button type="button" className="btn-secondary" onClick={() => openPreview(row)}>Preview</button>
                 <a className="btn-secondary" href={`/dashboard/courses/${row.id}/player`} target="_blank" rel="noreferrer">Preview</a>
                 <button type="button" className="btn-secondary" onClick={() => duplicateTraining(row)}>Duplicate</button>
                 <button type="button" className="btn-secondary" onClick={() => togglePublish(row)}>{row.status === 'published' ? 'Unpublish' : 'Publish'}</button>
@@ -240,6 +288,25 @@ export default function TrainingsPage() {
           ) : null}
           <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Training'}</button>
         </form>
+      </AdminModal>
+
+      <AdminModal open={previewOpen} title={previewRow ? `Deterministic Preview: ${previewRow.title}` : 'Deterministic Preview'} onClose={() => setPreviewOpen(false)}>
+        {previewBusy ? <p className="text-sm text-slate-500">Loading preview...</p> : null}
+        {previewError ? <p className="text-sm text-rose-600">{previewError}</p> : null}
+        {!previewBusy && !previewError && previewData ? (
+          <div className="space-y-3 text-sm">
+            <p><span className="font-semibold">State:</span> {previewData.state}</p>
+            <p><span className="font-semibold">Sections:</span> {previewData.canonical?.sections?.length || 0}</p>
+            <p><span className="font-semibold">Images:</span> {Object.keys(previewData.image_manifest || {}).length}</p>
+            <div className="max-h-64 overflow-auto rounded border border-slate-200 bg-slate-50 p-3 font-mono text-xs whitespace-pre-wrap">
+              {previewData.render?.html || ''}
+            </div>
+            <div className="flex gap-2">
+              <button type="button" className="btn-secondary" onClick={() => setApproval('approved')}>Approve</button>
+              <button type="button" className="btn-secondary" onClick={() => setApproval('rejected')}>Reject</button>
+            </div>
+          </div>
+        ) : null}
       </AdminModal>
     </div>
   );
