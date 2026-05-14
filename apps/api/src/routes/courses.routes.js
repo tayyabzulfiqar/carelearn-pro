@@ -4,11 +4,13 @@ const m = require('../controllers/modules.controller');
 const l = require('../controllers/lessons.controller');
 const a = require('../controllers/assessments.controller');
 const { authenticate, authorize } = require('../middleware/auth');
+const { withAudit } = require('../middleware/audit');
 const superAdmin = authorize('super_admin');
 
 router.get('/categories', authenticate, c.getCategories);
 router.get('/', authenticate, c.getAll);
 router.get('/:id', authenticate, c.getById);
+router.get('/:id/smart-runtime', authenticate, withAudit('learner_smart_runtime_view', 'learning', { metadata: (req) => ({ course_id: req.params.id }) }), c.getSmartRuntime);
 router.post('/', authenticate, superAdmin, c.create);
 router.put('/:id', authenticate, superAdmin, c.update);
 router.post('/:id/publish', authenticate, superAdmin, c.publish);

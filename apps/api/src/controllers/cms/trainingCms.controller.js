@@ -7,6 +7,10 @@ const { extractDocxStructured } = require('../../lib/docx-structure-extractor');
 const { extractPdfStructured } = require('../../lib/pdf-structure-extractor');
 const { adaptExtractedBlocksToCanonical } = require('../../lib/ingestion-contract-adapter');
 const { renderCanonicalDeterministic } = require('../../lib/deterministic-render-engine');
+const { buildQuizFromCanonical, scoreQuizAttempt } = require('../../lib/ai-quiz-engine');
+const { buildSummaryFromCanonical } = require('../../lib/ai-summary-engine');
+const { buildNarrationFromCanonical } = require('../../lib/ai-narration-engine');
+const { buildAnalyticsSnapshot, buildComplianceSnapshot } = require('../../lib/layer4-intelligence');
 const { getProvider } = require('../../services/storage');
 const { parsePagination } = require('../../utils/pagination');
 
@@ -42,6 +46,19 @@ async function appendOrgEvent({ organisationId, event }) {
     key,
     value: { events: next, updated_at: new Date().toISOString() },
   });
+}
+
+async function getPublishedSnapshot({ organisationId, trainingId }) {
+  const snapshot = await getOrgSetting({
+    organisationId,
+    key: `layer2_publish_snapshot_${trainingId}`,
+  });
+  if (!snapshot?.canonical) {
+    const error = new Error('Published snapshot not found');
+    error.code = 'PUBLISHED_SNAPSHOT_NOT_FOUND';
+    throw error;
+  }
+  return snapshot;
 }
 
 function buildImageManifest(imageFiles = []) {
@@ -506,6 +523,182 @@ exports.getPublishedTrainingRuntime = async (req, res, next) => {
   }
 };
 
+exports.generateAiQuiz = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const trainingId = req.params.id;
+    const snapshot = await getPublishedSnapshot({ organisationId, trainingId });
+    const quiz = buildQuizFromCanonical({
+      canonical: snapshot.canonical,
+      trainingId,
+      passMark: req.body?.pass_mark || 75,
+    });
+    const value = {
+      ...quiz,
+      source_snapshot_published_at: snapshot.published_at || null,
+      source_snapshot_key: `layer2_publish_snapshot_${trainingId}`,
+      generated_by: req.user?.id || null,
+      history: [],
+    };
+    await upsertOrgSetting({ organisationId, key: `layer4_ai_quiz_${trainingId}`, value });
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'ai.quiz.generated',
+        at: new Date().toISOString(),
+        actor_id: req.user?.id || null,
+        training_id: trainingId,
+        question_count: quiz.questions.length,
+      },
+    });
+    return res.success({ quiz: value });
+  } catch (err) {
+    return res.fail('AI quiz generation failed', err.code || 'AI_QUIZ_GENERATION_FAILED', 422);
+  }
+};
+
+exports.getAiQuiz = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const quiz = await getOrgSetting({ organisationId, key: `layer4_ai_quiz_${req.params.id}` });
+    if (!quiz) return res.fail('AI quiz not found', 'AI_QUIZ_NOT_FOUND', 404);
+    return res.success({ quiz });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.scoreAiQuiz = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const trainingId = req.params.id;
+    const settingKey = `layer4_ai_quiz_${trainingId}`;
+    const quizState = await getOrgSetting({ organisationId, key: settingKey });
+    if (!quizState?.questions?.length) return res.fail('AI quiz not found', 'AI_QUIZ_NOT_FOUND', 404);
+    const attempt = scoreQuizAttempt({ quiz: quizState, answers: req.body?.answers || [] });
+    const attemptRecord = {
+      id: randomUUID(),
+      learner_id: req.body?.learner_id || req.user?.id || null,
+      ...attempt,
+    };
+    const next = {
+      ...quizState,
+      history: [attemptRecord, ...(Array.isArray(quizState.history) ? quizState.history : [])].slice(0, 200),
+      last_attempt: attemptRecord,
+    };
+    await upsertOrgSetting({ organisationId, key: settingKey, value: next });
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'ai.quiz.scored',
+        at: new Date().toISOString(),
+        actor_id: req.user?.id || null,
+        training_id: trainingId,
+        learner_id: attemptRecord.learner_id,
+        score: attemptRecord.score,
+        passed: attemptRecord.passed,
+      },
+    });
+    return res.success({ attempt: attemptRecord, pass_mark: Number(quizState.pass_mark || 75) });
+  } catch (err) {
+    return res.fail('AI quiz scoring failed', err.code || 'AI_QUIZ_SCORING_FAILED', 422);
+  }
+};
+
+exports.generateAiSummary = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const trainingId = req.params.id;
+    const snapshot = await getPublishedSnapshot({ organisationId, trainingId });
+    const summary = buildSummaryFromCanonical({ canonical: snapshot.canonical, trainingId });
+    const value = {
+      ...summary,
+      source_snapshot_published_at: snapshot.published_at || null,
+      source_snapshot_key: `layer2_publish_snapshot_${trainingId}`,
+      generated_by: req.user?.id || null,
+    };
+    await upsertOrgSetting({ organisationId, key: `layer4_ai_summary_${trainingId}`, value });
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'ai.summary.generated',
+        at: new Date().toISOString(),
+        actor_id: req.user?.id || null,
+        training_id: trainingId,
+      },
+    });
+    return res.success({ summary: value });
+  } catch (err) {
+    return res.fail('AI summary generation failed', err.code || 'AI_SUMMARY_GENERATION_FAILED', 422);
+  }
+};
+
+exports.getAiSummary = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const summary = await getOrgSetting({ organisationId, key: `layer4_ai_summary_${req.params.id}` });
+    if (!summary) return res.fail('AI summary not found', 'AI_SUMMARY_NOT_FOUND', 404);
+    return res.success({ summary });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.generateAiNarration = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const trainingId = req.params.id;
+    const snapshot = await getPublishedSnapshot({ organisationId, trainingId });
+    const narration = buildNarrationFromCanonical({
+      canonical: snapshot.canonical,
+      trainingId,
+      language: req.body?.language || 'en-GB',
+    });
+    const value = {
+      ...narration,
+      source_snapshot_published_at: snapshot.published_at || null,
+      source_snapshot_key: `layer2_publish_snapshot_${trainingId}`,
+      generated_by: req.user?.id || null,
+    };
+    await upsertOrgSetting({ organisationId, key: `layer4_ai_narration_${trainingId}`, value });
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'ai.narration.generated',
+        at: new Date().toISOString(),
+        actor_id: req.user?.id || null,
+        training_id: trainingId,
+        language: value.language,
+      },
+    });
+    return res.success({ narration: value });
+  } catch (err) {
+    return res.fail('AI narration generation failed', err.code || 'AI_NARRATION_GENERATION_FAILED', 422);
+  }
+};
+
+exports.getAiNarration = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const narration = await getOrgSetting({ organisationId, key: `layer4_ai_narration_${req.params.id}` });
+    if (!narration) return res.fail('AI narration not found', 'AI_NARRATION_NOT_FOUND', 404);
+    return res.success({ narration });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 exports.getTrainingPublishHistory = async (req, res, next) => {
   try {
     const organisationId = req.tenant?.organisationId || null;
@@ -560,6 +753,188 @@ exports.getIngestionDiagnostics = async (req, res, next) => {
         events: latest,
       },
     });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.generateLayer4Analytics = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+
+    const [courseRows, attemptRows] = await Promise.all([
+      db.query(
+        `SELECT c.id, c.title,
+                COUNT(e.id)::int AS enrolled,
+                COUNT(e.id) FILTER (WHERE e.status = 'completed')::int AS completed
+         FROM courses c
+         LEFT JOIN enrollments e ON e.course_id = c.id AND e.organisation_id = $1
+         GROUP BY c.id, c.title
+         ORDER BY c.title ASC`,
+        [organisationId]
+      ),
+      db.query(
+        `SELECT e.course_id, a.score, a.passed
+         FROM assessment_attempts a
+         JOIN enrollments e ON e.id = a.enrollment_id
+         WHERE e.organisation_id = $1
+           AND a.is_final = true`,
+        [organisationId]
+      ),
+    ]);
+
+    const snapshot = buildAnalyticsSnapshot({
+      nowIso: new Date().toISOString(),
+      courseRows: courseRows.rows,
+      attemptRows: attemptRows.rows,
+    });
+
+    await upsertOrgSetting({
+      organisationId,
+      key: 'layer4e_analytics_snapshot_last',
+      value: snapshot,
+    });
+
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'layer4e.analytics.generated',
+        at: snapshot.generated_at,
+        actor_id: req.user?.id || null,
+        totals: {
+          courses: snapshot.courses.length,
+          difficult_topics: snapshot.difficult_topics.length,
+        },
+      },
+    });
+
+    return res.success({ analytics: snapshot });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.getLayer4Analytics = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const snapshot = await getOrgSetting({ organisationId, key: 'layer4e_analytics_snapshot_last' });
+    if (!snapshot) return res.fail('Layer 4 analytics not found', 'LAYER4_ANALYTICS_NOT_FOUND', 404);
+    return res.success({ analytics: snapshot });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.runLayer4ComplianceAutomation = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+
+    const [dueRows, expiringCertificates] = await Promise.all([
+      db.query(
+        `SELECT e.id AS enrollment_id, e.user_id, e.course_id, e.due_date, e.status
+         FROM enrollments e
+         JOIN courses c ON c.id = e.course_id
+         WHERE e.organisation_id = $1
+           AND c.is_mandatory = true
+           AND e.status IN ('enrolled', 'in_progress', 'overdue')
+           AND e.due_date IS NOT NULL
+           AND e.due_date <= (CURRENT_DATE + INTERVAL '30 days')`,
+        [organisationId]
+      ),
+      db.query(
+        `SELECT cert.id AS certificate_id, cert.user_id, cert.course_id, cert.expires_at
+         FROM certificates cert
+         WHERE cert.organisation_id = $1
+           AND cert.is_valid = true
+           AND cert.expires_at IS NOT NULL
+           AND cert.expires_at <= (NOW() + INTERVAL '45 days')`,
+        [organisationId]
+      ),
+    ]);
+
+    const snapshot = buildComplianceSnapshot({
+      nowIso: new Date().toISOString(),
+      dueRows: dueRows.rows,
+      expiringCertificates: expiringCertificates.rows,
+    });
+
+    await upsertOrgSetting({
+      organisationId,
+      key: 'layer4f_compliance_snapshot_last',
+      value: snapshot,
+    });
+
+    let notificationsCreated = 0;
+    for (const item of snapshot.mandatory_alerts) {
+      await db.query(
+        `INSERT INTO notifications (id, organisation_id, user_id, type, title, body, channel, payload)
+         VALUES ($1, $2, $3, $4, $5, $6, 'in_app', $7)`,
+        [
+          randomUUID(),
+          organisationId,
+          item.user_id,
+          'mandatory_course_alert',
+          'Mandatory training due soon',
+          `Course ${item.course_id} is due by ${item.due_date}.`,
+          item,
+        ]
+      );
+      notificationsCreated += 1;
+    }
+    for (const item of snapshot.renewal_alerts) {
+      await db.query(
+        `INSERT INTO notifications (id, organisation_id, user_id, type, title, body, channel, payload)
+         VALUES ($1, $2, $3, $4, $5, $6, 'in_app', $7)`,
+        [
+          randomUUID(),
+          organisationId,
+          item.user_id,
+          'certificate_expiry_reminder',
+          'Certificate renewal reminder',
+          `Certificate for course ${item.course_id} expires at ${item.expires_at}.`,
+          item,
+        ]
+      );
+      notificationsCreated += 1;
+    }
+
+    await appendOrgEvent({
+      organisationId,
+      event: {
+        id: randomUUID(),
+        type: 'layer4f.compliance.automation_run',
+        at: snapshot.generated_at,
+        actor_id: req.user?.id || null,
+        totals: snapshot.totals,
+      },
+    });
+
+    return res.success({ compliance: snapshot, notifications_created: notificationsCreated });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.getLayer4Compliance = async (req, res, next) => {
+  try {
+    const organisationId = req.tenant?.organisationId || null;
+    if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
+    const snapshot = await getOrgSetting({ organisationId, key: 'layer4f_compliance_snapshot_last' });
+    if (!snapshot) return res.fail('Layer 4 compliance snapshot not found', 'LAYER4_COMPLIANCE_NOT_FOUND', 404);
+    const notifications = await db.query(
+      `SELECT id, user_id, type, title, body, created_at
+       FROM notifications
+       WHERE organisation_id = $1
+         AND type IN ('mandatory_course_alert', 'certificate_expiry_reminder')
+       ORDER BY created_at DESC
+       LIMIT 100`,
+      [organisationId]
+    );
+    return res.success({ compliance: snapshot, notifications: notifications.rows });
   } catch (err) {
     return next(err);
   }

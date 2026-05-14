@@ -38,6 +38,40 @@ router.post(
 );
 router.post('/trainings/:id/publish', requirePermission('training.write'), withAudit('training_publish', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.publishTrainingDeterministic);
 router.get('/trainings/:id/published-runtime', requirePermission('training.read'), withAudit('training_published_runtime_view', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.getPublishedTrainingRuntime);
+router.post(
+  '/trainings/:id/ai/quiz/generate',
+  requirePermission('training.write'),
+  withAudit('training_ai_quiz_generate', 'training', { metadata: (req) => ({ training_id: req.params.id }) }),
+  validate([body('pass_mark').optional().isInt({ min: 1, max: 100 })]),
+  ctrl.generateAiQuiz
+);
+router.get('/trainings/:id/ai/quiz', requirePermission('training.read'), withAudit('training_ai_quiz_view', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.getAiQuiz);
+router.post(
+  '/trainings/:id/ai/quiz/score',
+  requirePermission('training.write'),
+  withAudit('training_ai_quiz_score', 'training', { metadata: (req) => ({ training_id: req.params.id }) }),
+  validate([body('answers').isArray(), body('learner_id').optional().isString()]),
+  ctrl.scoreAiQuiz
+);
+router.post(
+  '/trainings/:id/ai/summary/generate',
+  requirePermission('training.write'),
+  withAudit('training_ai_summary_generate', 'training', { metadata: (req) => ({ training_id: req.params.id }) }),
+  ctrl.generateAiSummary
+);
+router.get('/trainings/:id/ai/summary', requirePermission('training.read'), withAudit('training_ai_summary_view', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.getAiSummary);
+router.post(
+  '/trainings/:id/ai/narration/generate',
+  requirePermission('training.write'),
+  withAudit('training_ai_narration_generate', 'training', { metadata: (req) => ({ training_id: req.params.id }) }),
+  validate([body('language').optional().isString().isLength({ min: 2, max: 16 })]),
+  ctrl.generateAiNarration
+);
+router.get('/trainings/:id/ai/narration', requirePermission('training.read'), withAudit('training_ai_narration_view', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.getAiNarration);
+router.post('/layer4/analytics/generate', requirePermission('analytics.read'), withAudit('layer4_analytics_generate', 'analytics'), ctrl.generateLayer4Analytics);
+router.get('/layer4/analytics', requirePermission('analytics.read'), withAudit('layer4_analytics_view', 'analytics'), ctrl.getLayer4Analytics);
+router.post('/layer4/compliance/run', requirePermission('certificate.write'), withAudit('layer4_compliance_run', 'compliance'), ctrl.runLayer4ComplianceAutomation);
+router.get('/layer4/compliance', requirePermission('certificate.read'), withAudit('layer4_compliance_view', 'compliance'), ctrl.getLayer4Compliance);
 router.get('/trainings/:id/publish-history', requirePermission('training.read'), withAudit('training_publish_history_view', 'training', { metadata: (req) => ({ training_id: req.params.id }) }), ctrl.getTrainingPublishHistory);
 router.get('/ingestion/diagnostics', requirePermission('training.read'), withAudit('ingestion_diagnostics_view', 'ingestion'), ctrl.getIngestionDiagnostics);
 router.post(

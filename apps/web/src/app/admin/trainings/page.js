@@ -36,6 +36,8 @@ export default function TrainingsPage() {
   const [previewRow, setPreviewRow] = useState(null);
   const [previewData, setPreviewData] = useState(null);
   const [diagnostics, setDiagnostics] = useState(null);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiNarration, setAiNarration] = useState(null);
   const [diagBusy, setDiagBusy] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -185,6 +187,8 @@ export default function TrainingsPage() {
     setPreviewOpen(true);
     setPreviewRow(row);
     setPreviewError('');
+    setAiSummary(null);
+    setAiNarration(null);
     setPreviewBusy(true);
     try {
       let preview;
@@ -232,6 +236,34 @@ export default function TrainingsPage() {
       await loadDiagnostics();
     } catch (err) {
       setPreviewError(toErrorText(err, 'Approve + publish failed.'));
+    } finally {
+      setPreviewBusy(false);
+    }
+  };
+
+  const generateAiSummary = async () => {
+    if (!previewRow?.id) return;
+    setPreviewBusy(true);
+    setPreviewError('');
+    try {
+      const generated = await cmsPost(`/trainings/${previewRow.id}/ai/summary/generate`, {});
+      setAiSummary(generated?.summary || generated?.data?.summary || null);
+    } catch (err) {
+      setPreviewError(toErrorText(err, 'Summary generation failed.'));
+    } finally {
+      setPreviewBusy(false);
+    }
+  };
+
+  const generateAiNarration = async () => {
+    if (!previewRow?.id) return;
+    setPreviewBusy(true);
+    setPreviewError('');
+    try {
+      const generated = await cmsPost(`/trainings/${previewRow.id}/ai/narration/generate`, { language: 'en-GB' });
+      setAiNarration(generated?.narration || generated?.data?.narration || null);
+    } catch (err) {
+      setPreviewError(toErrorText(err, 'Narration generation failed.'));
     } finally {
       setPreviewBusy(false);
     }
@@ -358,7 +390,23 @@ export default function TrainingsPage() {
               <button type="button" className="btn-secondary" onClick={() => setApproval('approved')}>Approve</button>
               <button type="button" className="btn-secondary" onClick={() => setApproval('rejected')}>Reject</button>
               <button type="button" className="btn-primary" onClick={approveAndPublish}>Approve + Publish</button>
+              <button type="button" className="btn-secondary" onClick={generateAiSummary}>Generate Summary</button>
+              <button type="button" className="btn-secondary" onClick={generateAiNarration}>Generate Narration</button>
             </div>
+            {aiSummary ? (
+              <div className="rounded border border-slate-200 bg-white p-3">
+                <p className="text-xs font-semibold text-slate-700">AI Summary</p>
+                <p className="mt-1 text-xs text-slate-600 whitespace-pre-wrap">{aiSummary.quick_summary}</p>
+              </div>
+            ) : null}
+            {aiNarration ? (
+              <div className="rounded border border-slate-200 bg-white p-3">
+                <p className="text-xs font-semibold text-slate-700">AI Narration (Section Scripts)</p>
+                <div className="mt-1 max-h-40 overflow-auto text-xs text-slate-600 whitespace-pre-wrap">
+                  {(aiNarration.sections || []).map((s) => `${s.heading}: ${s.script}`).join('\n\n')}
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </AdminModal>

@@ -1,6 +1,7 @@
 const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/database');
 const { normalizeLessonContent } = require('../lib/lesson-content');
+const { buildLearnerSmartRuntime, buildWeakTopicRecommendations } = require('../lib/layer4-intelligence');
 
 async function getUserOrganisationId(userId) {
   const membership = await db.query(
@@ -24,6 +25,16 @@ async function getPublishedRuntimeSnapshot({ organisationId, courseId }) {
     [organisationId, `layer2_publish_snapshot_${courseId}`]
   );
   return row.rows[0]?.value || null;
+}
+
+async function upsertOrgSetting({ organisationId, key, value }) {
+  await db.query(
+    `INSERT INTO organisation_settings (id, organisation_id, key, value)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (organisation_id, key)
+     DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+    [uuidv4(), organisationId, key, value]
+  );
 }
 
 exports.getAll = async (req, res, next) => {
@@ -157,4 +168,94 @@ exports.getCategories = async (req, res, next) => {
     );
     res.json({ categories: result.rows });
   } catch (err) { next(err); }
+};
+
+exports.getSmartRuntime = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    const userId = req.user?.id;
+    const organisationId = req.tenant?.organisationId || await getUserOrganisationId(userId);
+    if (!organisationId) return res.status(400).json({ error: 'Organisation not found' });
+
+    const runtimeSnapshot = await getPublishedRuntimeSnapshot({ organisationId, courseId });
+    if (!runtimeSnapshot?.render?.lessonBlocks) {
+      return res.status(404).json({ error: 'Published runtime snapshot not found' });
+    }
+
+    const enrollment = await db.query(
+      `SELECT id
+       FROM enrollments
+       WHERE user_id = $1 AND course_id = $2
+       LIMIT 1`,
+      [userId, courseId]
+    );
+    const enrollmentId = enrollment.rows[0]?.id || null;
+
+    const [progressRows, latestFinalAttempt, wrongQuestionRows] = await Promise.all([
+      enrollmentId
+        ? db.query(
+          `SELECT lesson_id, completed
+           FROM progress
+           WHERE enrollment_id = $1`,
+          [enrollmentId]
+        )
+        : Promise.resolve({ rows: [] }),
+      enrollmentId
+        ? db.query(
+          `SELECT id, score, passed, attempted_at, answers
+           FROM assessment_attempts
+           WHERE enrollment_id = $1 AND is_final = true
+           ORDER BY attempted_at DESC
+           LIMIT 1`,
+          [enrollmentId]
+        )
+        : Promise.resolve({ rows: [] }),
+      enrollmentId
+        ? db.query(
+          `SELECT qq.question_text
+           FROM assessment_attempts aa
+           JOIN quizzes q ON q.course_id = $1 AND q.quiz_type = 'final' AND q.status = 'published'
+           JOIN quiz_questions qq ON qq.quiz_id = q.id
+           JOIN LATERAL jsonb_array_elements(aa.answers) a ON true
+           WHERE aa.enrollment_id = $2
+             AND aa.is_final = true
+             AND aa.id = (
+               SELECT id FROM assessment_attempts
+               WHERE enrollment_id = $2 AND is_final = true
+               ORDER BY attempted_at DESC
+               LIMIT 1
+             )
+             AND (a->>'question_id') ~* '^[0-9a-f-]{36}$'
+             AND (a->>'question_id')::uuid = qq.id
+             AND COALESCE(a->>'answer', '') <> COALESCE(qq.correct_answer, '')`,
+          [courseId, enrollmentId]
+        )
+        : Promise.resolve({ rows: [] }),
+    ]);
+
+    const weakTopics = buildWeakTopicRecommendations({
+      publishedRuntime: runtimeSnapshot,
+      wrongQuestionRows: wrongQuestionRows.rows,
+    });
+
+    const smartRuntime = buildLearnerSmartRuntime({
+      courseId,
+      userId,
+      progressRows: progressRows.rows,
+      lessonCount: runtimeSnapshot.render.lessonBlocks.filter((b) => b.type === 'heading').length || 1,
+      latestFinalAttempt: latestFinalAttempt.rows[0] || null,
+      weakTopics,
+      generatedAt: new Date().toISOString(),
+    });
+
+    await upsertOrgSetting({
+      organisationId,
+      key: `layer4d_smart_runtime_${courseId}_${userId}`,
+      value: smartRuntime,
+    });
+
+    return res.json({ smart_runtime: smartRuntime });
+  } catch (err) {
+    return next(err);
+  }
 };

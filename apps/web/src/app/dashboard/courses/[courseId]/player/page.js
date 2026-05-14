@@ -45,6 +45,7 @@ export default function CoursePlayerPage() {
   const [certificate, setCertificate] = useState(null);
   const [error, setError] = useState('');
   const [transitioning, setTransitioning] = useState(false);
+  const [smartRuntime, setSmartRuntime] = useState(null);
   const resumeKey = `carelearn-player-resume-${courseId}`;
 
   const allLessonsCompleted = allLessons.length > 0 && allLessons.every((lesson) => completedLessonIds.has(lesson.id));
@@ -61,6 +62,8 @@ export default function CoursePlayerPage() {
         const courseRes = await api.get(`/courses/${courseId}`);
         const courseData = courseRes.data.course;
         setCourse(courseData);
+        const smart = await api.get(`/courses/${courseId}/smart-runtime`).catch(() => ({ data: {} }));
+        setSmartRuntime(smart.data?.smart_runtime || null);
 
         let lessons = [];
         if (courseData?.runtime_snapshot?.render?.lessonBlocks?.length) {
@@ -248,6 +251,14 @@ export default function CoursePlayerPage() {
   if (phase === PHASE.SLIDES) {
     return (
       <div className={`transition-opacity duration-200 ${transitioning ? 'opacity-60' : 'opacity-100'}`}>
+        {smartRuntime ? (
+          <div className="mx-auto mt-4 max-w-5xl rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-slate-700">
+            <p className="font-semibold text-slate-900">Smart Recommendation: {smartRuntime.recommendations?.action || 'resume_lessons'}</p>
+            <p className="mt-1">
+              Completed {smartRuntime.completion?.completed_lessons || 0}/{smartRuntime.completion?.total_lessons || 0} lesson blocks.
+            </p>
+          </div>
+        ) : null}
         <SlideView
           course={course}
           modules={course?.modules || []}
