@@ -33,8 +33,6 @@
     "verify:workflow": "node src/scripts/workflow-checks.js"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.908.0",
-    "@aws-sdk/s3-request-presigner": "^3.908.0",
     "@napi-rs/canvas": "^0.1.100",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

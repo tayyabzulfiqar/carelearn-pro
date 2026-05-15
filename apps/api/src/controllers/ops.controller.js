@@ -325,10 +325,12 @@ exports.runCleanup = async (req, res, next) => {
 
 exports.providerStatus = async (_req, res) => {
   const status = {
-    email_provider: process.env.EMAIL_PROVIDER || 'local_log',
-    email_live_ready: Boolean(process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY),
-    storage_provider: process.env.STORAGE_PROVIDER || 'local',
-    storage_live_ready: Boolean(process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY && process.env.STORAGE_BUCKET),
+    mode: 'vps_only',
+    email_provider: 'local_log',
+    email_live_ready: true,
+    storage_provider: 'local_vps',
+    storage_live_ready: true,
+    external_provider_dependencies: false,
   };
   res.json({ success: true, data: status });
 };

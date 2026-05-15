@@ -116,8 +116,30 @@ async function main() {
   let storageLive = { attempted: false, success: null, reason: 'not_live_ready' };
   if (providers.storage_live_ready) {
     storageLive.attempted = true;
-    storageLive.success = false;
-    storageLive.reason = 'manual-live-upload-required';
+    const form = new FormData();
+    form.append('ref_type', 'upload');
+    form.append('file', new Blob([Buffer.from('layer6-vps-storage-validation')], { type: 'text/plain' }), 'layer6-vps.txt');
+    const uploadRes = await fetch(`${API_BASE}/api/v1/admin/ops/storage/object`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'x-org-id': orgId,
+      },
+      body: form,
+    });
+    const uploadData = await uploadRes.json().catch(() => ({}));
+    if (!uploadRes.ok) {
+      storageLive.success = false;
+      storageLive.reason = `upload_failed_${uploadRes.status}`;
+    } else {
+      const objectKey = uploadData?.data?.objectKey;
+      const integrity = await api('/api/v1/admin/ops/storage/integrity', token, 'GET', null, h);
+      const signed = await api(`/api/v1/admin/ops/storage/signed-url?object_key=${encodeURIComponent(objectKey)}`, token, 'GET', null, h);
+      const found = (integrity.data?.data || []).some((row) => row.object_key === objectKey);
+      storageLive.success = Boolean(objectKey && found && signed.status === 200);
+      storageLive.reason = storageLive.success ? 'local_upload_ok' : 'integrity_or_signed_url_failed';
+      storageLive.object_key = objectKey;
+    }
   }
 
   const metrics = await api('/api/v1/admin/ops/monitoring/metrics', token, 'GET', null, h);
