@@ -279,6 +279,119 @@ const createTables = async () => {
       UNIQUE(organisation_id, key)
     );
 
+    CREATE TABLE IF NOT EXISTS background_jobs (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+      queue_name VARCHAR(80) NOT NULL,
+      job_type VARCHAR(120) NOT NULL,
+      dedup_key VARCHAR(255),
+      payload JSONB NOT NULL DEFAULT '{}',
+      state VARCHAR(30) NOT NULL DEFAULT 'queued' CHECK (state IN ('queued','processing','succeeded','failed','dead_letter','cancelled')),
+      attempts INTEGER NOT NULL DEFAULT 0,
+      max_attempts INTEGER NOT NULL DEFAULT 3,
+      available_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      locked_at TIMESTAMPTZ,
+      locked_by VARCHAR(120),
+      last_error TEXT,
+      result JSONB DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (organisation_id, queue_name, dedup_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS job_executions (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      job_id UUID NOT NULL REFERENCES background_jobs(id) ON DELETE CASCADE,
+      organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+      attempt_number INTEGER NOT NULL,
+      state VARCHAR(30) NOT NULL,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      ended_at TIMESTAMPTZ,
+      duration_ms INTEGER,
+      error TEXT,
+      metadata JSONB DEFAULT '{}'
+    );
+
+    CREATE TABLE IF NOT EXISTS email_deliveries (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      recipient_email VARCHAR(255) NOT NULL,
+      template_key VARCHAR(120) NOT NULL,
+      template_version VARCHAR(40) NOT NULL DEFAULT 'v1',
+      provider VARCHAR(40) NOT NULL DEFAULT 'local_log',
+      dedup_key VARCHAR(255),
+      payload JSONB NOT NULL DEFAULT '{}',
+      status VARCHAR(30) NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','sent','failed','suppressed')),
+      attempts INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT,
+      sent_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (organisation_id, dedup_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS storage_objects (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+      bucket VARCHAR(80) NOT NULL,
+      object_key TEXT NOT NULL,
+      provider VARCHAR(40) NOT NULL,
+      checksum_sha256 VARCHAR(128) NOT NULL,
+      byte_size BIGINT NOT NULL,
+      mime_type VARCHAR(120),
+      ref_type VARCHAR(80) NOT NULL,
+      ref_id UUID,
+      created_by UUID REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(provider, bucket, object_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS scheduler_runs (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      task_key VARCHAR(120) NOT NULL UNIQUE,
+      last_run_at TIMESTAMPTZ,
+      last_status VARCHAR(20) CHECK (last_status IN ('success','failed')),
+      lock_until TIMESTAMPTZ,
+      run_count INTEGER NOT NULL DEFAULT 0,
+      fail_count INTEGER NOT NULL DEFAULT 0,
+      last_duration_ms INTEGER,
+      last_error TEXT,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS monitoring_snapshots (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      snapshot_type VARCHAR(80) NOT NULL,
+      payload JSONB NOT NULL,
+      checksum VARCHAR(128) NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS release_metadata (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      release_tag VARCHAR(120) NOT NULL,
+      commit_hash VARCHAR(64) NOT NULL,
+      env_fingerprint VARCHAR(128) NOT NULL,
+      startup_check_passed BOOLEAN NOT NULL DEFAULT false,
+      created_by UUID REFERENCES users(id),
+      metadata JSONB DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS recovery_artifacts (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      environment VARCHAR(30) NOT NULL CHECK (environment IN ('staging','production')),
+      artifact_type VARCHAR(80) NOT NULL,
+      storage_path TEXT NOT NULL,
+      checksum_sha256 VARCHAR(128) NOT NULL,
+      status VARCHAR(30) NOT NULL DEFAULT 'created' CHECK (status IN ('created','verified','restore_tested','failed')),
+      metadata JSONB DEFAULT '{}',
+      created_by UUID REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      verified_at TIMESTAMPTZ
+    );
+
     CREATE TABLE IF NOT EXISTS analytics_events (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
@@ -410,6 +523,14 @@ const createTables = async () => {
     CREATE INDEX IF NOT EXISTS idx_compliance_snapshots_org_created ON compliance_snapshots(organisation_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_report_exports_org_created ON report_exports(organisation_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_feature_flags_org_key ON feature_flags(organisation_id, key);
+    CREATE INDEX IF NOT EXISTS idx_jobs_queue_state_available ON background_jobs(queue_name, state, available_at);
+    CREATE INDEX IF NOT EXISTS idx_jobs_org_state ON background_jobs(organisation_id, state);
+    CREATE INDEX IF NOT EXISTS idx_job_exec_job ON job_executions(job_id, started_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_email_org_status ON email_deliveries(organisation_id, status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_storage_org_ref ON storage_objects(organisation_id, ref_type, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_monitoring_snapshots_type ON monitoring_snapshots(snapshot_type, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_release_created ON release_metadata(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_recovery_env_created ON recovery_artifacts(environment, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_analytics_events_org_time ON analytics_events(organisation_id, occurred_at DESC);
     CREATE INDEX IF NOT EXISTS idx_courses_slug ON courses(slug);
     CREATE INDEX IF NOT EXISTS idx_modules_course_parent ON modules(course_id, parent_module_id);

@@ -24,6 +24,7 @@
     "validate:layer4d2f:restart": "node src/scripts/layer4d2f-restart-persistence-validation.js",
     "validate:layer5abc": "node src/scripts/layer5abc-validation.js",
     "validate:layer5defg": "node src/scripts/layer5defg-validation.js",
+    "validate:layer6a6g": "node src/scripts/layer6a6g-validation.js",
     "validate:layer2b": "node src/scripts/validate-extraction-runtime.js",
     "verify:health": "node src/scripts/verify-health.js",
     "verify:workflow": "node src/scripts/workflow-checks.js"
