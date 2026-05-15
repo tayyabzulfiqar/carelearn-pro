@@ -47,6 +47,7 @@ const PERMISSIONS = {
     'analytics.read',
   ],
   learner: ['dashboard.read', 'training.read', 'certificate.read'],
+  staff_user: ['dashboard.read', 'training.read', 'certificate.read'],
 };
 
 function getUserPermissions(role) {

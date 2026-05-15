@@ -25,7 +25,7 @@ const createTables = async () => {
       first_name VARCHAR(100) NOT NULL,
       last_name VARCHAR(100) NOT NULL,
       role VARCHAR(50) NOT NULL DEFAULT 'learner'
-        CHECK (role IN ('platform_owner','super_admin','agency_admin','org_admin','trainer','learner')),
+        CHECK (role IN ('platform_owner','super_admin','agency_admin','org_admin','trainer','learner','staff_user')),
       avatar_url TEXT,
       is_active BOOLEAN DEFAULT true,
       last_login_at TIMESTAMPTZ,
@@ -229,6 +229,55 @@ const createTables = async () => {
       payload JSONB DEFAULT '{}',
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+    
+    CREATE TABLE IF NOT EXISTS notification_delivery_state (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+      type VARCHAR(80) NOT NULL,
+      dedup_key VARCHAR(255) NOT NULL,
+      last_sent_at TIMESTAMPTZ NOT NULL,
+      cooldown_until TIMESTAMPTZ NOT NULL,
+      send_count INTEGER NOT NULL DEFAULT 1,
+      payload_hash VARCHAR(128),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(organisation_id, type, dedup_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS compliance_snapshots (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+      snapshot_type VARCHAR(80) NOT NULL DEFAULT 'compliance_dashboard',
+      snapshot JSONB NOT NULL,
+      checksum VARCHAR(128) NOT NULL,
+      created_by UUID REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS report_exports (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+      requested_by UUID REFERENCES users(id),
+      report_type VARCHAR(80) NOT NULL,
+      format VARCHAR(20) NOT NULL CHECK (format IN ('csv', 'pdf')),
+      filters JSONB DEFAULT '{}',
+      row_count INTEGER NOT NULL DEFAULT 0,
+      checksum VARCHAR(128) NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS feature_flags (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+      key VARCHAR(120) NOT NULL,
+      enabled BOOLEAN NOT NULL DEFAULT false,
+      metadata JSONB NOT NULL DEFAULT '{}',
+      updated_by UUID REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(organisation_id, key)
+    );
 
     CREATE TABLE IF NOT EXISTS analytics_events (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -342,7 +391,7 @@ const createTables = async () => {
       DROP CONSTRAINT IF EXISTS users_role_check;
     ALTER TABLE users
       ADD CONSTRAINT users_role_check
-      CHECK (role IN ('platform_owner','super_admin','agency_admin','org_admin','trainer','learner'));
+      CHECK (role IN ('platform_owner','super_admin','agency_admin','org_admin','trainer','learner','staff_user'));
 
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_enrollments_user ON enrollments(user_id);
@@ -357,6 +406,10 @@ const createTables = async () => {
     CREATE INDEX IF NOT EXISTS idx_org_members_org ON organisation_members(organisation_id);
     CREATE INDEX IF NOT EXISTS idx_invites_org_email ON invitations(organisation_id, email);
     CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read);
+    CREATE INDEX IF NOT EXISTS idx_notification_delivery_state_org_type ON notification_delivery_state(organisation_id, type);
+    CREATE INDEX IF NOT EXISTS idx_compliance_snapshots_org_created ON compliance_snapshots(organisation_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_report_exports_org_created ON report_exports(organisation_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_feature_flags_org_key ON feature_flags(organisation_id, key);
     CREATE INDEX IF NOT EXISTS idx_analytics_events_org_time ON analytics_events(organisation_id, occurred_at DESC);
     CREATE INDEX IF NOT EXISTS idx_courses_slug ON courses(slug);
     CREATE INDEX IF NOT EXISTS idx_modules_course_parent ON modules(course_id, parent_module_id);
