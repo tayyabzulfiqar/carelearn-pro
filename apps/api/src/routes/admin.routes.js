@@ -74,6 +74,15 @@ router.post(
 );
 
 router.post(
+  '/platform/agencies/onboard',
+  authenticate,
+  platformOwnerOnly,
+  requirePermission('agency.read'),
+  withAudit('platform_agency_onboard', 'agency'),
+  admin.onboardAgency
+);
+
+router.post(
   '/platform/agencies/:agencyId/status',
   authenticate,
   platformOwnerOnly,

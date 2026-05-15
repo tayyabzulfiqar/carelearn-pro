@@ -29,6 +29,7 @@
     "validate:layer6h": "node src/scripts/layer6h-operational-validation.js",
     "validate:layer6ij": "node src/scripts/layer6ij-final-freeze-validation.js",
     "validate:layer7a": "node src/scripts/layer7a-billing-validation.js",
+    "validate:layer7b": "node src/scripts/layer7b-onboarding-validation.js",
     "validate:layer2b": "node src/scripts/validate-extraction-runtime.js",
     "verify:health": "node src/scripts/verify-health.js",
     "verify:workflow": "node src/scripts/workflow-checks.js"

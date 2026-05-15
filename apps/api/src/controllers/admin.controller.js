@@ -2,6 +2,7 @@ const db = require('../config/database');
 const { getUserPermissions } = require('../middleware/permissions');
 const { randomUUID } = require('crypto');
 const { setSubscriptionState, getSubscriptionState } = require('../middleware/subscription');
+const { createAgencyOnboarding } = require('../services/onboarding');
 
 exports.getDashboardSummary = async (req, res, next) => {
   try {
@@ -233,6 +234,29 @@ exports.getOrganisationSubscription = async (req, res, next) => {
     const subscription = await getSubscriptionState(organisationId);
     return res.success({ subscription });
   } catch (err) {
+    return next(err);
+  }
+};
+
+exports.onboardAgency = async (req, res, next) => {
+  try {
+    const { agency_name, admin_full_name, admin_email, phone = null, notes = null } = req.body || {};
+    if (!agency_name || !admin_full_name || !admin_email) {
+      return res.fail('agency_name, admin_full_name and admin_email are required', 'INVALID_INPUT', 422);
+    }
+    const result = await createAgencyOnboarding({
+      agencyName: agency_name,
+      adminFullName: admin_full_name,
+      adminEmail: admin_email,
+      phone,
+      notes,
+      actorId: req.user.id,
+    });
+    return res.success(result, {}, 201);
+  } catch (err) {
+    if (err.message === 'duplicate_admin_email') {
+      return res.fail('Admin email already exists', 'DUPLICATE_ADMIN_EMAIL', 409);
+    }
     return next(err);
   }
 };
