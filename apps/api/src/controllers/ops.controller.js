@@ -134,6 +134,17 @@ exports.storageIntegrity = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.storageSignedUrl = async (req, res, next) => {
+  try {
+    const { getSignedDownloadUrl } = require('../services/storage');
+    const objectKey = req.query.object_key;
+    if (!objectKey) return res.status(400).json({ error: 'object_key required' });
+    const signed = await getSignedDownloadUrl(objectKey, Number(req.query.expires_in || 900));
+    if (!signed) return res.status(400).json({ error: 'Signed URLs unsupported for current storage provider' });
+    res.json({ success: true, data: { object_key: objectKey, signed_url: signed } });
+  } catch (err) { next(err); }
+};
+
 exports.runScheduler = async (req, res, next) => {
   try {
     const organisationId = orgId(req);
@@ -175,6 +186,41 @@ exports.monitoringSnapshot = async (_req, res, next) => {
     );
     res.json({ success: true, data: payload, checksum });
   } catch (err) { next(err); }
+};
+
+exports.metrics = async (_req, res, next) => {
+  try {
+    const queueLag = await db.query(
+      `SELECT queue_name,
+              COUNT(*) FILTER (WHERE state='queued')::int AS queued,
+              COUNT(*) FILTER (WHERE state='processing')::int AS processing,
+              COALESCE(EXTRACT(EPOCH FROM (NOW() - MIN(created_at) FILTER (WHERE state='queued'))), 0)::int AS lag_seconds
+       FROM background_jobs
+       GROUP BY queue_name
+       ORDER BY queue_name`
+    );
+    const failedJobs = await db.query("SELECT COUNT(*)::int AS count FROM background_jobs WHERE state IN ('failed','dead_letter')");
+    const workers = await db.query(
+      `SELECT worker_id, status, queues, concurrency, processed_count, failed_count, last_seen_at
+       FROM worker_heartbeats
+       WHERE last_seen_at > NOW() - interval '2 minutes'
+       ORDER BY last_seen_at DESC`
+    );
+    res.json({
+      success: true,
+      data: {
+        schema: 'layer6h.metrics.v1',
+        uptime_seconds: Math.floor(process.uptime()),
+        memory: process.memoryUsage(),
+        cpu_usage: process.cpuUsage(),
+        queue_lag: queueLag.rows,
+        failed_jobs_total: failedJobs.rows[0].count,
+        active_workers: workers.rows,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 exports.monitoringHistory = async (_req, res, next) => {
@@ -250,4 +296,18 @@ exports.recoveryHistory = async (req, res, next) => {
     );
     res.json({ success: true, data: rows.rows });
   } catch (err) { next(err); }
+};
+
+exports.workerHealth = async (_req, res, next) => {
+  try {
+    const rows = await db.query(
+      `SELECT worker_id, status, queues, concurrency, processed_count, failed_count, last_seen_at, started_at, metadata
+       FROM worker_heartbeats
+       ORDER BY last_seen_at DESC
+       LIMIT 50`
+    );
+    res.json({ success: true, data: rows.rows });
+  } catch (err) {
+    next(err);
+  }
 };

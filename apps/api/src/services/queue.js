@@ -30,7 +30,10 @@ async function claimNextJob(queueName) {
        SELECT id
        FROM background_jobs
        WHERE queue_name = $1
-         AND state = 'queued'
+         AND (
+           (state = 'queued' AND available_at <= NOW())
+           OR (state = 'processing' AND locked_at < NOW() - interval '5 minutes')
+         )
          AND available_at <= NOW()
        ORDER BY created_at ASC
        LIMIT 1

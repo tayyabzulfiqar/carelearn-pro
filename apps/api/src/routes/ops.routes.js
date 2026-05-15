@@ -22,12 +22,15 @@ router.get('/email/stats', requirePermission('settings.write'), withAudit('layer
 
 router.post('/storage/object', requirePermission('media.write'), withAudit('layer6_storage_save', 'ops'), upload.single('file'), ctrl.storeObject);
 router.get('/storage/integrity', requirePermission('media.write'), withAudit('layer6_storage_integrity', 'ops'), ctrl.storageIntegrity);
+router.get('/storage/signed-url', requirePermission('media.write'), withAudit('layer6_storage_signed_url', 'ops'), ctrl.storageSignedUrl);
 
 router.post('/scheduler/run', requirePermission('settings.write'), withAudit('layer6_scheduler_run', 'ops'), ctrl.runScheduler);
 router.get('/scheduler/history', requirePermission('settings.write'), withAudit('layer6_scheduler_history', 'ops'), ctrl.schedulerHistory);
 
 router.post('/monitoring/snapshot', requirePermission('settings.write'), withAudit('layer6_monitoring_snapshot', 'ops'), ctrl.monitoringSnapshot);
 router.get('/monitoring/history', requirePermission('settings.write'), withAudit('layer6_monitoring_history', 'ops'), ctrl.monitoringHistory);
+router.get('/monitoring/metrics', requirePermission('settings.write'), withAudit('layer6_monitoring_metrics', 'ops'), ctrl.metrics);
+router.get('/worker/health', requirePermission('settings.write'), withAudit('layer6_worker_health', 'ops'), ctrl.workerHealth);
 
 router.post('/release/register', requirePermission('settings.write'), withAudit('layer6_release_register', 'ops'),
   validate([body('release_tag').isString().isLength({ min: 2, max: 120 }), body('commit_hash').isString().isLength({ min: 6, max: 64 })]), ctrl.releaseRegister);

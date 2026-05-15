@@ -6,6 +6,10 @@ const db = require('../config/database');
 const UPLOADS_DIR = path.join(__dirname, '../../uploads/media');
 const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local';
 const STORAGE_BUCKET = process.env.STORAGE_BUCKET || 'carelearn';
+const S3_REGION = process.env.S3_REGION || 'auto';
+const S3_ENDPOINT = process.env.S3_ENDPOINT || undefined;
+const S3_ACCESS_KEY_ID = process.env.S3_ACCESS_KEY_ID || '';
+const S3_SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY || '';
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -26,12 +30,32 @@ const localProvider = {
 };
 
 const s3CompatibleProvider = {
-  async save(_buffer, objectKey, mimeType) {
+  async save(buffer, objectKey, mimeType) {
+    if (!S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY || !STORAGE_BUCKET) {
+      throw new Error('S3 credentials/bucket missing');
+    }
+    const { S3Client, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
+    const client = new S3Client({
+      region: S3_REGION,
+      endpoint: S3_ENDPOINT,
+      forcePathStyle: Boolean(S3_ENDPOINT),
+      credentials: { accessKeyId: S3_ACCESS_KEY_ID, secretAccessKey: S3_SECRET_ACCESS_KEY },
+    });
+    await client.send(new PutObjectCommand({
+      Bucket: STORAGE_BUCKET,
+      Key: objectKey,
+      Body: buffer,
+      ContentType: mimeType || 'application/octet-stream',
+      ChecksumSHA256: createHash('sha256').update(buffer).digest('base64'),
+    }));
+    const head = await client.send(new HeadObjectCommand({ Bucket: STORAGE_BUCKET, Key: objectKey }));
     return {
       objectKey,
       publicPath: `/storage/${objectKey}`,
       mimeType: mimeType || 'application/octet-stream',
-      pending_remote_sync: true,
+      remote_etag: head.ETag || null,
+      remote_checksum_sha256: head.ChecksumSHA256 || null,
+      remote_content_length: head.ContentLength || null,
     };
   },
 };
@@ -65,4 +89,17 @@ async function saveObject({ organisationId = null, refType, refId = null, buffer
   return { ...saved, objectKey, checksum, byteSize, provider: STORAGE_PROVIDER, bucket: STORAGE_BUCKET };
 }
 
-module.exports = { getProvider, saveObject, sha256, deterministicObjectKey };
+async function getSignedDownloadUrl(objectKey, expiresInSeconds = 900) {
+  if (!['s3', 'r2', 'minio'].includes(STORAGE_PROVIDER)) return null;
+  const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+  const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+  const client = new S3Client({
+    region: S3_REGION,
+    endpoint: S3_ENDPOINT,
+    forcePathStyle: Boolean(S3_ENDPOINT),
+    credentials: { accessKeyId: S3_ACCESS_KEY_ID, secretAccessKey: S3_SECRET_ACCESS_KEY },
+  });
+  return getSignedUrl(client, new GetObjectCommand({ Bucket: STORAGE_BUCKET, Key: objectKey }), { expiresIn: expiresInSeconds });
+}
+
+module.exports = { getProvider, saveObject, sha256, deterministicObjectKey, getSignedDownloadUrl };

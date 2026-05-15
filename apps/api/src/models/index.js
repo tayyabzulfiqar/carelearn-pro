@@ -392,6 +392,19 @@ const createTables = async () => {
       verified_at TIMESTAMPTZ
     );
 
+    CREATE TABLE IF NOT EXISTS worker_heartbeats (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      worker_id VARCHAR(160) NOT NULL UNIQUE,
+      status VARCHAR(30) NOT NULL DEFAULT 'starting' CHECK (status IN ('starting','healthy','degraded','stopped')),
+      queues TEXT[] NOT NULL DEFAULT '{}',
+      concurrency INTEGER NOT NULL DEFAULT 1,
+      processed_count BIGINT NOT NULL DEFAULT 0,
+      failed_count BIGINT NOT NULL DEFAULT 0,
+      last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      metadata JSONB NOT NULL DEFAULT '{}'
+    );
+
     CREATE TABLE IF NOT EXISTS analytics_events (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
@@ -531,6 +544,7 @@ const createTables = async () => {
     CREATE INDEX IF NOT EXISTS idx_monitoring_snapshots_type ON monitoring_snapshots(snapshot_type, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_release_created ON release_metadata(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_recovery_env_created ON recovery_artifacts(environment, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_worker_heartbeats_seen ON worker_heartbeats(last_seen_at DESC);
     CREATE INDEX IF NOT EXISTS idx_analytics_events_org_time ON analytics_events(organisation_id, occurred_at DESC);
     CREATE INDEX IF NOT EXISTS idx_courses_slug ON courses(slug);
     CREATE INDEX IF NOT EXISTS idx_modules_course_parent ON modules(course_id, parent_module_id);

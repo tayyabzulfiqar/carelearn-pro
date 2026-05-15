@@ -3,6 +3,8 @@ const db = require('../config/database');
 const { enqueueJob } = require('./queue');
 
 const EMAIL_PROVIDER = process.env.EMAIL_PROVIDER || 'local_log';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'no-reply@carelearn.local';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 
 const templates = {
   welcome_email: ({ first_name }) => ({ subject: 'Welcome to CareLearn', text: `Welcome ${first_name || 'Learner'} to CareLearn.` }),
@@ -65,13 +67,36 @@ async function sendQueuedEmail(emailDeliveryId) {
   if (email.status === 'sent' || email.status === 'suppressed') return { skipped: true };
   try {
     const nextAttempts = Number(email.attempts || 0) + 1;
+    let providerResponse = { provider: EMAIL_PROVIDER, mode: 'simulated' };
+    if (EMAIL_PROVIDER === 'resend') {
+      if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY missing');
+      const rendered = buildTemplate(email.template_key, email.payload || {});
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: EMAIL_FROM,
+          to: [email.recipient_email],
+          subject: rendered.subject,
+          text: rendered.text,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(`resend_send_failed:${response.status}:${data?.message || 'unknown'}`);
+      }
+      providerResponse = { provider: 'resend', response: data };
+    }
     await db.query(
       `UPDATE email_deliveries
-       SET status='sent', attempts=$2, sent_at=NOW(), updated_at=NOW()
+       SET status='sent', attempts=$2, sent_at=NOW(), updated_at=NOW(), payload = payload || $3::jsonb
        WHERE id=$1`,
-      [email.id, nextAttempts]
+      [email.id, nextAttempts, { provider_response: providerResponse }]
     );
-    return { sent: true, provider: EMAIL_PROVIDER };
+    return { sent: true, provider: EMAIL_PROVIDER, provider_response: providerResponse };
   } catch (err) {
     await db.query(
       `UPDATE email_deliveries
