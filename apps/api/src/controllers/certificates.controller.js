@@ -4,6 +4,7 @@ const path = require('node:path');
 const db = require('../config/database');
 const { CERTIFICATE_ROOT, generateCertificateImage } = require('../lib/certificate-image');
 const { isGlobalRole } = require('../middleware/tenantAccess');
+const { recordCertificateUsage } = require('../services/billing');
 
 async function getUserProfile(userId) {
   const userResult = await db.query(
@@ -107,6 +108,7 @@ exports.issue = async (req, res, next) => {
         'UPDATE certificates SET pdf_url = $1 WHERE id = $2 RETURNING *',
         [image.publicUrl, existing.rows[0].id]
       );
+      await recordCertificateUsage(updated.rows[0]);
       return res.status(200).json({
         certificate: await withTemplate({ ...updated.rows[0], course_title: courseTitle }),
         certificate_url: image.publicUrl,
@@ -124,6 +126,7 @@ exports.issue = async (req, res, next) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
       [id, enrollment_id, user_id, course_id, scopedOrgId, certNumber, verificationToken, image.publicUrl, expiresAt]
     );
+    await recordCertificateUsage(result.rows[0]);
     await db.query(
       `UPDATE enrollments SET status='completed', completed_at=NOW() WHERE id=$1`,
       [enrollment_id]

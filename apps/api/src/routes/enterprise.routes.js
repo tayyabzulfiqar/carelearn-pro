@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { body, query } = require('express-validator');
 const ctrl = require('../controllers/enterprise.controller');
+const billing = require('../controllers/billing.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 const { requireTenant } = require('../middleware/tenant');
 const { requirePermission } = require('../middleware/permissions');
@@ -80,6 +81,67 @@ router.post(
   requireTenantScope({ orgResolver: (req) => req.body.organisation_id || req.tenant?.organisationId || null }),
   validate([body('course_id').isUUID(), body('user_ids').isArray({ min: 1, max: 200 })]),
   ctrl.bulkEnrollSafe
+);
+
+const platformOnly = authorize('platform_owner', 'super_admin');
+const agencyOrPlatform = authorize('platform_owner', 'super_admin', 'agency_admin', 'org_admin');
+
+router.post(
+  '/billing/platform/generate-monthly',
+  platformOnly,
+  requirePermission('settings.write'),
+  withAudit('layer7a_billing_generate_monthly', 'billing'),
+  billing.generateMonthlyInvoices
+);
+router.get(
+  '/billing/platform/invoices',
+  platformOnly,
+  requirePermission('report.read'),
+  withAudit('layer7a_billing_platform_invoices', 'billing'),
+  billing.listPlatformInvoices
+);
+router.get(
+  '/billing/platform/dashboard',
+  platformOnly,
+  requirePermission('report.read'),
+  withAudit('layer7a_billing_platform_dashboard', 'billing'),
+  billing.platformBillingDashboard
+);
+router.post(
+  '/billing/platform/invoices/:invoiceId/mark-paid',
+  platformOnly,
+  requirePermission('settings.write'),
+  withAudit('layer7a_billing_invoice_mark_paid', 'billing'),
+  billing.markInvoicePaid
+);
+router.post(
+  '/billing/platform/organisations/:organisationId/subscription-state',
+  platformOnly,
+  requirePermission('settings.write'),
+  withAudit('layer7a_billing_subscription_state_set', 'billing'),
+  billing.setAgencySubscriptionState
+);
+
+router.get(
+  '/billing/agency/dashboard',
+  agencyOrPlatform,
+  requirePermission('report.read'),
+  withAudit('layer7a_billing_agency_dashboard', 'billing'),
+  billing.getAgencyBillingDashboard
+);
+router.post(
+  '/billing/agency/invoices/generate',
+  agencyOrPlatform,
+  requirePermission('report.read'),
+  withAudit('layer7a_billing_agency_generate_invoice', 'billing'),
+  billing.generateAgencyInvoice
+);
+router.get(
+  '/billing/agency/invoices/:invoiceId',
+  agencyOrPlatform,
+  requirePermission('report.read'),
+  withAudit('layer7a_billing_invoice_view', 'billing'),
+  billing.getInvoiceById
 );
 
 module.exports = router;

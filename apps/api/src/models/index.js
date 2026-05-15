@@ -405,6 +405,37 @@ const createTables = async () => {
       metadata JSONB NOT NULL DEFAULT '{}'
     );
 
+    CREATE TABLE IF NOT EXISTS billing_certificate_usage (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+      certificate_id UUID NOT NULL REFERENCES certificates(id) ON DELETE CASCADE,
+      billing_month DATE NOT NULL,
+      unit_price NUMERIC(10,2) NOT NULL DEFAULT 5.00,
+      amount NUMERIC(10,2) NOT NULL DEFAULT 5.00,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(certificate_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS billing_invoices (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      organisation_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+      agency_id UUID REFERENCES agencies(id) ON DELETE SET NULL,
+      invoice_number VARCHAR(80) UNIQUE NOT NULL,
+      billing_month DATE NOT NULL,
+      base_monthly_price NUMERIC(10,2) NOT NULL DEFAULT 30.00,
+      certificate_count INTEGER NOT NULL DEFAULT 0,
+      certificate_amount NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+      total_amount NUMERIC(10,2) NOT NULL DEFAULT 30.00,
+      payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid' CHECK (payment_status IN ('paid','unpaid','cancelled')),
+      issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      due_at TIMESTAMPTZ,
+      paid_at TIMESTAMPTZ,
+      metadata JSONB DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (organisation_id, billing_month)
+    );
+
     CREATE TABLE IF NOT EXISTS analytics_events (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
@@ -545,6 +576,8 @@ const createTables = async () => {
     CREATE INDEX IF NOT EXISTS idx_release_created ON release_metadata(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_recovery_env_created ON recovery_artifacts(environment, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_worker_heartbeats_seen ON worker_heartbeats(last_seen_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_billing_usage_org_month ON billing_certificate_usage(organisation_id, billing_month);
+    CREATE INDEX IF NOT EXISTS idx_billing_invoices_org_month ON billing_invoices(organisation_id, billing_month DESC);
     CREATE INDEX IF NOT EXISTS idx_analytics_events_org_time ON analytics_events(organisation_id, occurred_at DESC);
     CREATE INDEX IF NOT EXISTS idx_courses_slug ON courses(slug);
     CREATE INDEX IF NOT EXISTS idx_modules_course_parent ON modules(course_id, parent_module_id);

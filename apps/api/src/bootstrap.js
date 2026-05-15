@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const { randomUUID: uuidv4 } = require('crypto');
 const db = require('./config/database');
 const { createTables } = require('./models');
+const { seedDemoBillingData } = require('./services/billing');
 
 let bootstrapPromise;
 
@@ -51,7 +52,10 @@ function bootstrapDatabase() {
   if (!bootstrapPromise) {
     bootstrapPromise = createTables()
       .then(() => ensureSuperAdminFromEnv())
-      .then(() => ensurePlatformOwnerFromEnv());
+      .then(() => ensurePlatformOwnerFromEnv())
+      .then(() => seedDemoBillingData().catch((err) => {
+        console.error('Bootstrap demo billing seed warning', err.message);
+      }));
   }
   return bootstrapPromise;
 }
