@@ -117,6 +117,12 @@ services:
       WORKER_POLL_MS: 2000
     volumes:
       - api_uploads:/app/apps/api/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('./apps/api/src/config/database').query('SELECT 1').then(()=>process.exit(0)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy
