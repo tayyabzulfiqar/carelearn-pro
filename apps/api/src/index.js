@@ -29,8 +29,7 @@ const { CERTIFICATE_ROOT } = require('./lib/certificate-image');
 const app = express();
 const allowedOrigins = [
   process.env.CORS_ORIGIN,
-  'https://carelearn-pro-web.vercel.app',
-  'https://carelearn-pro-web-tayyab12.vercel.app',
+  ...(process.env.CORS_EXTRA_ORIGINS ? process.env.CORS_EXTRA_ORIGINS.split(',').map(s => s.trim()).filter(Boolean) : []),
 ].filter(Boolean);
 
 const databaseReady = bootstrapDatabase().catch((err) => {

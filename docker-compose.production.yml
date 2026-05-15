@@ -99,6 +99,30 @@ services:
     networks:
       - app_net
 
+  worker:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    image: carelearn-api:latest
+    container_name: carelearn-worker
+    restart: always
+    command: ["node", "apps/api/src/worker.js"]
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      WORKER_QUEUES: email_delivery,notifications,compliance,subscriptions,reports,exports,certificates
+      WORKER_CONCURRENCY: 2
+      WORKER_POLL_MS: 2000
+    volumes:
+      - api_uploads:/app/apps/api/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_net
+
   certbot:
     image: certbot/certbot:latest
     container_name: carelearn-certbot
