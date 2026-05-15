@@ -5,7 +5,7 @@ const { enqueueJob } = require('../services/queue');
 const { processSingleJob } = require('../services/worker');
 const { queueEmail } = require('../services/email');
 const { saveObject, sha256 } = require('../services/storage');
-const { withSchedulerLock, runAutomationSweep } = require('../services/scheduler');
+const { withSchedulerLock, runAutomationSweep, runCleanupSweep } = require('../services/scheduler');
 
 function orgId(req) {
   return req.scopedOrganisationId || req.tenant?.organisationId || req.headers['x-org-id'] || null;
@@ -203,7 +203,8 @@ exports.metrics = async (_req, res, next) => {
     const workers = await db.query(
       `SELECT worker_id, status, queues, concurrency, processed_count, failed_count, last_seen_at
        FROM worker_heartbeats
-       WHERE last_seen_at > NOW() - interval '2 minutes'
+       WHERE status = 'healthy'
+         AND last_seen_at > NOW() - interval '2 minutes'
        ORDER BY last_seen_at DESC`
     );
     res.json({
@@ -310,4 +311,24 @@ exports.workerHealth = async (_req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+exports.runCleanup = async (req, res, next) => {
+  try {
+    const taskKey = req.body.task_key || 'layer6_cleanup';
+    const result = await withSchedulerLock(taskKey, 300, async () => runCleanupSweep());
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.providerStatus = async (_req, res) => {
+  const status = {
+    email_provider: process.env.EMAIL_PROVIDER || 'local_log',
+    email_live_ready: Boolean(process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY),
+    storage_provider: process.env.STORAGE_PROVIDER || 'local',
+    storage_live_ready: Boolean(process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY && process.env.STORAGE_BUCKET),
+  };
+  res.json({ success: true, data: status });
 };

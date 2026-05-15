@@ -49,6 +49,25 @@ async function claimNextJob(queueName) {
   return claimed.rows[0] || null;
 }
 
+async function reclaimStaleProcessingJobs(staleMinutes = 5, limit = 200) {
+  const result = await db.query(
+    `UPDATE background_jobs
+     SET state='queued', locked_at=NULL, locked_by=NULL, updated_at=NOW()
+     WHERE id IN (
+       SELECT id
+       FROM background_jobs
+       WHERE state='processing'
+         AND locked_at < NOW() - ($1 || ' minutes')::interval
+       ORDER BY locked_at ASC
+       LIMIT $2
+       FOR UPDATE SKIP LOCKED
+     )
+     RETURNING id`,
+    [String(staleMinutes), limit]
+  );
+  return result.rows.length;
+}
+
 async function completeJob(jobId, resultPayload = {}) {
   await db.query(
     `UPDATE background_jobs
@@ -92,4 +111,5 @@ module.exports = {
   completeJob,
   failJob,
   recordExecution,
+  reclaimStaleProcessingJobs,
 };

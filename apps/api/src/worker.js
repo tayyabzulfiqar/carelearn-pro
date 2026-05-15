@@ -1,6 +1,7 @@
 const { randomUUID } = require('crypto');
 const db = require('./config/database');
 const { processSingleJob } = require('./services/worker');
+const { reclaimStaleProcessingJobs } = require('./services/queue');
 
 const QUEUES = (process.env.WORKER_QUEUES || 'email_delivery,notifications,compliance,subscriptions,reports,exports,certificates')
   .split(',')
@@ -14,6 +15,8 @@ const workerId = process.env.WORKER_ID || `worker-${process.pid}-${randomUUID().
 let stopping = false;
 let processedCount = 0;
 let failedCount = 0;
+const lockKey = Number(process.env.WORKER_LEADER_LOCK_KEY || 6420601);
+let hasLeaderLock = false;
 
 async function upsertHeartbeat(status = 'healthy') {
   await db.query(
@@ -34,7 +37,14 @@ async function upsertHeartbeat(status = 'healthy') {
 
 async function processLoop(slot) {
   while (!stopping) {
+    if (!hasLeaderLock) {
+      await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+      continue;
+    }
     let didWork = false;
+    if (slot === 0) {
+      await reclaimStaleProcessingJobs(5, 50);
+    }
     for (const queueName of QUEUES) {
       const result = await processSingleJob(queueName);
       if (result.processed) {
@@ -51,6 +61,13 @@ async function processLoop(slot) {
 
 async function start() {
   console.log(`Worker starting: ${workerId} queues=${QUEUES.join(',')} concurrency=${CONCURRENCY}`);
+  const lock = await db.query('SELECT pg_try_advisory_lock($1) AS acquired', [lockKey]);
+  hasLeaderLock = Boolean(lock.rows[0]?.acquired);
+  if (!hasLeaderLock) {
+    console.error(`Worker ${workerId} could not acquire leader lock ${lockKey}, exiting to prevent duplicate leaders.`);
+    await upsertHeartbeat('degraded');
+    process.exit(1);
+  }
   await upsertHeartbeat('starting');
   const hbTimer = setInterval(() => {
     upsertHeartbeat('healthy').catch((err) => {
@@ -71,6 +88,10 @@ async function shutdown(signal) {
   stopping = true;
   console.log(`Worker shutdown requested by ${signal}`);
   try {
+    if (hasLeaderLock) {
+      await db.query('SELECT pg_advisory_unlock($1)', [lockKey]).catch(() => {});
+      hasLeaderLock = false;
+    }
     await upsertHeartbeat('stopped');
   } finally {
     process.exit(0);

@@ -31,6 +31,8 @@ router.post('/monitoring/snapshot', requirePermission('settings.write'), withAud
 router.get('/monitoring/history', requirePermission('settings.write'), withAudit('layer6_monitoring_history', 'ops'), ctrl.monitoringHistory);
 router.get('/monitoring/metrics', requirePermission('settings.write'), withAudit('layer6_monitoring_metrics', 'ops'), ctrl.metrics);
 router.get('/worker/health', requirePermission('settings.write'), withAudit('layer6_worker_health', 'ops'), ctrl.workerHealth);
+router.post('/cleanup/run', requirePermission('settings.write'), withAudit('layer6_cleanup_run', 'ops'), ctrl.runCleanup);
+router.get('/providers/status', requirePermission('settings.write'), withAudit('layer6_provider_status', 'ops'), ctrl.providerStatus);
 
 router.post('/release/register', requirePermission('settings.write'), withAudit('layer6_release_register', 'ops'),
   validate([body('release_tag').isString().isLength({ min: 2, max: 120 }), body('commit_hash').isString().isLength({ min: 6, max: 64 })]), ctrl.releaseRegister);

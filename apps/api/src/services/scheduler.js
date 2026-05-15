@@ -1,5 +1,6 @@
 const db = require('../config/database');
-const { enqueueJob } = require('./queue');
+const { enqueueJob, reclaimStaleProcessingJobs } = require('./queue');
+const { runCleanup } = require('./cleanup');
 
 async function withSchedulerLock(taskKey, lockSeconds, runner) {
   const lock = await db.query(
@@ -57,7 +58,18 @@ async function runAutomationSweep(organisationId) {
       maxAttempts: 3,
     });
   }
+  await reclaimStaleProcessingJobs(5, 200);
   return { queued: jobs.length };
 }
 
-module.exports = { withSchedulerLock, runAutomationSweep };
+async function runCleanupSweep() {
+  return runCleanup({
+    staleMinutes: Number(process.env.CLEANUP_STALE_MINUTES || 30),
+    deadLetterDays: Number(process.env.CLEANUP_DEAD_LETTER_DAYS || 30),
+    monitoringDays: Number(process.env.CLEANUP_MONITORING_DAYS || 14),
+    workerHeartbeatMinutes: Number(process.env.CLEANUP_HEARTBEAT_MINUTES || 60),
+    releaseDays: Number(process.env.CLEANUP_RELEASE_DAYS || 120),
+  });
+}
+
+module.exports = { withSchedulerLock, runAutomationSweep, runCleanupSweep };
