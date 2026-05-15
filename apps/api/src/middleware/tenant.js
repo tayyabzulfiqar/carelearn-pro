@@ -44,7 +44,7 @@ async function attachTenant(req, _res, next) {
 }
 
 async function requireTenant(req, res, next) {
-  if (req.tenant?.organisationId || req.user?.role === 'super_admin') return next();
+  if (req.tenant?.organisationId || ['super_admin', 'platform_owner'].includes(req.user?.role)) return next();
 
   try {
     // Allow first-run environments with no organisations to operate in global mode.

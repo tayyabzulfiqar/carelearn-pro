@@ -22,6 +22,7 @@
     "validate:layer4e:analytics": "node src/scripts/layer4e-analytics-recommendations-validation.js",
     "validate:layer4f:compliance": "node src/scripts/layer4f-compliance-automation-validation.js",
     "validate:layer4d2f:restart": "node src/scripts/layer4d2f-restart-persistence-validation.js",
+    "validate:layer5abc": "node src/scripts/layer5abc-validation.js",
     "validate:layer2b": "node src/scripts/validate-extraction-runtime.js",
     "verify:health": "node src/scripts/verify-health.js",
     "verify:workflow": "node src/scripts/workflow-checks.js"

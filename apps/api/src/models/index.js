@@ -25,7 +25,7 @@ const createTables = async () => {
       first_name VARCHAR(100) NOT NULL,
       last_name VARCHAR(100) NOT NULL,
       role VARCHAR(50) NOT NULL DEFAULT 'learner'
-        CHECK (role IN ('super_admin','org_admin','trainer','learner')),
+        CHECK (role IN ('platform_owner','super_admin','agency_admin','org_admin','trainer','learner')),
       avatar_url TEXT,
       is_active BOOLEAN DEFAULT true,
       last_login_at TIMESTAMPTZ,
@@ -337,6 +337,12 @@ const createTables = async () => {
 
     ALTER TABLE certificates
       ADD COLUMN IF NOT EXISTS verification_token VARCHAR(120);
+
+    ALTER TABLE users
+      DROP CONSTRAINT IF EXISTS users_role_check;
+    ALTER TABLE users
+      ADD CONSTRAINT users_role_check
+      CHECK (role IN ('platform_owner','super_admin','agency_admin','org_admin','trainer','learner'));
 
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_enrollments_user ON enrollments(user_id);

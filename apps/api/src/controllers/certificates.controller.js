@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const db = require('../config/database');
 const { CERTIFICATE_ROOT, generateCertificateImage } = require('../lib/certificate-image');
+const { isGlobalRole } = require('../middleware/tenantAccess');
 
 async function getUserProfile(userId) {
   const userResult = await db.query(
@@ -37,13 +38,19 @@ async function withTemplate(certificate) {
 
 exports.getByUser = async (req, res, next) => {
   try {
+    const clauses = ['cert.user_id = $1'];
+    const params = [req.params.userId];
+    if (!isGlobalRole(req.user?.role)) {
+      params.push(req.tenant?.organisationId || null);
+      clauses.push(`cert.organisation_id = $${params.length}`);
+    }
     const result = await db.query(
       `SELECT cert.*, c.title as course_title, c.category, c.cqc_reference
        FROM certificates cert
        JOIN courses c ON c.id = cert.course_id
-       WHERE cert.user_id = $1
+       WHERE ${clauses.join(' AND ')}
        ORDER BY cert.issued_at DESC`,
-      [req.params.userId]
+      params
     );
     const certificates = await Promise.all(result.rows.map(withTemplate));
     res.json({ certificates });
@@ -53,9 +60,22 @@ exports.getByUser = async (req, res, next) => {
 exports.issue = async (req, res, next) => {
   try {
     const { enrollment_id, user_id, course_id, organisation_id } = req.body;
+    const scopedOrgId = req.scopedOrganisationId || organisation_id || req.tenant?.organisationId || null;
+    if (!scopedOrgId) return res.status(400).json({ error: 'Organisation context required' });
+    if (!isGlobalRole(req.user?.role)) {
+      const member = await db.query(
+        'SELECT 1 FROM organisation_members WHERE organisation_id = $1 AND user_id = $2 LIMIT 1',
+        [scopedOrgId, user_id]
+      );
+      if (!member.rows.length) return res.status(403).json({ error: 'Cross-tenant certificate issuance blocked' });
+    }
     const passed = await db.query(
-      'SELECT id FROM assessment_attempts WHERE enrollment_id=$1 AND is_final=true AND passed=true LIMIT 1',
-      [enrollment_id]
+      `SELECT a.id
+       FROM assessment_attempts a
+       JOIN enrollments e ON e.id = a.enrollment_id
+       WHERE a.enrollment_id=$1 AND a.is_final=true AND a.passed=true AND e.organisation_id = $2
+       LIMIT 1`,
+      [enrollment_id, scopedOrgId]
     );
     if (!passed.rows.length) {
       return res.status(403).json({ error: 'Assessment not passed' });
@@ -102,7 +122,7 @@ exports.issue = async (req, res, next) => {
       `INSERT INTO certificates
        (id, enrollment_id, user_id, course_id, organisation_id, certificate_number, verification_token, pdf_url, expires_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [id, enrollment_id, user_id, course_id, organisation_id, certNumber, verificationToken, image.publicUrl, expiresAt]
+      [id, enrollment_id, user_id, course_id, scopedOrgId, certNumber, verificationToken, image.publicUrl, expiresAt]
     );
     await db.query(
       `UPDATE enrollments SET status='completed', completed_at=NOW() WHERE id=$1`,

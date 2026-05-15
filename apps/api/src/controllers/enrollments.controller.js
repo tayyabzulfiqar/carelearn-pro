@@ -1,16 +1,26 @@
 const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/database');
+const { isGlobalRole } = require('../middleware/tenantAccess');
 
 exports.enroll = async (req, res, next) => {
   try {
     const { user_id, course_id, organisation_id, due_date } = req.body;
+    const scopedOrgId = req.scopedOrganisationId || organisation_id || req.tenant?.organisationId || null;
+    if (!scopedOrgId) return res.status(400).json({ error: 'Organisation context required' });
+    if (!isGlobalRole(req.user?.role)) {
+      const member = await db.query(
+        'SELECT 1 FROM organisation_members WHERE organisation_id = $1 AND user_id = $2 LIMIT 1',
+        [scopedOrgId, user_id]
+      );
+      if (!member.rows.length) return res.status(403).json({ error: 'Cross-tenant enrollment blocked' });
+    }
     const id = uuidv4();
     const result = await db.query(
       `INSERT INTO enrollments (id, user_id, course_id, organisation_id, due_date)
        VALUES ($1,$2,$3,$4,$5)
        ON CONFLICT (user_id, course_id) DO UPDATE SET due_date=$5
        RETURNING *`,
-      [id, user_id, course_id, organisation_id, due_date]
+      [id, user_id, course_id, scopedOrgId, due_date]
     );
     res.status(201).json({ enrollment: result.rows[0] });
   } catch (err) { next(err); }
@@ -18,6 +28,12 @@ exports.enroll = async (req, res, next) => {
 
 exports.getMyEnrollments = async (req, res, next) => {
   try {
+    const where = ['e.user_id = $1'];
+    const params = [req.user.id];
+    if (!isGlobalRole(req.user?.role)) {
+      params.push(req.tenant?.organisationId || null);
+      where.push(`e.organisation_id = $${params.length}`);
+    }
     const result = await db.query(
       `SELECT e.*, c.title as course_title, c.category, c.duration_minutes,
               c.is_mandatory,
@@ -28,10 +44,10 @@ exports.getMyEnrollments = async (req, res, next) => {
        LEFT JOIN modules m ON m.course_id = c.id
        LEFT JOIN lessons l ON l.module_id = m.id
        LEFT JOIN progress p ON p.lesson_id = l.id AND p.enrollment_id = e.id
-       WHERE e.user_id = $1
+       WHERE ${where.join(' AND ')}
        GROUP BY e.id, c.title, c.category, c.duration_minutes, c.is_mandatory
        ORDER BY e.enrolled_at DESC`,
-      [req.user.id]
+      params
     );
     res.json({ enrollments: result.rows });
   } catch (err) { next(err); }

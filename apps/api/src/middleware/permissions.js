@@ -1,5 +1,24 @@
+const { recordAudit } = require('./audit');
+
 const PERMISSIONS = {
+  platform_owner: ['*'],
   super_admin: ['*'],
+  agency_admin: [
+    'dashboard.read',
+    'training.read',
+    'quiz.read',
+    'certificate.read',
+    'certificate.write',
+    'user.read',
+    'user.write',
+    'agency.read',
+    'analytics.read',
+    'audit.read',
+    'settings.write',
+    'media.write',
+    'enrollment.write',
+    'report.read',
+  ],
   org_admin: [
     'dashboard.read',
     'training.read',
@@ -15,6 +34,8 @@ const PERMISSIONS = {
     'audit.read',
     'settings.write',
     'media.write',
+    'enrollment.write',
+    'report.read',
   ],
   trainer: [
     'dashboard.read',
@@ -66,4 +87,3 @@ module.exports = {
   hasPermission,
   requirePermission,
 };
-const { recordAudit } = require('./audit');
