@@ -1,4 +1,5 @@
-const { randomUUID, randomUUID: uuidv4 } = require('crypto');
+const { randomUUID } = require('crypto');
+const uuidv4 = randomUUID;
 const fs = require('node:fs');
 const path = require('node:path');
 const db = require('../config/database');
