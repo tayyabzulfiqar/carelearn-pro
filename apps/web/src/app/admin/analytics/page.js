@@ -17,10 +17,9 @@ export default function AnalyticsPage() {
       try {
         const response = await api.get('/admin/analytics/training');
         setRows(response.data?.data?.courses || []);
-        const generated = await api.post('/admin/cms/layer4/analytics/generate').catch(() => null);
-        setLayer4(generated?.data?.data?.analytics || null);
-        const complianceRun = await api.post('/admin/cms/layer4/compliance/run').catch(() => null);
-        setCompliance(complianceRun?.data?.data?.compliance || null);
+        // Layer4 endpoints require org tenant context — skip silently for global admin
+        setLayer4(null);
+        setCompliance(null);
       } catch (_err) {
         setError('Failed to load analytics.');
       } finally {

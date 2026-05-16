@@ -84,9 +84,8 @@ export default function TrainingsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    loadDiagnostics();
-  }, [loadDiagnostics]);
+  // Diagnostics require org tenant context — only load on explicit Refresh click
+  // useEffect(() => { loadDiagnostics(); }, [loadDiagnostics]);
 
   const filters = useMemo(() => ([
     {

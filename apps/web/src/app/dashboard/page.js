@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import useAuth from '@/hooks/useAuth';
 import Navbar from '@/components/layout/Navbar';
 import Sidebar from '@/components/layout/Sidebar';
@@ -99,15 +100,22 @@ export default function DashboardPage() {
                 ) : (
                   <div className="space-y-3">
                     {enrollments.slice(0, 5).map((item) => (
-                      <div key={item.id} className="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-4">
+                      <Link
+                        key={item.id}
+                        href={`/dashboard/courses/${item.course_id}/player`}
+                        className="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-4 hover:bg-slate-50 hover:border-blue-200 transition-colors cursor-pointer"
+                      >
                         <div className="min-w-0 pr-4">
                           <p className="truncate text-sm font-semibold text-gray-900">{item.course_title}</p>
                           <p className="mt-1 text-xs text-gray-500">{item.category} - {item.duration_minutes} min</p>
                         </div>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium capitalize text-slate-700">
-                          {item.status.replace('_', ' ')}
-                        </span>
-                      </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium capitalize text-slate-700">
+                            {item.status.replace('_', ' ')}
+                          </span>
+                          <span className="text-blue-600 text-xs font-medium">Start →</span>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -134,17 +142,24 @@ export default function DashboardPage() {
                 ) : (
                   <div className="space-y-3">
                     {courses.slice(0, 5).map((item) => (
-                      <div key={item.id} className="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-4">
+                      <Link
+                        key={item.id}
+                        href={`/dashboard/courses/${item.id}/player`}
+                        className="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-4 hover:bg-slate-50 hover:border-blue-200 transition-colors cursor-pointer"
+                      >
                         <div className="min-w-0 pr-4">
                           <p className="truncate text-sm font-semibold text-gray-900">{item.title}</p>
                           <p className="mt-1 text-xs text-gray-500">{item.category} - {item.duration_minutes} min</p>
                         </div>
-                        {item.is_mandatory && (
-                          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
-                            Mandatory
-                          </span>
-                        )}
-                      </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {item.is_mandatory && (
+                            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                              Mandatory
+                            </span>
+                          )}
+                          <span className="text-blue-600 text-xs font-medium">Open →</span>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 )}
