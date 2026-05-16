@@ -18,6 +18,7 @@ COPY apps/web ./apps/web
 COPY packages/shared ./packages/shared
 WORKDIR /app/apps/web
 ARG NEXT_PUBLIC_API_URL
+ARG CACHEBUST=1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN node -e "require.resolve('next/package.json');require.resolve('tailwindcss/package.json');require.resolve('postcss/package.json');require.resolve('autoprefixer/package.json')"
 RUN npm run build
