@@ -36,10 +36,9 @@ export default function TrainingsPage() {
   const [previewRow, setPreviewRow] = useState(null);
   const [previewData, setPreviewData] = useState(null);
   const [diagnostics, setDiagnostics] = useState(null);
-  const [aiSummary, setAiSummary] = useState(null);
-  const [aiNarration, setAiNarration] = useState(null);
   const [diagBusy, setDiagBusy] = useState(false);
   const [rowBusy, setRowBusy] = useState({});
+  const [rowMenuOpen, setRowMenuOpen] = useState('');
   const [notice, setNotice] = useState('');
   const [formError, setFormError] = useState('');
   const [page, setPage] = useState(1);
@@ -47,8 +46,11 @@ export default function TrainingsPage() {
 
   const toErrorText = (err, fallback) => {
     const payload = err?.response?.data || {};
-    const code = payload?.error || payload?.code || '';
-    const message = payload?.message || fallback;
+    const rawError = payload?.error;
+    const code = typeof rawError === 'string' ? rawError : (payload?.code || '');
+    const message = typeof rawError === 'string'
+      ? (payload?.message || rawError)
+      : (payload?.message || fallback);
     return code ? `${message} (${code})` : message;
   };
 
@@ -125,6 +127,8 @@ export default function TrainingsPage() {
     setRowBusy((prev) => ({ ...prev, [id]: busy }));
   };
 
+  const closeRowMenu = () => setRowMenuOpen('');
+
   const validateForm = () => {
     if (!String(form.title || '').trim()) return 'Title is required.';
     const duration = Number(form.duration_minutes || 0);
@@ -174,6 +178,7 @@ export default function TrainingsPage() {
 
   const remove = async (row) => {
     if (!window.confirm(`Delete training "${row.title}"?`)) return;
+    closeRowMenu();
     markRowBusy(row.id, true);
     try {
       await cmsDelete(`/trainings/${row.id}`);
@@ -191,6 +196,7 @@ export default function TrainingsPage() {
   };
 
   const duplicateTraining = async (row) => {
+    closeRowMenu();
     markRowBusy(row.id, true);
     const payload = {
       ...row,
@@ -211,6 +217,7 @@ export default function TrainingsPage() {
   };
 
   const togglePublish = async (row) => {
+    closeRowMenu();
     markRowBusy(row.id, true);
     try {
       if (row.status === 'published') {
@@ -230,11 +237,10 @@ export default function TrainingsPage() {
   };
 
   const openPreview = async (row) => {
+    closeRowMenu();
     setPreviewOpen(true);
     setPreviewRow(row);
     setPreviewError('');
-    setAiSummary(null);
-    setAiNarration(null);
     setPreviewBusy(true);
     try {
       let preview;
@@ -288,33 +294,6 @@ export default function TrainingsPage() {
     }
   };
 
-  const generateAiSummary = async () => {
-    if (!previewRow?.id) return;
-    setPreviewBusy(true);
-    setPreviewError('');
-    try {
-      const generated = await cmsPost(`/trainings/${previewRow.id}/ai/summary/generate`, {});
-      setAiSummary(generated?.summary || generated?.data?.summary || null);
-    } catch (err) {
-      setPreviewError(toErrorText(err, 'Summary generation failed.'));
-    } finally {
-      setPreviewBusy(false);
-    }
-  };
-
-  const generateAiNarration = async () => {
-    if (!previewRow?.id) return;
-    setPreviewBusy(true);
-    setPreviewError('');
-    try {
-      const generated = await cmsPost(`/trainings/${previewRow.id}/ai/narration/generate`, { language: 'en-GB' });
-      setAiNarration(generated?.narration || generated?.data?.narration || null);
-    } catch (err) {
-      setPreviewError(toErrorText(err, 'Narration generation failed.'));
-    } finally {
-      setPreviewBusy(false);
-    }
-  };
 
   const paginatedRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
@@ -372,22 +351,69 @@ export default function TrainingsPage() {
 
       <AdminTable
         columns={[
-          { key: 'title', label: 'Title' },
+          {
+            key: 'title',
+            label: 'Training',
+            render: (row) => (
+              <div className="flex items-center gap-3 py-1">
+                <div className="h-12 w-12 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                  {row.thumbnail_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={row.thumbnail_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-[10px] font-semibold text-slate-400">No Img</div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-900">{row.title}</p>
+                  <p className="truncate text-xs text-slate-500">{row.description || 'No description yet'}</p>
+                </div>
+              </div>
+            ),
+          },
           { key: 'category', label: 'Category' },
-          { key: 'status', label: 'Status' },
+          {
+            key: 'status',
+            label: 'Status',
+            render: (row) => (
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                row.status === 'published'
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : row.status === 'archived'
+                    ? 'bg-slate-200 text-slate-700'
+                    : 'bg-amber-100 text-amber-700'
+              }`}>{row.status}</span>
+            ),
+          },
           { key: 'duration_minutes', label: 'Duration' },
           {
             key: 'actions',
             label: 'Actions',
             render: (row) => (
-              <div className="flex gap-2">
-                <button type="button" className="btn-secondary" onClick={() => openEdit(row)}>Edit</button>
-                <a className="btn-secondary" href={`/admin/trainings/${row.id}/studio`}>Studio</a>
-                <button type="button" className="btn-secondary" disabled={!!rowBusy[row.id]} onClick={() => openPreview(row)}>Workflow</button>
-                <a className="btn-secondary" href={`/dashboard/courses/${row.id}/player`} target="_blank" rel="noreferrer">Learner View</a>
-                <button type="button" className="btn-secondary" disabled={!!rowBusy[row.id]} onClick={() => duplicateTraining(row)}>{rowBusy[row.id] ? 'Working...' : 'Duplicate'}</button>
-                <button type="button" className="btn-secondary" disabled={!!rowBusy[row.id]} onClick={() => togglePublish(row)}>{rowBusy[row.id] ? 'Working...' : row.status === 'published' ? 'Unpublish' : 'Publish'}</button>
-                <button type="button" className="btn-secondary" disabled={!!rowBusy[row.id]} onClick={() => remove(row)}>{rowBusy[row.id] ? 'Working...' : 'Delete'}</button>
+              <div className="flex items-center gap-2">
+                <a className="btn-primary" href={`/admin/trainings/${row.id}/studio`}>Open Studio</a>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={!!rowBusy[row.id]}
+                    onClick={() => setRowMenuOpen((prev) => prev === row.id ? '' : row.id)}
+                  >
+                    Actions
+                  </button>
+                  {rowMenuOpen === row.id ? (
+                    <div className="absolute right-0 z-20 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => openEdit(row)}>Edit</button>
+                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => togglePublish(row)}>{row.status === 'published' ? 'Unpublish' : 'Publish'}</button>
+                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => openPreview(row)}>Preview</button>
+                      <a className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-50" href={`/dashboard/courses/${row.id}/player`} target="_blank" rel="noreferrer" onClick={closeRowMenu}>Learner View</a>
+                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => duplicateTraining(row)}>Duplicate</button>
+                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => cmsPost(`/trainings/${row.id}/status`, { status: 'archived' }).then(loadRows)}>Archive</button>
+                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50" onClick={() => remove(row)}>Delete</button>
+                    </div>
+                  ) : null}
+                </div>
+                {rowBusy[row.id] ? <span className="text-xs text-slate-500">Working...</span> : null}
               </div>
             ),
           },
@@ -430,7 +456,7 @@ export default function TrainingsPage() {
         </form>
       </AdminModal>
 
-      <AdminModal open={previewOpen} title={previewRow ? `Deterministic Preview: ${previewRow.title}` : 'Deterministic Preview'} onClose={() => setPreviewOpen(false)}>
+      <AdminModal open={previewOpen} title={previewRow ? `Preview: ${previewRow.title}` : 'Preview'} onClose={() => setPreviewOpen(false)}>
         {previewBusy ? <p className="text-sm text-slate-500">Loading preview...</p> : null}
         {previewError ? <p className="text-sm text-rose-600">{previewError}</p> : null}
         {!previewBusy && !previewError && previewData ? (
@@ -438,30 +464,14 @@ export default function TrainingsPage() {
             <p><span className="font-semibold">State:</span> {previewData.state}</p>
             <p><span className="font-semibold">Sections:</span> {previewData.canonical?.sections?.length || 0}</p>
             <p><span className="font-semibold">Images:</span> {Object.keys(previewData.image_manifest || {}).length}</p>
-            <div className="max-h-64 overflow-auto rounded border border-slate-200 bg-slate-50 p-3 font-mono text-xs whitespace-pre-wrap">
-              {previewData.render?.html || ''}
+            <div className="max-h-72 overflow-auto rounded-xl border border-slate-200 bg-white p-4">
+              <div className="prose prose-sm max-w-none text-slate-700" dangerouslySetInnerHTML={{ __html: previewData.render?.html || '<p>No preview content yet.</p>' }} />
             </div>
             <div className="flex gap-2">
+              <button type="button" className="btn-secondary" onClick={() => openPreview(previewRow)}>Refresh Preview</button>
               <button type="button" className="btn-secondary" onClick={() => setApproval('approved')}>Approve</button>
-              <button type="button" className="btn-secondary" onClick={() => setApproval('rejected')}>Reject</button>
-              <button type="button" className="btn-primary" onClick={approveAndPublish}>Approve + Publish</button>
-              <button type="button" className="btn-secondary" onClick={generateAiSummary}>Generate Summary</button>
-              <button type="button" className="btn-secondary" onClick={generateAiNarration}>Generate Narration</button>
+              <button type="button" className="btn-primary" onClick={approveAndPublish}>Publish</button>
             </div>
-            {aiSummary ? (
-              <div className="rounded border border-slate-200 bg-white p-3">
-                <p className="text-xs font-semibold text-slate-700">AI Summary</p>
-                <p className="mt-1 text-xs text-slate-600 whitespace-pre-wrap">{aiSummary.quick_summary}</p>
-              </div>
-            ) : null}
-            {aiNarration ? (
-              <div className="rounded border border-slate-200 bg-white p-3">
-                <p className="text-xs font-semibold text-slate-700">AI Narration (Section Scripts)</p>
-                <div className="mt-1 max-h-40 overflow-auto text-xs text-slate-600 whitespace-pre-wrap">
-                  {(aiNarration.sections || []).map((s) => `${s.heading}: ${s.script}`).join('\n\n')}
-                </div>
-              </div>
-            ) : null}
           </div>
         ) : null}
       </AdminModal>
