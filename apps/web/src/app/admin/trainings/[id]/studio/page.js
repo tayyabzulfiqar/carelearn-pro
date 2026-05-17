@@ -564,41 +564,159 @@ export default function CourseStudioPage({ params }) {
     return autosave.message;
   }, [autosave]);
 
-  if (loading) return <div className="p-6 text-sm text-slate-600">Loading studio...</div>;
+  const AUTOSAVE_COLORS = {
+    idle: 'text-slate-400',
+    dirty: 'text-amber-600',
+    saving: 'text-indigo-600',
+    saved: 'text-emerald-600',
+    error: 'text-rose-600',
+  };
+  const AUTOSAVE_ICONS = {
+    idle: '○',
+    dirty: '●',
+    saving: '↻',
+    saved: '✓',
+    error: '✕',
+  };
+  const STATUS_COLORS = {
+    published: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    draft: 'bg-amber-100 text-amber-800 border-amber-200',
+    archived: 'bg-slate-100 text-slate-600 border-slate-200',
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-5rem)] items-center justify-center bg-slate-50">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-slate-500 font-medium">Loading course studio…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] overflow-auto bg-slate-100/60 lg:h-[calc(100vh-5rem)] lg:overflow-hidden">
-      <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Course Builder Studio</p>
-            <h1 className="text-xl font-semibold text-slate-900">{course?.title || 'Untitled course'}</h1>
-            <p className={`text-xs ${autosave.state === 'error' ? 'text-rose-600' : autosave.state === 'dirty' ? 'text-amber-700' : 'text-slate-500'}`}>{autosaveHint}</p>
-            {autosave.state === 'error' && activeLesson ? (
-              <button type="button" className="mt-1 text-xs font-medium text-rose-700 underline" onClick={() => saveLesson(activeLesson, true)}>Retry save</button>
-            ) : null}
+    <div className="min-h-[calc(100vh-5rem)] overflow-auto bg-slate-50 lg:h-[calc(100vh-5rem)] lg:overflow-hidden">
+
+      {/* ── Top Bar ─────────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between px-5 py-3">
+          <div className="flex items-center gap-4 min-w-0">
+            <Link
+              href="/admin/trainings"
+              className="flex-shrink-0 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Trainings
+            </Link>
+            <div className="h-4 w-px bg-slate-200" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-semibold text-slate-900 truncate max-w-xs">{course?.title || 'Untitled course'}</h1>
+                <span className={`flex-shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_COLORS[course?.status || 'draft']}`}>
+                  {(course?.status || 'draft').toUpperCase()}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`text-xs font-mono ${AUTOSAVE_COLORS[autosave.state]}`}>{AUTOSAVE_ICONS[autosave.state]}</span>
+                <span className={`text-xs ${AUTOSAVE_COLORS[autosave.state]}`}>{autosaveHint || 'All changes saved'}</span>
+                {autosave.state === 'error' && activeLesson ? (
+                  <button type="button" className="text-xs font-semibold text-rose-600 underline hover:text-rose-800" onClick={() => saveLesson(activeLesson, true)}>Retry</button>
+                ) : null}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Link className="btn-secondary" href="/admin/trainings">Back</Link>
-            <button type="button" className="btn-secondary" disabled={!!actionBusy.duplicate} onClick={duplicateCourse}>{actionBusy.duplicate ? 'Duplicating...' : 'Duplicate'}</button>
-            <button type="button" className="btn-secondary" disabled={!activeLesson || autosave.state === 'saving'} onClick={() => activeLesson && saveLesson(activeLesson, true)}>{autosave.state === 'saving' ? 'Saving...' : 'Save Now'}</button>
-            <button type="button" className="btn-primary" disabled={publishing || !!actionBusy.publish} onClick={publishCourse}>{publishing || actionBusy.publish ? 'Publishing...' : 'Publish'}</button>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              type="button"
+              disabled={!!actionBusy.duplicate}
+              onClick={duplicateCourse}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            >
+              {actionBusy.duplicate ? 'Duplicating…' : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
+                  Duplicate
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              disabled={!activeLesson || autosave.state === 'saving'}
+              onClick={() => activeLesson && saveLesson(activeLesson, true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-40 transition-colors"
+            >
+              {autosave.state === 'saving' ? (
+                <span className="animate-spin inline-block">↻</span>
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+              )}
+              {autosave.state === 'saving' ? 'Saving…' : 'Save'}
+            </button>
+            <button
+              type="button"
+              disabled={publishing || !!actionBusy.publish}
+              onClick={publishCourse}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+            >
+              {(publishing || actionBusy.publish) ? (
+                <><span className="animate-spin inline-block">↻</span> Publishing…</>
+              ) : (
+                <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Publish</>
+              )}
+            </button>
           </div>
         </div>
-        {notice ? <p className="mt-1 text-sm text-emerald-700">{notice}</p> : null}
-        {error ? <p className="mt-1 text-sm text-rose-700">{error}</p> : null}
+
+        {/* Notice / Error strip */}
+        {notice ? (
+          <div className="border-t border-emerald-100 bg-emerald-50 px-5 py-2 flex items-center gap-2">
+            <svg className="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+            <p className="text-sm text-emerald-800 font-medium">{notice}</p>
+          </div>
+        ) : null}
+        {error ? (
+          <div className="border-t border-rose-100 bg-rose-50 px-5 py-2 flex items-center gap-2">
+            <svg className="w-3.5 h-3.5 text-rose-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+            <p className="text-sm text-rose-700">{error}</p>
+          </div>
+        ) : null}
       </div>
 
-      <div className="flex flex-col gap-3 overflow-auto p-3 lg:grid lg:h-[calc(100%-82px)] lg:grid-cols-[320px_1fr_360px] lg:overflow-hidden">
-        <aside className="overflow-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="sticky top-0 z-10 mb-3 flex items-center justify-between bg-white/95 pb-2 backdrop-blur">
-            <p className="text-sm font-semibold text-slate-900">Modules</p>
-            <button type="button" className="btn-secondary" onClick={addModule}>+ Module</button>
+      {/* ── Three-Panel Layout ───────────────────────────────────────── */}
+      <div className="flex flex-col gap-0 overflow-auto lg:grid lg:h-[calc(100%-64px)] lg:grid-cols-[300px_1fr_340px] lg:overflow-hidden">
+
+        {/* ── LEFT: Module Navigator ──────────────────────────────── */}
+        <aside className="overflow-auto border-r border-slate-200 bg-white lg:border-r">
+          <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Structure</p>
+              <p className="text-sm font-semibold text-slate-900 mt-0.5">{modules.length} module{modules.length !== 1 ? 's' : ''}</p>
+            </div>
+            <button
+              type="button"
+              onClick={addModule}
+              className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+              Module
+            </button>
           </div>
-          <div className="space-y-2">
+
+          <div className="p-3 space-y-2">
             {!modules.length ? (
-              <p className="rounded-lg border border-dashed border-slate-300 p-3 text-xs text-slate-500">No modules yet. Add a module to start building your course.</p>
+              <div className="rounded-xl border-2 border-dashed border-slate-200 p-8 text-center">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                </div>
+                <p className="text-sm font-semibold text-slate-600 mb-1">No modules yet</p>
+                <p className="text-xs text-slate-400">Click <strong>+ Module</strong> above to build your course structure</p>
+              </div>
             ) : null}
+
             {modules.map((moduleNode, moduleIndex) => (
               <div
                 key={moduleNode.id}
@@ -617,23 +735,48 @@ export default function CourseStudioPage({ params }) {
                   persistModuleOrder(reordered, snapshot);
                 }}
                 onDragEnd={() => { setDraggingModuleId(''); setModuleDropIndex(-1); }}
-                className={`rounded-xl border p-2 transition ${moduleDropIndex === moduleIndex ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-200 bg-white'} ${draggingModuleId === moduleNode.id ? 'opacity-60' : ''}`}
+                className={`rounded-xl border transition-all duration-150 overflow-hidden
+                  ${moduleDropIndex === moduleIndex ? 'border-indigo-400 shadow-md shadow-indigo-100' : 'border-slate-200'}
+                  ${draggingModuleId === moduleNode.id ? 'opacity-50 scale-98' : ''}
+                  ${activeModuleId === moduleNode.id ? 'shadow-sm' : ''}
+                `}
               >
-                <div className="flex items-center gap-2">
-                  <span className="cursor-grab text-slate-400">::</span>
-                  <button type="button" className="btn-secondary" onClick={() => setExpanded((prev) => ({ ...prev, [moduleNode.id]: !prev[moduleNode.id] }))}>{expanded[moduleNode.id] ? '-' : '+'}</button>
+                {/* Module header */}
+                <div className={`flex items-center gap-2 px-3 py-2.5 ${activeModuleId === moduleNode.id ? 'bg-indigo-50' : 'bg-slate-50'}`}>
+                  <span className="cursor-grab text-slate-300 hover:text-slate-500 transition-colors select-none text-sm">⠿</span>
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-indigo-700">{moduleIndex + 1}</span>
+                  </div>
                   <input
-                    className="field-input"
+                    className="flex-1 bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400 focus:text-slate-900 min-w-0"
                     value={moduleNode.title || ''}
+                    placeholder="Module title…"
                     onChange={(e) => setModules((prev) => prev.map((m) => m.id === moduleNode.id ? { ...m, title: e.target.value } : m))}
                     onBlur={(e) => updateModuleTitle(moduleNode, e.target.value)}
                   />
-                  <button type="button" className="btn-secondary" onClick={() => deleteModule(moduleNode.id)}>Del</button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setExpanded((prev) => ({ ...prev, [moduleNode.id]: !prev[moduleNode.id] }))}
+                      className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-white transition-colors text-xs"
+                    >
+                      {expanded[moduleNode.id] ? '▲' : '▼'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteModule(moduleNode.id)}
+                      className="w-5 h-5 rounded flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                      title="Delete module"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
                 </div>
 
+                {/* Lessons */}
                 {expanded[moduleNode.id] ? (
                   <div
-                    className="mt-2 space-y-1 rounded-lg border border-dashed border-slate-200 p-2"
+                    className="p-2 space-y-1 bg-white"
                     onDragOver={(e) => { e.preventDefault(); setLessonDrop({ moduleId: moduleNode.id, index: (moduleNode.lessons || []).length }); }}
                     onDrop={async () => {
                       if (!draggingLesson) return;
@@ -644,6 +787,10 @@ export default function CourseStudioPage({ params }) {
                       setLessonDrop({ moduleId: '', index: -1 });
                     }}
                   >
+                    {!(moduleNode.lessons || []).length ? (
+                      <p className="text-center text-[11px] text-slate-400 py-2">No lessons — click + Lesson to add</p>
+                    ) : null}
+
                     {(moduleNode.lessons || []).map((lesson, lessonIndex) => (
                       <div
                         key={lesson.id}
@@ -670,29 +817,43 @@ export default function CourseStudioPage({ params }) {
                           setLessonDrop({ moduleId: '', index: -1 });
                         }}
                         onDragEnd={() => { setDraggingLesson(null); setLessonDrop({ moduleId: '', index: -1 }); }}
-                        className={`rounded-md border px-2 py-1 transition ${activeLesson?.id === lesson.id ? 'border-indigo-300 bg-indigo-50' : 'border-transparent hover:bg-slate-50'} ${lessonDrop.moduleId === moduleNode.id && lessonDrop.index === lessonIndex ? 'ring-2 ring-indigo-300' : ''}`}
+                        className={`group flex items-center gap-2 rounded-lg px-2.5 py-2 cursor-pointer transition-all
+                          ${activeLesson?.id === lesson.id ? 'bg-indigo-600 shadow-sm' : 'hover:bg-slate-50'}
+                          ${lessonDrop.moduleId === moduleNode.id && lessonDrop.index === lessonIndex ? 'ring-2 ring-indigo-300 ring-offset-1' : ''}
+                        `}
+                        onClick={() => openLesson(moduleNode.id, lesson.id)}
                       >
-                        <div className="flex items-center gap-1">
-                          <span className="cursor-grab text-slate-400">::</span>
-                          <input
-                            className="w-full rounded border border-transparent bg-transparent px-1 text-xs text-slate-700 outline-none focus:border-slate-300"
-                            value={lesson.title || ''}
-                            onClick={() => openLesson(moduleNode.id, lesson.id)}
-                            onChange={(e) => setModules((prev) => prev.map((m) => m.id === moduleNode.id ? { ...m, lessons: (m.lessons || []).map((l) => l.id === lesson.id ? { ...l, title: e.target.value } : l) } : m))}
-                            onBlur={(e) => updateLessonInline(moduleNode.id, { ...lesson, title: e.target.value })}
-                          />
-                          <input
-                            className="w-14 rounded border border-transparent bg-transparent px-1 text-[11px] text-slate-500 outline-none focus:border-slate-300"
-                            type="number"
-                            value={lesson.duration_minutes || 5}
-                            onChange={(e) => setModules((prev) => prev.map((m) => m.id === moduleNode.id ? { ...m, lessons: (m.lessons || []).map((l) => l.id === lesson.id ? { ...l, duration_minutes: Number(e.target.value || 5) } : l) } : m))}
-                            onBlur={(e) => updateLessonInline(moduleNode.id, { ...lesson, duration_minutes: Number(e.target.value || 5) })}
-                          />
-                          <button type="button" className="btn-secondary" onClick={() => deleteLesson(moduleNode.id, lesson.id)}>X</button>
-                        </div>
+                        <span className="cursor-grab text-slate-300 group-hover:text-slate-400 select-none text-xs flex-shrink-0">⠿</span>
+                        <svg className={`w-3.5 h-3.5 flex-shrink-0 ${activeLesson?.id === lesson.id ? 'text-indigo-200' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span
+                          className={`flex-1 text-xs font-medium truncate ${activeLesson?.id === lesson.id ? 'text-white' : 'text-slate-700'}`}
+                          title={lesson.title}
+                        >
+                          {lesson.title || 'Untitled lesson'}
+                        </span>
+                        <span className={`text-[10px] flex-shrink-0 ${activeLesson?.id === lesson.id ? 'text-indigo-200' : 'text-slate-400'}`}>{lesson.duration_minutes || 5}m</span>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); deleteLesson(moduleNode.id, lesson.id); }}
+                          className={`flex-shrink-0 w-4 h-4 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity
+                            ${activeLesson?.id === lesson.id ? 'text-indigo-200 hover:text-white hover:bg-indigo-500' : 'text-slate-300 hover:text-rose-500 hover:bg-rose-50'}`}
+                          title="Delete lesson"
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
                       </div>
                     ))}
-                    <button type="button" className="btn-secondary w-full" onClick={() => addLesson(moduleNode.id)}>+ Lesson</button>
+
+                    <button
+                      type="button"
+                      onClick={() => addLesson(moduleNode.id)}
+                      className="w-full flex items-center gap-2 rounded-lg border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-400 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/40 transition-all"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                      Add lesson
+                    </button>
                   </div>
                 ) : null}
               </div>
@@ -700,107 +861,350 @@ export default function CourseStudioPage({ params }) {
           </div>
         </aside>
 
-        <main className="overflow-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        {/* ── CENTRE: Lesson Editor ────────────────────────────────── */}
+        <main className="overflow-auto bg-white border-r border-slate-200">
           {!activeLesson ? (
-            <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">Select a lesson to start editing.</div>
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-12 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold text-slate-700 mb-2">Select a lesson to edit</h3>
+              <p className="text-sm text-slate-400 max-w-xs">Choose a lesson from the left panel, or add a new module and lesson to get started.</p>
+              {!modules.length ? (
+                <button type="button" onClick={addModule} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors shadow-sm">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                  Add First Module
+                </button>
+              ) : null}
+            </div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                <input className="field-input text-lg font-semibold" value={activeLesson.title || ''} onChange={(e) => queueAutosave({ ...activeLesson, title: e.target.value, document: { ...activeLesson.document, title: e.target.value } })} />
-                <input className="field-input w-24" type="number" value={activeLesson.duration_minutes || 5} onChange={(e) => queueAutosave({ ...activeLesson, duration_minutes: Number(e.target.value || 5) })} />
+            <div className="p-5 space-y-5">
+              {/* Lesson title + duration */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-2 block">Lesson Title</label>
+                <input
+                  className="w-full bg-transparent text-lg font-semibold text-slate-900 outline-none placeholder:text-slate-300 focus:ring-0 border-0"
+                  value={activeLesson.title || ''}
+                  placeholder="Untitled lesson…"
+                  onChange={(e) => queueAutosave({ ...activeLesson, title: e.target.value, document: { ...activeLesson.document, title: e.target.value } })}
+                />
+                <div className="mt-3 flex items-center gap-3 pt-3 border-t border-slate-200">
+                  <label className="text-xs text-slate-500 flex-shrink-0">Duration (min)</label>
+                  <input
+                    className="w-20 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent"
+                    type="number"
+                    min={1}
+                    value={activeLesson.duration_minutes || 5}
+                    onChange={(e) => queueAutosave({ ...activeLesson, duration_minutes: Number(e.target.value || 5) })}
+                  />
+                  <span className="text-xs text-slate-400">Ctrl/⌘+S to force save</span>
+                </div>
               </div>
-              <div className="rounded-xl border border-slate-200 p-3">
-                <label className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Upload Media</label>
-                <input className="mt-2 block w-full text-sm" type="file" accept="image/*,video/*,.pdf" onChange={uploadMedia} />
-                {uploading ? <p className="mt-1 text-xs text-slate-600">Uploading... {uploadProgress}%</p> : null}
+
+              {/* Media upload */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-3 block">Upload Media</label>
+                <label className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-6 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors">
+                  <svg className="w-7 h-7 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                  <span className="text-sm text-slate-500 font-medium">Drop files here or click to upload</span>
+                  <span className="text-xs text-slate-400">Images, videos, PDFs supported</span>
+                  <input type="file" accept="image/*,video/*,.pdf" className="hidden" onChange={uploadMedia} />
+                </label>
+                {uploading ? (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-slate-600">Uploading…</span>
+                      <span className="text-xs font-semibold text-indigo-700">{uploadProgress}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: uploadProgress + '%' }} />
+                    </div>
+                  </div>
+                ) : null}
               </div>
+
+              {/* Block editor */}
               <LessonBlockEditor document={activeLesson.document} onChange={(doc) => queueAutosave({ ...activeLesson, document: doc })} />
             </div>
           )}
         </main>
 
-        <aside className="overflow-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="sticky top-0 z-10 border-b border-slate-100 bg-white pb-3">
-            <p className="text-sm font-semibold text-slate-900">Course Settings</p>
-            <p className="text-xs text-slate-500">Status: <span className="font-semibold text-slate-700">{course?.status || 'draft'}</span></p>
-          </div>
-          <div className="mt-3 space-y-2">
-            <input className="field-input" value={course?.title || ''} onChange={(e) => setCourse((prev) => ({ ...prev, title: e.target.value }))} placeholder="Course title" />
-            <textarea className="field-input min-h-[80px]" value={course?.description || ''} onChange={(e) => setCourse((prev) => ({ ...prev, description: e.target.value }))} placeholder="Description" />
-            <input className="field-input" type="number" value={course?.duration_minutes || 30} onChange={(e) => setCourse((prev) => ({ ...prev, duration_minutes: Number(e.target.value || 30) }))} placeholder="Duration" />
-            <input className="field-input" type="number" min={1} max={100} value={course?.pass_mark || 75} onChange={(e) => setCourse((prev) => ({ ...prev, pass_mark: Number(e.target.value || 75) }))} placeholder="Pass mark" />
-            <button type="button" className="btn-primary w-full" onClick={saveCourseSettings}>Save Draft</button>
-            <button type="button" className="btn-secondary w-full" disabled={!!actionBusy.unpublish} onClick={unpublishCourse}>{actionBusy.unpublish ? 'Updating...' : 'Unpublish to Draft'}</button>
-            <button type="button" className="btn-secondary w-full" disabled={!!actionBusy.archive} onClick={archiveCourse}>{actionBusy.archive ? 'Archiving...' : 'Archive'}</button>
-            <a className="btn-secondary block w-full text-center" href={`/dashboard/courses/${courseId}/player`} target="_blank" rel="noreferrer">Learner Preview</a>
+        {/* ── RIGHT: Settings + Quiz Builder ──────────────────────── */}
+        <aside className="overflow-auto bg-white">
+
+          {/* Course Settings */}
+          <div className="border-b border-slate-200">
+            <div className="px-4 pt-4 pb-3">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Course Settings</p>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_COLORS[course?.status || 'draft']}`}>
+                  {(course?.status || 'draft').toUpperCase()}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-slate-500 font-medium block mb-1">Title</label>
+                  <input
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent"
+                    value={course?.title || ''}
+                    onChange={(e) => setCourse((prev) => ({ ...prev, title: e.target.value }))}
+                    placeholder="Course title"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 font-medium block mb-1">Description</label>
+                  <textarea
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent min-h-[70px] resize-none"
+                    value={course?.description || ''}
+                    onChange={(e) => setCourse((prev) => ({ ...prev, description: e.target.value }))}
+                    placeholder="Describe this course…"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-slate-500 font-medium block mb-1">Duration (min)</label>
+                    <input type="number" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-300" value={course?.duration_minutes || 30} onChange={(e) => setCourse((prev) => ({ ...prev, duration_minutes: Number(e.target.value || 30) }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 font-medium block mb-1">Pass mark (%)</label>
+                    <input type="number" min={1} max={100} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-300" value={course?.pass_mark || 75} onChange={(e) => setCourse((prev) => ({ ...prev, pass_mark: Number(e.target.value || 75) }))} />
+                  </div>
+                </div>
+                <button type="button" onClick={saveCourseSettings} className="w-full rounded-lg bg-slate-900 py-2 text-xs font-semibold text-white hover:bg-slate-700 transition-colors">
+                  Save Settings
+                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    disabled={!!actionBusy.unpublish}
+                    onClick={unpublishCourse}
+                    className="rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                  >
+                    {actionBusy.unpublish ? 'Updating…' : 'Unpublish'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!!actionBusy.archive}
+                    onClick={archiveCourse}
+                    className="rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                  >
+                    {actionBusy.archive ? 'Archiving…' : 'Archive'}
+                  </button>
+                </div>
+                <a
+                  href={`/dashboard/courses/${courseId}/player`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 w-full rounded-lg border border-indigo-200 bg-indigo-50 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Learner Preview
+                </a>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-5 border-t border-slate-200 pt-4">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-900">Quiz Builder</p>
-              <button type="button" className="btn-secondary" onClick={() => setShowQuizPreview((prev) => !prev)}>{showQuizPreview ? 'Hide Preview' : 'Preview Quiz'}</button>
+          {/* Quiz Builder */}
+          <div className="px-4 pt-4 pb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Quiz Builder</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5">{questions.length} question{questions.length !== 1 ? 's' : ''}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuizPreview((prev) => !prev)}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${showQuizPreview ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                {showQuizPreview ? 'Hide' : 'Preview'}
+              </button>
             </div>
-            {quizError ? <p className="mb-2 text-xs text-rose-600">{quizError}</p> : null}
-            {quizNotice ? <p className="mb-2 text-xs text-emerald-700">{quizNotice}</p> : null}
-            <textarea className="field-input min-h-[70px]" value={questionDraft.question_text} onChange={(e) => setQuestionDraft((prev) => ({ ...prev, question_text: e.target.value }))} placeholder="Question text" />
-            <div className="mt-2 space-y-1">
-              {questionDraft.options.map((opt, idx) => (
-                <input key={idx} className="field-input" value={opt} onChange={(e) => setQuestionDraft((prev) => ({ ...prev, options: prev.options.map((o, i) => i === idx ? e.target.value : o) }))} placeholder={`Option ${idx + 1}`} />
-              ))}
-              <button type="button" className="btn-secondary w-full" onClick={() => setQuestionDraft((prev) => ({ ...prev, options: [...prev.options, ''] }))}>Add Option</button>
-            </div>
-            <select className="field-input mt-2" value={questionDraft.correct_answer} onChange={(e) => setQuestionDraft((prev) => ({ ...prev, correct_answer: e.target.value }))}>
-              <option value="">Select correct answer</option>
-              {questionDraft.options.map((opt, idx) => (
-                <option key={`draft-correct-${idx}`} value={idx}>{opt || `Option ${idx + 1}`}</option>
-              ))}
-            </select>
-            <button type="button" className="btn-primary mt-2 w-full" onClick={addQuestion}>Add Question</button>
-            {!questions.length ? (
-              <p className="mt-3 rounded border border-dashed border-slate-300 p-3 text-xs text-slate-500">No quiz questions yet. Add your first question to build learner assessment.</p>
+
+            {/* Feedback messages */}
+            {quizError ? (
+              <div className="mb-3 rounded-xl bg-rose-50 border border-rose-200 px-3 py-2.5 flex items-center gap-2">
+                <svg className="w-4 h-4 text-rose-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                <p className="text-xs text-rose-700 font-medium">{quizError}</p>
+              </div>
             ) : null}
-            <div className="mt-3 max-h-72 space-y-2 overflow-auto">
-              {questions.map((q, index) => (
-                <div key={q.id} className="rounded-lg border border-slate-200 p-2">
-                  <textarea className="field-input min-h-[60px]" value={q.question_text || ''} onChange={(e) => setQuestions((prev) => prev.map((item) => item.id === q.id ? { ...item, question_text: e.target.value } : item))} onBlur={(e) => updateQuestion({ ...q, question_text: e.target.value })} />
-                  <div className="mt-1 space-y-1">
-                    {(q.options || []).map((opt, optIndex) => (
-                      <input key={`${q.id}-${optIndex}`} className="field-input" value={opt} onChange={(e) => setQuestions((prev) => prev.map((item) => item.id === q.id ? { ...item, options: (item.options || []).map((o, i) => i === optIndex ? e.target.value : o) } : item))} onBlur={() => updateQuestion(questions.find((item) => item.id === q.id))} />
-                    ))}
+            {quizNotice ? (
+              <div className="mb-3 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2.5 flex items-center gap-2">
+                <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                <p className="text-xs text-emerald-700 font-medium">{quizNotice}</p>
+              </div>
+            ) : null}
+
+            {/* Add question form */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 mb-4">
+              <p className="text-xs font-semibold text-slate-600 mb-2">New Question</p>
+              <textarea
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent resize-none min-h-[70px]"
+                value={questionDraft.question_text}
+                onChange={(e) => setQuestionDraft((prev) => ({ ...prev, question_text: e.target.value }))}
+                placeholder="Type your question here…"
+              />
+
+              <div className="mt-2 space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Answer Options</p>
+                {questionDraft.options.map((opt, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold
+                      ${String(questionDraft.correct_answer) === String(idx) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 text-slate-500'}`}>
+                      {String.fromCharCode(65 + idx)}
+                    </div>
+                    <input
+                      className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent"
+                      value={opt}
+                      onChange={(e) => setQuestionDraft((prev) => ({ ...prev, options: prev.options.map((o, i) => i === idx ? e.target.value : o) }))}
+                      placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                    />
                   </div>
-                  <select className="field-input mt-1" value={q.correct_answer ?? ''} onChange={(e) => setQuestions((prev) => prev.map((item) => item.id === q.id ? { ...item, correct_answer: e.target.value === '' ? '' : Number(e.target.value) } : item))} onBlur={() => updateQuestion(questions.find((item) => item.id === q.id))}>
-                    <option value="">Select correct answer</option>
-                    {(q.options || []).map((opt, optIndex) => (
-                      <option key={`${q.id}-correct-${optIndex}`} value={optIndex}>{opt || `Option ${optIndex + 1}`}</option>
-                    ))}
-                  </select>
-                  <div className="mt-1 flex gap-1">
-                    <button type="button" className="btn-secondary" onClick={() => reorderQuestion(index, -1)}>Up</button>
-                    <button type="button" className="btn-secondary" onClick={() => reorderQuestion(index, 1)}>Down</button>
-                    <button type="button" className="btn-secondary" onClick={() => deleteQuestion(q.id)}>Delete</button>
-                    {savingQuestionId === q.id ? <span className="px-2 py-1 text-[11px] text-slate-500">Saving...</span> : null}
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setQuestionDraft((prev) => ({ ...prev, options: [...prev.options, ''] }))}
+                  className="w-full text-center py-1.5 rounded-lg border border-dashed border-slate-200 text-xs text-slate-400 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
+                >
+                  + Add option
+                </button>
+              </div>
+
+              <div className="mt-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 mb-1.5 block">Correct Answer</label>
+                <select
+                  className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 font-medium outline-none focus:ring-2 focus:ring-emerald-300"
+                  value={questionDraft.correct_answer}
+                  onChange={(e) => setQuestionDraft((prev) => ({ ...prev, correct_answer: e.target.value }))}
+                >
+                  <option value="">Select correct answer…</option>
+                  {questionDraft.options.map((opt, idx) => (
+                    <option key={`draft-correct-${idx}`} value={idx}>{String.fromCharCode(65 + idx)}. {opt || `Option ${idx + 1}`}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={addQuestion}
+                className="w-full mt-3 rounded-lg bg-indigo-600 py-2 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                Add Question
+              </button>
+            </div>
+
+            {/* Existing questions */}
+            {!questions.length ? (
+              <div className="rounded-xl border-2 border-dashed border-slate-200 p-6 text-center">
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2">
+                  <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <p className="text-xs font-semibold text-slate-500 mb-1">No questions yet</p>
+                <p className="text-[11px] text-slate-400">Build your assessment using the form above</p>
+              </div>
+            ) : null}
+
+            <div className="space-y-2 max-h-64 overflow-auto">
+              {questions.map((q, index) => (
+                <div key={q.id} className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 border-b border-slate-100">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700">{index + 1}</span>
+                    <p className="flex-1 text-xs font-medium text-slate-700 truncate">{q.question_text || 'Untitled question'}</p>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button type="button" onClick={() => reorderQuestion(index, -1)} className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-slate-700 text-xs rounded hover:bg-slate-100">↑</button>
+                      <button type="button" onClick={() => reorderQuestion(index, 1)} className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-slate-700 text-xs rounded hover:bg-slate-100">↓</button>
+                      <button type="button" onClick={() => deleteQuestion(q.id)} className="w-5 h-5 flex items-center justify-center text-slate-300 hover:text-rose-500 rounded hover:bg-rose-50 transition-colors">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                      {savingQuestionId === q.id ? <span className="text-[10px] text-indigo-500 animate-pulse">saving</span> : null}
+                    </div>
+                  </div>
+                  <div className="p-2.5 space-y-1.5">
+                    <textarea
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent resize-none min-h-[50px]"
+                      value={q.question_text || ''}
+                      onChange={(e) => setQuestions((prev) => prev.map((item) => item.id === q.id ? { ...item, question_text: e.target.value } : item))}
+                      onBlur={(e) => updateQuestion({ ...q, question_text: e.target.value })}
+                    />
+                    <div className="space-y-1">
+                      {(q.options || []).map((opt, optIndex) => (
+                        <div key={`${q.id}-${optIndex}`} className="flex items-center gap-1.5">
+                          <div className={`flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center text-[9px] font-bold
+                            ${q.correct_answer === optIndex ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 text-slate-400'}`}>
+                            {String.fromCharCode(65 + optIndex)}
+                          </div>
+                          <input
+                            className="flex-1 rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-800 outline-none focus:ring-1 focus:ring-indigo-300"
+                            value={opt}
+                            onChange={(e) => setQuestions((prev) => prev.map((item) => item.id === q.id ? { ...item, options: (item.options || []).map((o, i) => i === optIndex ? e.target.value : o) } : item))}
+                            onBlur={() => updateQuestion(questions.find((item) => item.id === q.id))}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <select
+                      className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs text-emerald-800 font-medium outline-none focus:ring-2 focus:ring-emerald-300"
+                      value={q.correct_answer ?? ''}
+                      onChange={(e) => setQuestions((prev) => prev.map((item) => item.id === q.id ? { ...item, correct_answer: e.target.value === '' ? '' : Number(e.target.value) } : item))}
+                      onBlur={() => updateQuestion(questions.find((item) => item.id === q.id))}
+                    >
+                      <option value="">Select correct answer</option>
+                      {(q.options || []).map((opt, optIndex) => (
+                        <option key={`${q.id}-correct-${optIndex}`} value={optIndex}>{String.fromCharCode(65 + optIndex)}. {opt || `Option ${optIndex + 1}`}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               ))}
             </div>
-            {showQuizPreview ? (
-              <div className="mt-4 rounded-lg border border-indigo-200 bg-indigo-50/40 p-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-700">Learner Preview</p>
-                <div className="mt-2 max-h-64 space-y-2 overflow-auto">
+
+            {/* Quiz Preview Mode */}
+            {showQuizPreview && questions.length > 0 ? (
+              <div className="mt-4 rounded-2xl border border-indigo-200 bg-gradient-to-b from-indigo-50 to-white p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /></svg>
+                  </div>
+                  <p className="text-xs font-bold text-indigo-700 uppercase tracking-[0.12em]">Learner Simulation</p>
+                </div>
+                <div className="space-y-3 max-h-56 overflow-auto">
                   {questions.map((q, idx) => (
-                    <div key={`preview-${q.id}`} className="rounded border border-indigo-100 bg-white p-2">
-                      <p className="text-xs font-medium text-slate-800">{idx + 1}. {q.question_text}</p>
-                      <select className="field-input mt-1" value={previewAnswers[q.id] || ''} onChange={(e) => setPreviewAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}>
-                        <option value="">Choose answer</option>
-                        {(q.options || []).map((opt, optIndex) => (
-                          <option key={`preview-${q.id}-${optIndex}`} value={opt}>{opt}</option>
+                    <div key={`preview-${q.id}`} className="rounded-xl border border-indigo-100 bg-white p-3 shadow-sm">
+                      <p className="text-xs font-semibold text-slate-800 mb-2">{idx + 1}. {q.question_text}</p>
+                      <div className="space-y-1.5">
+                        {(q.options || []).map((opt, optIdx) => (
+                          <button
+                            key={`prev-opt-${q.id}-${optIdx}`}
+                            type="button"
+                            onClick={() => setPreviewAnswers((prev) => ({ ...prev, [q.id]: optIdx }))}
+                            className={`w-full text-left flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all
+                              ${previewAnswers[q.id] === optIdx ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
+                          >
+                            <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold
+                              ${previewAnswers[q.id] === optIdx ? 'bg-white text-indigo-700' : 'bg-white text-slate-500 border border-slate-300'}`}>
+                              {String.fromCharCode(65 + optIdx)}
+                            </span>
+                            {opt}
+                          </button>
                         ))}
-                      </select>
+                      </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-2 text-xs text-slate-700">
-                  Score: <span className="font-semibold">{quizPreviewScore.score}%</span> ({quizPreviewScore.correct}/{quizPreviewScore.total}) · Pass mark {quizPreviewScore.passMark || 75}% · <span className={quizPreviewScore.pass ? 'text-emerald-700 font-semibold' : 'text-rose-700 font-semibold'}>{quizPreviewScore.pass ? 'PASS' : 'FAIL'}</span>
+                <div className="mt-3 rounded-xl bg-white border border-slate-200 px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Score</p>
+                    <p className="text-2xl font-bold text-slate-900">{quizPreviewScore.score}<span className="text-sm text-slate-400">%</span></p>
+                    <p className="text-[11px] text-slate-500">{quizPreviewScore.correct}/{quizPreviewScore.total} correct · pass ≥{quizPreviewScore.passMark || 75}%</p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold
+                    ${quizPreviewScore.pass ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'}`}>
+                    {quizPreviewScore.pass ? '✓' : '✗'}
+                  </div>
                 </div>
               </div>
             ) : null}
