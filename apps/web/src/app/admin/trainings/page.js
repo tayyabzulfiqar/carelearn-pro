@@ -236,6 +236,20 @@ export default function TrainingsPage() {
     }
   };
 
+  const archiveTraining = async (row) => {
+    closeRowMenu();
+    markRowBusy(row.id, true);
+    try {
+      await cmsPost(`/trainings/${row.id}/status`, { status: 'archived' });
+      setNotice('Training archived.');
+      await loadRows();
+    } catch (_err) {
+      setError(toErrorText(_err, 'Failed to archive training.'));
+    } finally {
+      markRowBusy(row.id, false);
+    }
+  };
+
   const openPreview = async (row) => {
     closeRowMenu();
     setPreviewOpen(true);
@@ -408,7 +422,7 @@ export default function TrainingsPage() {
                       <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => openPreview(row)}>Preview</button>
                       <a className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-50" href={`/dashboard/courses/${row.id}/player`} target="_blank" rel="noreferrer" onClick={closeRowMenu}>Learner View</a>
                       <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => duplicateTraining(row)}>Duplicate</button>
-                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => cmsPost(`/trainings/${row.id}/status`, { status: 'archived' }).then(loadRows)}>Archive</button>
+                      <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => archiveTraining(row)}>Archive</button>
                       <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50" onClick={() => remove(row)}>Delete</button>
                     </div>
                   ) : null}
