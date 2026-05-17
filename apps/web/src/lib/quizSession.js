@@ -26,20 +26,13 @@ function shuffleWithSeed(items, seed) {
 
 function buildAttemptQuestionSet({ seed, questions }) {
   const normalizedQuestions = Array.isArray(questions) ? questions : [];
-  const shuffledQuestions = shuffleWithSeed(normalizedQuestions, `${seed}:questions`).map((question, questionIndex) => {
-    const indexedOptions = (Array.isArray(question.options) ? question.options : []).map((option, optionIndex) => ({
-      option,
-      optionIndex,
-    }));
-    const shuffledOptions = shuffleWithSeed(indexedOptions, `${seed}:${question.id}:options`);
-
-    return {
-      ...question,
-      options: shuffledOptions.map((entry) => entry.option),
-      correct_answer: shuffledOptions.findIndex((entry) => entry.optionIndex === question.correct_answer),
-      display_order: questionIndex,
-    };
-  });
+  // Question order is shuffled per attempt; option order is preserved so that
+  // the integer correct_answer index stays consistent with the server-side DB value.
+  const shuffledQuestions = shuffleWithSeed(normalizedQuestions, `${seed}:questions`).map((question, questionIndex) => ({
+    ...question,
+    options: Array.isArray(question.options) ? question.options : [],
+    display_order: questionIndex,
+  }));
 
   return {
     seed,

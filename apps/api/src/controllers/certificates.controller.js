@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const db = require('../config/database');
 const { CERTIFICATE_ROOT, generateCertificateImage } = require('../lib/certificate-image');
+const { buildCertificateTemplateModel } = require('../lib/certificate-template');
 const { isGlobalRole } = require('../middleware/tenantAccess');
 const { recordCertificateUsage } = require('../services/billing');
 
@@ -27,15 +28,15 @@ async function withTemplate(certificate) {
   return {
     ...certificate,
     certificate_url: certificate.pdf_url || null,
-      template: {
-        recipientName: getUserName(user),
-        courseTitle,
-        issuedAt: certificate.issued_at,
-      },
-      verification_url: certificate.verification_token
-        ? `/api/v1/certificates/verify-token/${certificate.verification_token}`
-        : null,
-    };
+    template: buildCertificateTemplateModel({
+      recipientName: getUserName(user),
+      issuedAt: certificate.issued_at,
+    }),
+    course_title: courseTitle,
+    verification_url: certificate.verification_token
+      ? `/api/v1/certificates/verify-token/${certificate.verification_token}`
+      : null,
+  };
 }
 
 exports.getByUser = async (req, res, next) => {

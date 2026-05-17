@@ -29,6 +29,8 @@ router.delete('/:courseId/modules/:moduleId/lessons/:lessonId', authenticate, su
 router.get('/:courseId/questions', authenticate, a.getQuestions);
 router.get('/:courseId/lessons/:lessonNumber/questions', authenticate, a.getQuestions);
 router.post('/:courseId/questions', authenticate, superAdmin, a.addQuestion);
+router.put('/:courseId/questions/:questionId', authenticate, superAdmin, a.updateQuestion);
+router.delete('/:courseId/questions/:questionId', authenticate, superAdmin, a.deleteQuestion);
 router.post('/:courseId/attempt', authenticate, a.submitAttempt);
 
 module.exports = router;

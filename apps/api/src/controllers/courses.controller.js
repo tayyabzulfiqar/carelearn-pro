@@ -113,15 +113,20 @@ exports.update = async (req, res, next) => {
   try {
     const {
       title, description, category, cqc_reference,
-      duration_minutes, renewal_years, pass_mark, is_mandatory
+      duration_minutes, renewal_years, pass_mark, is_mandatory, status
     } = req.body;
+    const ALLOWED_STATUSES = ['draft', 'published', 'archived'];
+    const safeStatus = ALLOWED_STATUSES.includes(status) ? status : null;
     const result = await db.query(
       `UPDATE courses SET title=$1, description=$2, category=$3,
        cqc_reference=$4, duration_minutes=$5, renewal_years=$6,
-       pass_mark=$7, is_mandatory=$8, updated_at=NOW()
-       WHERE id=$9 RETURNING *`,
+       pass_mark=$7, is_mandatory=$8,
+       status = COALESCE($9, status),
+       updated_at=NOW()
+       WHERE id=$10 RETURNING *`,
       [title, description, category, cqc_reference,
-       duration_minutes, renewal_years, pass_mark, is_mandatory, req.params.id]
+       duration_minutes, renewal_years, pass_mark, is_mandatory,
+       safeStatus, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Course not found' });
     res.json({ course: result.rows[0] });

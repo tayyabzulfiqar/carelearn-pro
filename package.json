@@ -12,7 +12,10 @@
     "lint": "npm run lint --workspaces --if-present",
     "web:prebuild": "npm run prebuild --workspace @carelearn/web",
     "web:build": "npm run build --workspace @carelearn/web",
-    "web:verify": "npm run web:prebuild && npm run web:build"
+    "web:verify": "npm run web:prebuild && npm run web:build",
+    "fire-safety:import": "node apps/api/src/scripts/import-fire-safety-course.js",
+    "fire-safety:validate": "node apps/api/src/scripts/validate-fire-safety-system.js",
+    "fire-safety:test": "node --test apps/api/src/lib/fire-safety-quiz.test.js apps/web/src/lib/quizSession.test.js apps/web/src/lib/coursePlayerState.test.js"
   },
   "engines": {
     "node": ">=18.0.0"

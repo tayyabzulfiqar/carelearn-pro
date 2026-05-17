@@ -10,6 +10,7 @@ import CertificateView from '@/components/player/CertificateView';
 const PHASE = {
   LOADING: 'loading',
   SLIDES: 'slides',
+  LESSON_QUIZ: 'lesson_quiz',
   QUIZ: 'quiz',
   RESULT: 'result',
   CERT: 'cert',
@@ -46,9 +47,15 @@ export default function CoursePlayerPage() {
   const [error, setError] = useState('');
   const [transitioning, setTransitioning] = useState(false);
   const [smartRuntime, setSmartRuntime] = useState(null);
-  const resumeKey = `carelearn-player-resume-${courseId}`;
 
-  const allLessonsCompleted = allLessons.length > 0 && allLessons.every((lesson) => completedLessonIds.has(lesson.id));
+  // Lesson quiz state
+  const [lessonQuizQuestions, setLessonQuizQuestions] = useState([]);
+  const [lessonQuizLessonNumber, setLessonQuizLessonNumber] = useState(null);
+  const [lessonQuizAttempt, setLessonQuizAttempt] = useState(0);
+  const [lessonQuizPassed, setLessonQuizPassed] = useState(false);
+
+  const resumeKey = `carelearn-player-resume-${courseId}`;
+  const allLessonsCompleted = allLessons.length > 0 && allLessons.every((l) => completedLessonIds.has(l.id));
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
@@ -108,12 +115,12 @@ export default function CoursePlayerPage() {
           .catch(() => ({ data: { progress: [] } }));
         const doneIds = new Set(
           (progressRes.data.progress || [])
-            .filter((progress) => progress.completed)
-            .map((progress) => progress.lesson_id)
+            .filter((p) => p.completed)
+            .map((p) => p.lesson_id),
         );
         setCompletedLessonIds(doneIds);
 
-        const nextIncomplete = lessons.findIndex((lesson) => !doneIds.has(lesson.id));
+        const nextIncomplete = lessons.findIndex((l) => !doneIds.has(l.id));
         const persisted = Number(localStorage.getItem(resumeKey));
         const safePersisted = Number.isInteger(persisted) && persisted >= 0 && persisted < lessons.length ? persisted : null;
         setCurrentIndex(safePersisted ?? (nextIncomplete === -1 ? Math.max(lessons.length - 1, 0) : nextIncomplete));
@@ -138,14 +145,14 @@ export default function CoursePlayerPage() {
       lesson_id: lessonId,
       time_spent_seconds: 60,
     });
-    setCompletedLessonIds((previous) => {
-      const next = new Set(previous);
+    setCompletedLessonIds((prev) => {
+      const next = new Set(prev);
       next.add(lessonId);
       return next;
     });
   }, [completedLessonIds, enrollment]);
 
-  const loadQuiz = useCallback(async (attempt = 1) => {
+  const loadFinalQuiz = useCallback(async (attempt = 1) => {
     const response = await api.get(`/courses/${courseId}/questions?is_final=true`);
     setQuizQuestions(response.data.questions || []);
     setQuizAttempt(attempt);
@@ -157,31 +164,83 @@ export default function CoursePlayerPage() {
     const lesson = allLessons[currentIndex];
     if (!lesson) return;
 
-    if (!completedLessonIds.has(lesson.id)) {
-      await markLessonComplete(lesson.id);
-    }
-
-    if (currentIndex < allLessons.length - 1) {
-      setTransitioning(true);
-      setCurrentIndex((index) => index + 1);
-      setTimeout(() => setTransitioning(false), 220);
+    // Already completed — advance directly without re-quizzing
+    if (completedLessonIds.has(lesson.id)) {
+      if (currentIndex < allLessons.length - 1) {
+        setTransitioning(true);
+        setCurrentIndex((i) => i + 1);
+        setTimeout(() => setTransitioning(false), 220);
+      } else {
+        await loadFinalQuiz(1);
+      }
       return;
     }
 
-    await loadQuiz(1);
-  }, [allLessons, completedLessonIds, currentIndex, loadQuiz, markLessonComplete]);
+    // Try to load a lesson quiz
+    const lessonNum = lesson.lesson_number || currentIndex + 1;
+    try {
+      const response = await api.get(`/courses/${courseId}/questions?is_final=false&lesson_number=${lessonNum}`);
+      const questions = response.data.questions || [];
+      if (questions.length > 0) {
+        setLessonQuizQuestions(questions);
+        setLessonQuizLessonNumber(lessonNum);
+        setLessonQuizAttempt((a) => a + 1);
+        setLessonQuizPassed(false);
+        setPhase(PHASE.LESSON_QUIZ);
+        return;
+      }
+    } catch (e) {
+      console.error('Lesson quiz load failed, advancing without gate:', e);
+    }
+
+    // No quiz for this lesson — mark complete and advance
+    await markLessonComplete(lesson.id);
+    if (currentIndex < allLessons.length - 1) {
+      setTransitioning(true);
+      setCurrentIndex((i) => i + 1);
+      setTimeout(() => setTransitioning(false), 220);
+    } else {
+      await loadFinalQuiz(1);
+    }
+  }, [allLessons, completedLessonIds, courseId, currentIndex, loadFinalQuiz, markLessonComplete]);
 
   const handlePrev = () => {
     if (currentIndex > 0) {
       setTransitioning(true);
-      setCurrentIndex((index) => index - 1);
+      setCurrentIndex((i) => i - 1);
       setTimeout(() => setTransitioning(false), 220);
     }
   };
 
-  const handleLessonSelect = (index) => {
-    setCurrentIndex(index);
-  };
+  const handleLessonSelect = (index) => setCurrentIndex(index);
+
+  // Called by QuizView immediately when quiz is submitted (pass or fail)
+  const handleLessonQuizComplete = useCallback((result) => {
+    if (result.passed) {
+      setLessonQuizPassed(true);
+      // QuizView shows pass screen; user clicks "Continue to Next Lesson" → handleLessonQuizExit
+    }
+    // On fail: QuizView handles retry internally — no parent action needed
+  }, []);
+
+  // Called when user clicks "Continue to Next Lesson" (pass) or "Exit to Course" (fail)
+  const handleLessonQuizExit = useCallback(async () => {
+    if (lessonQuizPassed) {
+      const lesson = allLessons[currentIndex];
+      if (lesson) await markLessonComplete(lesson.id);
+      if (currentIndex < allLessons.length - 1) {
+        setTransitioning(true);
+        setCurrentIndex((i) => i + 1);
+        setTimeout(() => setTransitioning(false), 220);
+        setPhase(PHASE.SLIDES);
+      } else {
+        await loadFinalQuiz(1);
+      }
+    } else {
+      setPhase(PHASE.SLIDES);
+    }
+    setLessonQuizPassed(false);
+  }, [allLessons, currentIndex, lessonQuizPassed, loadFinalQuiz, markLessonComplete]);
 
   const issueCertificate = useCallback(async () => {
     if (!enrollment?.id || !user?.id) return;
@@ -195,24 +254,22 @@ export default function CoursePlayerPage() {
     setPhase(PHASE.CERT);
   }, [courseId, enrollment, user]);
 
-  const handleQuizComplete = useCallback(async (result) => {
+  const handleFinalQuizComplete = useCallback(async (result) => {
+    setQuizResult(result);
     if (!result.passed) {
-      setQuizResult(result);
       setPhase(PHASE.RESULT);
       return;
     }
-
-    setQuizResult(result);
     await issueCertificate();
   }, [issueCertificate]);
 
-  const handleRetryQuiz = async () => {
-    await loadQuiz(quizAttempt + 1);
+  const handleRetryFinalQuiz = async () => {
+    await loadFinalQuiz(quizAttempt + 1);
   };
 
   const handleGoToQuiz = async () => {
     if (!allLessonsCompleted) return;
-    await loadQuiz(1);
+    await loadFinalQuiz(1);
   };
 
   if (loading || !user) return null;
@@ -277,6 +334,21 @@ export default function CoursePlayerPage() {
     );
   }
 
+  if (phase === PHASE.LESSON_QUIZ) {
+    return (
+      <QuizView
+        course={course}
+        questions={lessonQuizQuestions}
+        enrollmentId={enrollment?.id}
+        attemptKey={`lesson-${lessonQuizLessonNumber}-${lessonQuizAttempt}`}
+        mode="lesson"
+        lessonNumber={lessonQuizLessonNumber}
+        onComplete={handleLessonQuizComplete}
+        onExit={handleLessonQuizExit}
+      />
+    );
+  }
+
   if (phase === PHASE.QUIZ) {
     return (
       <QuizView
@@ -284,7 +356,8 @@ export default function CoursePlayerPage() {
         questions={quizQuestions}
         enrollmentId={enrollment?.id}
         attemptKey={`final-${quizAttempt}`}
-        onComplete={handleQuizComplete}
+        mode="final"
+        onComplete={handleFinalQuizComplete}
         onExit={() => router.push('/dashboard/courses')}
       />
     );
@@ -295,16 +368,16 @@ export default function CoursePlayerPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl font-bold bg-red-100 text-red-500">
-            X
+            ✗
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Quiz Failed</h2>
           <p className="text-gray-500 mb-1">
             Score: <span className="font-bold text-gray-900">{quizResult?.score}%</span>
             {' '}({quizResult?.correct}/{quizResult?.total} correct)
           </p>
-          <p className="text-sm text-gray-500 mb-8">You must achieve at least 75 percent to pass</p>
+          <p className="text-sm text-gray-500 mb-8">You must achieve at least 75% to pass</p>
           <button
-            onClick={handleRetryQuiz}
+            onClick={handleRetryFinalQuiz}
             className="px-5 py-2.5 bg-[#0D1F3C] text-white rounded-lg text-sm font-medium hover:bg-[#1a3560] transition-colors"
           >
             Retake Quiz

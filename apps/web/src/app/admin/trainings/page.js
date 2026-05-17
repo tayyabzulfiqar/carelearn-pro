@@ -39,6 +39,9 @@ export default function TrainingsPage() {
   const [aiSummary, setAiSummary] = useState(null);
   const [aiNarration, setAiNarration] = useState(null);
   const [diagBusy, setDiagBusy] = useState(false);
+  const [rowBusy, setRowBusy] = useState({});
+  const [notice, setNotice] = useState('');
+  const [formError, setFormError] = useState('');
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -61,6 +64,7 @@ export default function TrainingsPage() {
         },
       });
       setRows(data?.trainings || []);
+      setPage(1);
     } catch (_err) {
       setError('Unable to load trainings.');
     } finally {
@@ -103,6 +107,7 @@ export default function TrainingsPage() {
 
   const openCreate = () => {
     setForm(EMPTY_FORM);
+    setFormError('');
     setOpen(true);
   };
 
@@ -112,11 +117,31 @@ export default function TrainingsPage() {
       ...row,
       tags: Array.isArray(row.tags) ? row.tags.join(', ') : '',
     });
+    setFormError('');
     setOpen(true);
+  };
+
+  const markRowBusy = (id, busy) => {
+    setRowBusy((prev) => ({ ...prev, [id]: busy }));
+  };
+
+  const validateForm = () => {
+    if (!String(form.title || '').trim()) return 'Title is required.';
+    const duration = Number(form.duration_minutes || 0);
+    if (!Number.isFinite(duration) || duration <= 0) return 'Duration must be greater than 0.';
+    const passMark = Number(form.pass_mark || 0);
+    if (!Number.isFinite(passMark) || passMark < 0 || passMark > 100) return 'Pass mark must be between 0 and 100.';
+    return '';
   };
 
   const submit = async (e) => {
     e.preventDefault();
+    setFormError('');
+    const validationMessage = validateForm();
+    if (validationMessage) {
+      setFormError(validationMessage);
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -132,14 +157,16 @@ export default function TrainingsPage() {
 
       if (form.id) {
         await cmsPut(`/trainings/${form.id}`, payload);
+        setNotice('Training updated.');
       } else {
         await cmsPost('/trainings', payload);
+        setNotice('Training created.');
       }
 
       setOpen(false);
       await loadRows();
     } catch (_err) {
-      setError(toErrorText(_err, 'Failed to save training.'));
+      setFormError(toErrorText(_err, 'Failed to save training.'));
     } finally {
       setSaving(false);
     }
@@ -147,11 +174,15 @@ export default function TrainingsPage() {
 
   const remove = async (row) => {
     if (!window.confirm(`Delete training "${row.title}"?`)) return;
+    markRowBusy(row.id, true);
     try {
       await cmsDelete(`/trainings/${row.id}`);
       await loadRows();
+      setNotice('Training deleted.');
     } catch (_err) {
       setError(toErrorText(_err, 'Failed to delete training.'));
+    } finally {
+      markRowBusy(row.id, false);
     }
   };
 
@@ -160,6 +191,7 @@ export default function TrainingsPage() {
   };
 
   const duplicateTraining = async (row) => {
+    markRowBusy(row.id, true);
     const payload = {
       ...row,
       title: `${row.title} (Copy)`,
@@ -167,19 +199,35 @@ export default function TrainingsPage() {
       tags: Array.isArray(row.tags) ? row.tags : [],
     };
     delete payload.id;
-    await cmsPost('/trainings', payload);
-    await loadRows();
+    try {
+      await cmsPost('/trainings', payload);
+      await loadRows();
+      setNotice('Training duplicated to draft.');
+    } catch (_err) {
+      setError(toErrorText(_err, 'Failed to duplicate training.'));
+    } finally {
+      markRowBusy(row.id, false);
+    }
   };
 
   const togglePublish = async (row) => {
-    if (row.status === 'published') {
-      await cmsPost(`/trainings/${row.id}/status`, { status: 'draft' });
+    markRowBusy(row.id, true);
+    try {
+      if (row.status === 'published') {
+        await cmsPost(`/trainings/${row.id}/status`, { status: 'draft' });
+        setNotice('Training moved back to draft.');
+        await loadRows();
+        return;
+      }
+      await cmsPost(`/trainings/${row.id}/publish`, {});
+      setNotice('Training published.');
       await loadRows();
-      return;
+      await loadDiagnostics();
+    } catch (_err) {
+      setError(toErrorText(_err, row.status === 'published' ? 'Failed to unpublish training.' : 'Failed to publish training.'));
+    } finally {
+      markRowBusy(row.id, false);
     }
-    await cmsPost(`/trainings/${row.id}/publish`, {});
-    await loadRows();
-    await loadDiagnostics();
   };
 
   const openPreview = async (row) => {
@@ -214,6 +262,7 @@ export default function TrainingsPage() {
     try {
       const result = await cmsPost(`/trainings/${previewRow.id}/approval`, { action });
       setPreviewData(result?.preview || null);
+      setNotice(action === 'approved' ? 'Preview approved.' : 'Preview rejected.');
       await loadRows();
     } catch (err) {
       setPreviewError(toErrorText(err, 'Approval action failed.'));
@@ -231,6 +280,7 @@ export default function TrainingsPage() {
       await cmsPost(`/trainings/${previewRow.id}/publish`, {});
       const refreshed = await cmsGet(`/trainings/${previewRow.id}/preview`);
       setPreviewData(refreshed?.preview || null);
+      setNotice('Preview approved and training published.');
       await loadRows();
       await loadDiagnostics();
     } catch (err) {
@@ -293,6 +343,12 @@ export default function TrainingsPage() {
         <p className="mt-1 text-sm text-slate-600">
           Manage healthcare training drafts, publication state, and learner-ready course availability.
         </p>
+        {notice ? (
+          <p className="mt-2 text-sm text-emerald-700" role="status">{notice}</p>
+        ) : null}
+        {error ? (
+          <p className="mt-2 text-sm text-rose-700" role="alert">{error}</p>
+        ) : null}
       </section>
       <section className="surface-card p-4">
         <div className="flex items-center justify-between">
@@ -328,11 +384,12 @@ export default function TrainingsPage() {
             render: (row) => (
               <div className="flex gap-2">
                 <button type="button" className="btn-secondary" onClick={() => openEdit(row)}>Edit</button>
-                <button type="button" className="btn-secondary" onClick={() => openPreview(row)}>Workflow</button>
+                <a className="btn-secondary" href={`/admin/trainings/${row.id}/studio`}>Studio</a>
+                <button type="button" className="btn-secondary" disabled={!!rowBusy[row.id]} onClick={() => openPreview(row)}>Workflow</button>
                 <a className="btn-secondary" href={`/dashboard/courses/${row.id}/player`} target="_blank" rel="noreferrer">Learner View</a>
-                <button type="button" className="btn-secondary" onClick={() => duplicateTraining(row)}>Duplicate</button>
-                <button type="button" className="btn-secondary" onClick={() => togglePublish(row)}>{row.status === 'published' ? 'Unpublish' : 'Publish'}</button>
-                <button type="button" className="btn-secondary" onClick={() => remove(row)}>Delete</button>
+                <button type="button" className="btn-secondary" disabled={!!rowBusy[row.id]} onClick={() => duplicateTraining(row)}>{rowBusy[row.id] ? 'Working...' : 'Duplicate'}</button>
+                <button type="button" className="btn-secondary" disabled={!!rowBusy[row.id]} onClick={() => togglePublish(row)}>{rowBusy[row.id] ? 'Working...' : row.status === 'published' ? 'Unpublish' : 'Publish'}</button>
+                <button type="button" className="btn-secondary" disabled={!!rowBusy[row.id]} onClick={() => remove(row)}>{rowBusy[row.id] ? 'Working...' : 'Delete'}</button>
               </div>
             ),
           },
@@ -349,6 +406,7 @@ export default function TrainingsPage() {
 
       <AdminModal open={open} title={form.id ? 'Edit Training' : 'Create Training'} onClose={() => setOpen(false)}>
         <form className="space-y-3" onSubmit={submit}>
+          {formError ? <p className="text-sm text-rose-600" role="alert">{formError}</p> : null}
           <AdminFormField label="Title"><input className="field-input" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required /></AdminFormField>
           <AdminFormField label="Description"><textarea className="field-input" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} /></AdminFormField>
           <div className="grid grid-cols-2 gap-3">

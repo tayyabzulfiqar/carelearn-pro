@@ -5,7 +5,10 @@ exports.getQuestions = async (req, res, next) => {
   try {
     const { courseId, lessonNumber: lessonNumberParam } = req.params;
     const { lesson_number: lessonNumberQuery, is_final } = req.query;
+    const isFinal = is_final !== 'false';
     const lessonNumber = Number(lessonNumberParam || lessonNumberQuery || 0) || null;
+
+    // Try quiz_questions first (legacy quiz builder path)
     const quizzesResult = await db.query(
       `SELECT id, pass_mark, retry_limit
        FROM quizzes
@@ -14,13 +17,14 @@ exports.getQuestions = async (req, res, next) => {
          AND quiz_type = $2
        ORDER BY updated_at DESC
        LIMIT 1`,
-      [courseId, is_final === 'false' ? 'lesson' : 'final']
+      [courseId, isFinal ? 'final' : 'lesson']
     );
 
     if (quizzesResult.rows.length) {
       const quiz = quizzesResult.rows[0];
       const questions = await db.query(
-        `SELECT id, question_text AS question, options, question_type, explanation, order_index
+        `SELECT id, question_text, options, question_type, explanation, order_index,
+                correct_answer, difficulty, question_key, lesson_number
          FROM quiz_questions
          WHERE quiz_id = $1 AND is_active = true
          ORDER BY order_index ASC`,
@@ -29,18 +33,134 @@ exports.getQuestions = async (req, res, next) => {
       return res.json({
         questions: questions.rows,
         lesson_number: lessonNumber,
-        is_final: is_final !== 'false',
+        is_final: isFinal,
         quiz_id: quiz.id,
-        pass_mark: quiz.pass_mark,
+        pass_mark: quiz.pass_mark || 75,
         retry_limit: quiz.retry_limit,
       });
     }
 
+    const assessmentClauses = [
+      'course_id = $1',
+      'is_active = true',
+      `is_final_assessment = ${isFinal ? 'true' : 'false'}`,
+    ];
+    const assessmentParams = [courseId];
+    if (!isFinal && lessonNumber) {
+      assessmentParams.push(lessonNumber);
+      assessmentClauses.push(`lesson_number = $${assessmentParams.length}`);
+    }
+    const authored = await db.query(
+      `SELECT id, question_text, options, question_type, explanation, order_index,
+              correct_answer, difficulty, question_key, lesson_number, is_final_assessment
+       FROM assessment_questions
+       WHERE ${assessmentClauses.join(' AND ')}
+       ORDER BY order_index ASC`,
+      assessmentParams
+    );
+    if (authored.rows.length) {
+      const courseRow = await db.query('SELECT pass_mark FROM courses WHERE id = $1', [courseId]);
+      return res.json({
+        questions: authored.rows,
+        lesson_number: lessonNumber,
+        is_final: isFinal,
+        pass_mark: courseRow.rows[0]?.pass_mark || 75,
+      });
+    }
+
+    // Fall back to questions table (import-fire-safety-course path)
+    const clauses = [
+      'course_id = $1',
+      'is_active = true',
+      `is_final_assessment = ${isFinal ? 'true' : 'false'}`,
+    ];
+    const params = [courseId];
+
+    if (!isFinal && lessonNumber) {
+      params.push(lessonNumber);
+      clauses.push(`lesson_number = $${params.length}`);
+    }
+
+    const result = await db.query(
+      `SELECT id, question_text, options, question_type, explanation, order_index,
+              correct_answer, difficulty, question_key, lesson_number, is_final_assessment
+       FROM questions
+       WHERE ${clauses.join(' AND ')}
+       ORDER BY order_index ASC`,
+      params
+    );
+
+    const courseRow = await db.query('SELECT pass_mark FROM courses WHERE id = $1', [courseId]);
+    const passMark = courseRow.rows[0]?.pass_mark || 75;
+
     res.json({
-      questions: [],
+      questions: result.rows,
       lesson_number: lessonNumber,
-      is_final: is_final !== 'false',
+      is_final: isFinal,
+      pass_mark: passMark,
     });
+  } catch (err) { next(err); }
+};
+
+exports.updateQuestion = async (req, res, next) => {
+  try {
+    const {
+      question_text,
+      question_type,
+      options,
+      correct_answer,
+      explanation,
+      module_id,
+      lesson_number,
+      difficulty,
+      is_final_assessment,
+      order_index,
+      is_active,
+    } = req.body;
+    const result = await db.query(
+      `UPDATE assessment_questions
+       SET question_text = COALESCE($1, question_text),
+           question_type = COALESCE($2, question_type),
+           options = COALESCE($3, options),
+           correct_answer = COALESCE($4, correct_answer),
+           explanation = COALESCE($5, explanation),
+           module_id = COALESCE($6, module_id),
+           lesson_number = COALESCE($7, lesson_number),
+           difficulty = COALESCE($8, difficulty),
+           is_final_assessment = COALESCE($9, is_final_assessment),
+           order_index = COALESCE($10, order_index),
+           is_active = COALESCE($11, is_active)
+       WHERE id = $12 AND course_id = $13
+       RETURNING *`,
+      [
+        question_text,
+        question_type,
+        options ? JSON.stringify(options) : null,
+        correct_answer,
+        explanation,
+        module_id,
+        lesson_number || null,
+        difficulty,
+        is_final_assessment,
+        order_index,
+        is_active,
+        req.params.questionId,
+        req.params.courseId,
+      ]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Question not found' });
+    res.json({ question: result.rows[0] });
+  } catch (err) { next(err); }
+};
+
+exports.deleteQuestion = async (req, res, next) => {
+  try {
+    const result = await db.query(
+      'DELETE FROM assessment_questions WHERE id = $1 AND course_id = $2 RETURNING id',
+      [req.params.questionId, req.params.courseId]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Question not found' });
+    res.json({ deleted: true });
   } catch (err) { next(err); }
 };
 
@@ -121,9 +241,12 @@ exports.submitAttempt = async (req, res, next) => {
     let passMark = 75;
     let passed = false;
 
+    const courseRow = await db.query('SELECT pass_mark FROM courses WHERE id = $1', [courseId]);
+    passMark = courseRow.rows[0]?.pass_mark || 75;
+
     if (quizForCourse.rows.length) {
       const quiz = quizForCourse.rows[0];
-      passMark = quiz.pass_mark || 75;
+      passMark = quiz.pass_mark || passMark;
       const attemptsCount = await db.query(
         `SELECT COUNT(*)::int AS count
          FROM assessment_attempts
@@ -161,11 +284,26 @@ exports.submitAttempt = async (req, res, next) => {
       score = Number(((earned / totalWeight) * 100).toFixed(2));
       passed = score >= passMark;
     } else {
-      correct = 0;
-      total = 0;
-      score = 0;
-      passed = false;
-      passMark = 75;
+      // Fall back to questions table (import path)
+      const qClauses = ['course_id = $1', 'is_active = true', `is_final_assessment = ${finalMode ? 'true' : 'false'}`];
+      const qParams = [courseId];
+      if (!finalMode && normalizedLessonNumber) {
+        qParams.push(normalizedLessonNumber);
+        qClauses.push(`lesson_number = $${qParams.length}`);
+      }
+      const questionsResult = await db.query(
+        `SELECT id, correct_answer FROM questions WHERE ${qClauses.join(' AND ')}`,
+        qParams
+      );
+      total = questionsResult.rows.length;
+      const byId = new Map(questionsResult.rows.map((q) => [q.id, q]));
+      for (const answer of submittedAnswers) {
+        const q = byId.get(answer.question_id);
+        if (!q) continue;
+        if (String(answer.answer).trim() === String(q.correct_answer).trim()) correct++;
+      }
+      score = total > 0 ? Number(((correct / total) * 100).toFixed(2)) : 0;
+      passed = score >= passMark;
     }
     const attemptId = uuidv4();
 
