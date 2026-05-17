@@ -9,6 +9,7 @@ const { validate } = require('../middleware/validation');
 
 const superAdminOnly = authorize('super_admin');
 const platformOwnerOnly = authorize('platform_owner', 'super_admin');
+const adminWorkspaceRoles = authorize('platform_owner', 'super_admin', 'agency_admin');
 
 router.get(
   '/dashboard',
@@ -23,7 +24,7 @@ router.get(
 router.get(
   '/permissions',
   authenticate,
-  superAdminOnly,
+  adminWorkspaceRoles,
   requirePermission('dashboard.read'),
   admin.getPermissionMatrix
 );
