@@ -222,7 +222,6 @@ export default function TrainingsPage() {
       await cmsPost(`/trainings/${row.id}/publish`, {});
       setNotice('Training published.');
       await loadRows();
-      await loadDiagnostics();
     } catch (_err) {
       setError(toErrorText(_err, row.status === 'published' ? 'Failed to unpublish training.' : 'Failed to publish training.'));
     } finally {
@@ -240,11 +239,11 @@ export default function TrainingsPage() {
     try {
       let preview;
       try {
-        const loaded = await cmsPost(`/trainings/${row.id}/preview/load-latest`, {});
-        preview = loaded?.preview;
-      } catch (_err) {
         const got = await cmsGet(`/trainings/${row.id}/preview`);
         preview = got?.preview;
+      } catch (_err) {
+        const loaded = await cmsPost(`/trainings/${row.id}/preview/load-latest`, {});
+        preview = loaded?.preview;
       }
       setPreviewData(preview || null);
     } catch (err) {
@@ -282,7 +281,6 @@ export default function TrainingsPage() {
       setPreviewData(refreshed?.preview || null);
       setNotice('Preview approved and training published.');
       await loadRows();
-      await loadDiagnostics();
     } catch (err) {
       setPreviewError(toErrorText(err, 'Approve + publish failed.'));
     } finally {
