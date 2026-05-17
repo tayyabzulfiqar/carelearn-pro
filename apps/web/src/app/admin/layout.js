@@ -58,10 +58,11 @@ export default function AdminLayout({ children }) {
     || permissions.includes('user.read')
     || permissions.includes('settings.write');
 
-  if (!hasAdminAccess || user?.role !== 'super_admin') {
+  const allowedAdminRoles = new Set(['super_admin', 'platform_owner', 'agency_admin']);
+  if (!hasAdminAccess || !allowedAdminRoles.has(user?.role)) {
     return (
       <div className="page-container py-8">
-        <AdminErrorState message="Your account does not have super admin workspace access." />
+        <AdminErrorState message="Your account does not have workspace access." />
       </div>
     );
   }

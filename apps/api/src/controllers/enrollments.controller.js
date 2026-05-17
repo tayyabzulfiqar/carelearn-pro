@@ -22,6 +22,12 @@ exports.enroll = async (req, res, next) => {
        RETURNING *`,
       [id, user_id, course_id, scopedOrgId, due_date]
     );
+    await db.query(
+      `INSERT INTO organisation_members (id, organisation_id, user_id, role)
+       VALUES ($1, $2, $3, 'learner')
+       ON CONFLICT (organisation_id, user_id) DO NOTHING`,
+      [uuidv4(), scopedOrgId, user_id]
+    );
     res.status(201).json({ enrollment: result.rows[0] });
   } catch (err) { next(err); }
 };

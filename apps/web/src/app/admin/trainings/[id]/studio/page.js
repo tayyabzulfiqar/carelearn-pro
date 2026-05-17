@@ -63,9 +63,9 @@ export default function CourseStudioPage({ params }) {
   };
 
   const pushQuizNotice = (text) => {
-    pushQuizNotice(text);
+    setQuizNotice(text);
     if (quizNoticeTimeoutRef.current) clearTimeout(quizNoticeTimeoutRef.current);
-    quizNoticeTimeoutRef.current = setTimeout(() => pushQuizNotice(''), 3500);
+    quizNoticeTimeoutRef.current = setTimeout(() => setQuizNotice(''), 3500);
   };
 
   const withBusy = async (key, task) => {
@@ -124,17 +124,6 @@ export default function CourseStudioPage({ params }) {
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [autosave.state]);
 
-  useEffect(() => {
-    const onKey = (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
-        event.preventDefault();
-        if (activeLesson) saveLesson(activeLesson, true);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [activeLesson, saveLesson]);
-
   const openLesson = async (moduleId, lessonId) => {
     try {
       const res = await api.get(`/courses/${courseId}/modules/${moduleId}/lessons`);
@@ -166,6 +155,17 @@ export default function CourseStudioPage({ params }) {
       setError(toError(err, 'Lesson save failed.'));
     }
   }, [courseId, loadAll]);
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        if (activeLesson) saveLesson(activeLesson, true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activeLesson, saveLesson]);
 
   const queueAutosave = (nextLesson) => {
     setActiveLesson(nextLesson);

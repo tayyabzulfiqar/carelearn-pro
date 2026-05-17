@@ -68,33 +68,10 @@ exports.getQuestions = async (req, res, next) => {
       });
     }
 
-    // Fall back to questions table (import-fire-safety-course path)
-    const clauses = [
-      'course_id = $1',
-      'is_active = true',
-      `is_final_assessment = ${isFinal ? 'true' : 'false'}`,
-    ];
-    const params = [courseId];
-
-    if (!isFinal && lessonNumber) {
-      params.push(lessonNumber);
-      clauses.push(`lesson_number = $${params.length}`);
-    }
-
-    const result = await db.query(
-      `SELECT id, question_text, options, question_type, explanation, order_index,
-              correct_answer, difficulty, question_key, lesson_number, is_final_assessment
-       FROM questions
-       WHERE ${clauses.join(' AND ')}
-       ORDER BY order_index ASC`,
-      params
-    );
-
     const courseRow = await db.query('SELECT pass_mark FROM courses WHERE id = $1', [courseId]);
     const passMark = courseRow.rows[0]?.pass_mark || 75;
-
     res.json({
-      questions: result.rows,
+      questions: [],
       lesson_number: lessonNumber,
       is_final: isFinal,
       pass_mark: passMark,
@@ -284,7 +261,7 @@ exports.submitAttempt = async (req, res, next) => {
       score = Number(((earned / totalWeight) * 100).toFixed(2));
       passed = score >= passMark;
     } else {
-      // Fall back to questions table (import path)
+      // assessment_questions is the single source of truth
       const qClauses = ['course_id = $1', 'is_active = true', `is_final_assessment = ${finalMode ? 'true' : 'false'}`];
       const qParams = [courseId];
       if (!finalMode && normalizedLessonNumber) {
@@ -292,7 +269,7 @@ exports.submitAttempt = async (req, res, next) => {
         qClauses.push(`lesson_number = $${qParams.length}`);
       }
       const questionsResult = await db.query(
-        `SELECT id, correct_answer FROM questions WHERE ${qClauses.join(' AND ')}`,
+        `SELECT id, correct_answer FROM assessment_questions WHERE ${qClauses.join(' AND ')}`,
         qParams
       );
       total = questionsResult.rows.length;
