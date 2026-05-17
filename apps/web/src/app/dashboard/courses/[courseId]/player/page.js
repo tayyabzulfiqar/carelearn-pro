@@ -102,17 +102,21 @@ export default function CoursePlayerPage() {
         const enrollRes = await api.get('/enrollments/my');
         let existingEnrollment = enrollRes.data.enrollments?.find((item) => item.course_id === courseId);
         if (!existingEnrollment) {
-          const newEnrollment = await api.post('/enrollments', {
-            user_id: user.id,
-            course_id: courseId,
-          });
-          existingEnrollment = newEnrollment.data.enrollment;
+          try {
+            const newEnrollment = await api.post('/enrollments', {
+              user_id: user.id,
+              course_id: courseId,
+            });
+            existingEnrollment = newEnrollment.data.enrollment;
+          } catch (_err) {
+            existingEnrollment = null;
+          }
         }
         setEnrollment(existingEnrollment);
 
-        const progressRes = await api
-          .get(`/enrollments/${existingEnrollment.id}/progress`)
-          .catch(() => ({ data: { progress: [] } }));
+        const progressRes = existingEnrollment?.id
+          ? await api.get(`/enrollments/${existingEnrollment.id}/progress`).catch(() => ({ data: { progress: [] } }))
+          : { data: { progress: [] } };
         const doneIds = new Set(
           (progressRes.data.progress || [])
             .filter((p) => p.completed)
@@ -139,12 +143,14 @@ export default function CoursePlayerPage() {
   }, [currentIndex, resumeKey]);
 
   const markLessonComplete = useCallback(async (lessonId) => {
-    if (!enrollment?.id || completedLessonIds.has(lessonId)) return;
-    await api.put('/enrollments/progress', {
-      enrollment_id: enrollment.id,
-      lesson_id: lessonId,
-      time_spent_seconds: 60,
-    });
+    if (completedLessonIds.has(lessonId)) return;
+    if (enrollment?.id) {
+      await api.put('/enrollments/progress', {
+        enrollment_id: enrollment.id,
+        lesson_id: lessonId,
+        time_spent_seconds: 60,
+      });
+    }
     setCompletedLessonIds((prev) => {
       const next = new Set(prev);
       next.add(lessonId);

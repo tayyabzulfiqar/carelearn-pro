@@ -69,7 +69,25 @@ export default function QuizView({
   };
 
   const handleSubmit = async () => {
-    if (!enrollmentId || answeredCount !== total) return;
+    if (answeredCount !== total) return;
+    if (!enrollmentId) {
+      const localCorrect = shuffled.reduce((count, q) => {
+        const selectedAnswer = answers[q.id]?.answer;
+        return count + (String(selectedAnswer) === String(q.correct_answer) ? 1 : 0);
+      }, 0);
+      const localScore = total > 0 ? Math.round((localCorrect / total) * 100) : 0;
+      const passMark = Number(course?.pass_mark || 75);
+      const localResult = {
+        score: localScore,
+        passed: localScore >= passMark,
+        correct: localCorrect,
+        total,
+        pass_mark: passMark,
+      };
+      setResult(localResult);
+      onComplete?.(localResult);
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {

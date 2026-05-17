@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import LessonBlockEditor from '@/components/admin/lesson/LessonBlockEditor';
-import { normalizeEditorDocument, serializeLessonDocument } from '@/lib/lesson-blocks';
+import { normalizeEditorDocument, resolveAssetUrl, serializeLessonDocument } from '@/lib/lesson-blocks';
 
 function move(items, from, to) {
   if (from === to || from < 0 || to < 0 || from >= items.length || to >= items.length) return items;
@@ -47,6 +47,7 @@ export default function CourseStudioPage({ params }) {
   const [showQuizPreview, setShowQuizPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [mediaAssets, setMediaAssets] = useState([]);
   const [autosave, setAutosave] = useState({ state: 'idle', lastSavedAt: null, message: '' });
   const [draggingModuleId, setDraggingModuleId] = useState('');
   const [moduleDropIndex, setModuleDropIndex] = useState(-1);
@@ -105,7 +106,17 @@ export default function CourseStudioPage({ params }) {
     }
   }, [courseId, activeModuleId]);
 
+  const loadMediaAssets = useCallback(async () => {
+    try {
+      const res = await api.get('/cms/media-assets');
+      setMediaAssets(res.data?.assets || []);
+    } catch (_err) {
+      setMediaAssets([]);
+    }
+  }, []);
+
   useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => { loadMediaAssets(); }, [loadMediaAssets]);
 
   useEffect(() => () => {
     if (autosaveRef.current) clearTimeout(autosaveRef.current);
@@ -427,8 +438,39 @@ export default function CourseStudioPage({ params }) {
     });
   };
 
-  const uploadMedia = async (event) => {
-    const files = Array.from(event.target.files || []);
+  const buildMediaBlock = (file, indexOffset = 0) => {
+    const mime = String(file?.mimeType || file?.mime_type || '').toLowerCase();
+    const url = file?.url || file?.storage_path || '';
+    const label = file?.originalName || file?.file_name || file?.filename || 'Attachment';
+    const fileType = mime.includes('pdf') ? 'pdf' : (mime.split('/')[1] || '');
+
+    if (mime.includes('pdf')) {
+      return { id: `media-${Date.now()}-${indexOffset}`, type: 'file', payload: { href: url, label, fileType: 'pdf' } };
+    }
+    if (mime.includes('video')) {
+      return { id: `media-${Date.now()}-${indexOffset}`, type: 'video', payload: { src: url, title: label, provider: 'direct' } };
+    }
+    if (mime.includes('image')) {
+      return { id: `media-${Date.now()}-${indexOffset}`, type: 'image', payload: { src: url, alt: label, caption: '' } };
+    }
+    return { id: `media-${Date.now()}-${indexOffset}`, type: 'file', payload: { href: url, label, fileType } };
+  };
+
+  const insertAssetsIntoLesson = (assets) => {
+    if (!activeLesson || !Array.isArray(assets) || !assets.length) return;
+    const existingBlocks = activeLesson.document?.blocks || [];
+    const appended = assets.map((asset, idx) => ({ ...buildMediaBlock(asset, idx), order: existingBlocks.length + idx }));
+    const nextLesson = {
+      ...activeLesson,
+      document: {
+        ...activeLesson.document,
+        blocks: [...existingBlocks, ...appended],
+      },
+    };
+    queueAutosave(nextLesson);
+  };
+
+  const uploadMediaFiles = async (files) => {
     if (!files.length || !activeLesson) return;
     const formData = new FormData();
     files.forEach((f) => formData.append('files', f));
@@ -443,29 +485,20 @@ export default function CourseStudioPage({ params }) {
         },
       });
       const uploaded = res.data?.files || [];
-      if (uploaded.length) {
-        const first = uploaded[0];
-        const ext = String(first.mimeType || '').toLowerCase();
-        const newBlock = ext.includes('pdf')
-          ? { type: 'file', payload: { href: first.url, label: first.originalName || 'Document', fileType: 'pdf' } }
-          : ext.includes('video')
-            ? { type: 'video', payload: { src: first.url, title: first.originalName || 'Video', provider: 'direct' } }
-            : { type: 'image', payload: { src: first.url, alt: first.originalName || 'Image', caption: '' } };
-        const nextLesson = {
-          ...activeLesson,
-          document: {
-            ...activeLesson.document,
-            blocks: [...(activeLesson.document?.blocks || []), { id: `media-${Date.now()}`, order: (activeLesson.document?.blocks || []).length, ...newBlock }],
-          },
-        };
-        queueAutosave(nextLesson);
-      }
-      pushNotice('Media uploaded.');
+      if (uploaded.length) insertAssetsIntoLesson(uploaded);
+      await loadMediaAssets();
+      pushNotice(uploaded.length > 1 ? `${uploaded.length} files uploaded and inserted.` : 'Media uploaded and inserted.');
     } catch (err) {
       setError(toError(err, 'Upload failed.'));
     } finally {
       setUploading(false);
     }
+  };
+
+  const uploadMedia = async (event) => {
+    const files = Array.from(event.target.files || []);
+    await uploadMediaFiles(files);
+    event.target.value = '';
   };
 
   const addQuestion = async () => {
@@ -906,11 +939,19 @@ export default function CourseStudioPage({ params }) {
               {/* Media upload */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-3 block">Upload Media</label>
-                <label className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-6 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors">
+                <label
+                  className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-6 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const dropped = Array.from(e.dataTransfer.files || []);
+                    uploadMediaFiles(dropped);
+                  }}
+                >
                   <svg className="w-7 h-7 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                   <span className="text-sm text-slate-500 font-medium">Drop files here or click to upload</span>
-                  <span className="text-xs text-slate-400">Images, videos, PDFs supported</span>
-                  <input type="file" accept="image/*,video/*,.pdf" className="hidden" onChange={uploadMedia} />
+                  <span className="text-xs text-slate-400">Images, videos, PDFs supported. Multi-upload enabled.</span>
+                  <input type="file" multiple accept="image/*,video/*,.pdf" className="hidden" onChange={uploadMedia} />
                 </label>
                 {uploading ? (
                   <div className="mt-3">
@@ -923,6 +964,37 @@ export default function CourseStudioPage({ params }) {
                     </div>
                   </div>
                 ) : null}
+                <div className="mt-4">
+                  <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Media Gallery</p>
+                  <div className="max-h-56 space-y-2 overflow-auto pr-1">
+                    {mediaAssets.slice(0, 12).map((asset) => {
+                      const source = resolveAssetUrl(asset.storage_path || '');
+                      const mime = String(asset.mime_type || '').toLowerCase();
+                      const isImage = mime.startsWith('image/');
+                      const typeLabel = mime.includes('pdf') ? 'PDF' : mime.includes('video') ? 'Video' : isImage ? 'Image' : 'File';
+                      return (
+                        <div key={asset.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+                          <div className="h-10 w-10 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                            {isImage ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={source} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="grid h-full w-full place-items-center text-[10px] font-bold text-slate-500">{typeLabel}</div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-semibold text-slate-800">{asset.file_name}</p>
+                            <p className="text-[11px] text-slate-500">{typeLabel}</p>
+                          </div>
+                          <button type="button" className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-indigo-700" onClick={() => insertAssetsIntoLesson([asset])}>
+                            Insert into Lesson
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {!mediaAssets.length ? <p className="text-xs text-slate-500">No media assets yet.</p> : null}
+                  </div>
+                </div>
               </div>
 
               {/* Block editor */}
