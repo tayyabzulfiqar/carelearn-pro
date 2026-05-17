@@ -61,6 +61,18 @@ async function getPublishedSnapshot({ organisationId, trainingId }) {
   return snapshot;
 }
 
+async function resolveOrganisationId(req) {
+  if (req.tenant?.organisationId) return req.tenant.organisationId;
+  const row = await db.query(
+    `SELECT id
+     FROM organisations
+     WHERE is_active = true
+     ORDER BY created_at ASC
+     LIMIT 1`
+  );
+  return row.rows[0]?.id || null;
+}
+
 function buildImageManifest(imageFiles = []) {
   const map = {};
   for (const file of imageFiles) {
@@ -328,7 +340,7 @@ exports.extractAndValidateDocument = async (req, res, next) => {
 
 exports.getTrainingPreview = async (req, res, next) => {
   try {
-    const organisationId = req.tenant?.organisationId || null;
+    const organisationId = await resolveOrganisationId(req);
     if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
     const workflowKey = `layer2_publish_workflow_${req.params.id}`;
     const workflow = await getOrgSetting({ organisationId, key: workflowKey });
@@ -389,7 +401,7 @@ exports.getTrainingPreview = async (req, res, next) => {
 
 exports.loadLatestExtractionToPreview = async (req, res, next) => {
   try {
-    const organisationId = req.tenant?.organisationId || null;
+    const organisationId = await resolveOrganisationId(req);
     if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
 
     const extraction = await getOrgSetting({ organisationId, key: 'layer2_ingestion_extraction_last' });
@@ -456,7 +468,7 @@ exports.loadLatestExtractionToPreview = async (req, res, next) => {
 
 exports.setTrainingApproval = async (req, res, next) => {
   try {
-    const organisationId = req.tenant?.organisationId || null;
+    const organisationId = await resolveOrganisationId(req);
     if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
     const { action, reason = '' } = req.body;
     if (!['approved', 'rejected'].includes(action)) {
@@ -500,7 +512,7 @@ exports.setTrainingApproval = async (req, res, next) => {
 
 exports.publishTrainingDeterministic = async (req, res, next) => {
   try {
-    const organisationId = req.tenant?.organisationId || null;
+    const organisationId = await resolveOrganisationId(req);
     if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
     const trainingId = req.params.id;
     const workflow = await getOrgSetting({
