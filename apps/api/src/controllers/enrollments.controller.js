@@ -6,7 +6,10 @@ exports.enroll = async (req, res, next) => {
   try {
     const { user_id, course_id, organisation_id, due_date } = req.body;
     const scopedOrgId = req.scopedOrganisationId || organisation_id || req.tenant?.organisationId || null;
-    if (!scopedOrgId) return res.status(400).json({ error: 'Organisation context required' });
+    // Global roles (super_admin, platform_owner) can self-enroll without org context for preview purposes
+    if (!scopedOrgId && !isGlobalRole(req.user?.role)) {
+      return res.status(400).json({ error: 'Organisation context required' });
+    }
     if (!isGlobalRole(req.user?.role)) {
       const member = await db.query(
         'SELECT 1 FROM organisation_members WHERE organisation_id = $1 AND user_id = $2 LIMIT 1',
@@ -22,12 +25,14 @@ exports.enroll = async (req, res, next) => {
        RETURNING *`,
       [id, user_id, course_id, scopedOrgId, due_date]
     );
-    await db.query(
-      `INSERT INTO organisation_members (id, organisation_id, user_id, role)
-       VALUES ($1, $2, $3, 'learner')
-       ON CONFLICT (organisation_id, user_id) DO NOTHING`,
-      [uuidv4(), scopedOrgId, user_id]
-    );
+    if (scopedOrgId) {
+      await db.query(
+        `INSERT INTO organisation_members (id, organisation_id, user_id, role)
+         VALUES ($1, $2, $3, 'learner')
+         ON CONFLICT (organisation_id, user_id) DO NOTHING`,
+        [uuidv4(), scopedOrgId, user_id]
+      );
+    }
     res.status(201).json({ enrollment: result.rows[0] });
   } catch (err) { next(err); }
 };

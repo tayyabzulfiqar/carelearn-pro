@@ -108,7 +108,7 @@ export default function CourseStudioPage({ params }) {
 
   const loadMediaAssets = useCallback(async () => {
     try {
-      const res = await api.get('/cms/media-assets');
+      const res = await api.get('/admin/cms/media-assets');
       setMediaAssets(res.data?.assets || []);
     } catch (_err) {
       setMediaAssets([]);

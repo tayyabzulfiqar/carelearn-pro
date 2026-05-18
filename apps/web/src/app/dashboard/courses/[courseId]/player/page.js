@@ -69,8 +69,9 @@ export default function CoursePlayerPage() {
         const courseRes = await api.get(`/courses/${courseId}`);
         const courseData = courseRes.data.course;
         setCourse(courseData);
-        const smart = await api.get(`/courses/${courseId}/smart-runtime`).catch(() => ({ data: {} }));
-        setSmartRuntime(smart.data?.smart_runtime || null);
+        // smart-runtime is an optional feature — silently skip if not available
+        const smart = await api.get(`/courses/${courseId}/smart-runtime`).catch(() => null);
+        setSmartRuntime(smart?.data?.smart_runtime || null);
 
         let lessons = [];
         if (courseData?.runtime_snapshot?.render?.lessonBlocks?.length) {

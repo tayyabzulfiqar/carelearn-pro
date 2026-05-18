@@ -18,6 +18,9 @@ async function isUserInOrganisation(userId, organisationId) {
 function requireTenantScope(options = {}) {
   const orgResolver = options.orgResolver || ((req) => req.tenant?.organisationId || req.body?.organisation_id || req.params?.organisationId || null);
   return async (req, res, next) => {
+    // Global roles (super_admin, platform_owner) bypass tenant scope entirely
+    if (isGlobalRole(req.user?.role)) return next();
+
     const organisationId = orgResolver(req);
     if (!organisationId) {
       return res.status(400).json({
@@ -26,7 +29,6 @@ function requireTenantScope(options = {}) {
       });
     }
     req.scopedOrganisationId = organisationId;
-    if (isGlobalRole(req.user?.role)) return next();
     try {
       const allowed = await isUserInOrganisation(req.user.id, organisationId);
       if (!allowed) {
