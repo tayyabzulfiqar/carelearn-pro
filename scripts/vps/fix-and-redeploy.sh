@@ -3,7 +3,7 @@
 # Usage: bash scripts/vps/fix-and-redeploy.sh
 set -euo pipefail
 
-COMPOSE="docker compose -f docker-compose.production.yml"
+COMPOSE="docker compose -f docker-compose.production.yml --env-file .env.production"
 ENV_FILE=".env.production"
 
 echo "=== [1/7] Pulling latest code ==="

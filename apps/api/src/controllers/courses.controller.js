@@ -180,7 +180,7 @@ exports.getSmartRuntime = async (req, res, next) => {
     const courseId = req.params.id;
     const userId = req.user?.id;
     const organisationId = req.tenant?.organisationId || await getUserOrganisationId(userId);
-    if (!organisationId) return res.status(400).json({ error: 'Organisation not found' });
+    if (!organisationId) return res.status(200).json({ smart_runtime: null });
 
     const runtimeSnapshot = await getPublishedRuntimeSnapshot({ organisationId, courseId });
     if (!runtimeSnapshot?.render?.lessonBlocks) {
