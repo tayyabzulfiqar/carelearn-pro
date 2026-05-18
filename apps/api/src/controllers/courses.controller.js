@@ -184,7 +184,7 @@ exports.getSmartRuntime = async (req, res, next) => {
 
     const runtimeSnapshot = await getPublishedRuntimeSnapshot({ organisationId, courseId });
     if (!runtimeSnapshot?.render?.lessonBlocks) {
-      return res.status(404).json({ error: 'Published runtime snapshot not found' });
+      return res.status(200).json({ smart_runtime: null });
     }
 
     const enrollment = await db.query(
