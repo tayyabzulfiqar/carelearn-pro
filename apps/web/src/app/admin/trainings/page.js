@@ -162,13 +162,19 @@ export default function TrainingsPage() {
       if (form.id) {
         await cmsPut(`/trainings/${form.id}`, payload);
         setNotice('Training updated.');
+        setOpen(false);
+        await loadRows();
       } else {
-        await cmsPost('/trainings', payload);
+        const created = await cmsPost('/trainings', payload);
+        const newId = created?.id || created?.training?.id;
+        if (newId) {
+          window.location.href = `/admin/trainings/${newId}/studio`;
+          return;
+        }
         setNotice('Training created.');
+        setOpen(false);
+        await loadRows();
       }
-
-      setOpen(false);
-      await loadRows();
     } catch (_err) {
       setFormError(toErrorText(_err, 'Failed to save training.'));
     } finally {
@@ -358,7 +364,7 @@ export default function TrainingsPage() {
           <>
             <button type="button" className="btn-secondary" onClick={applyFilters}>Apply</button>
             <button type="button" className="btn-secondary" disabled={bulkBusy} onClick={bulkArchiveDrafts}>{bulkBusy ? 'Archiving...' : 'Archive Drafts'}</button>
-            <button type="button" className="btn-secondary" onClick={openCreate}>Quick Create</button>
+            <button type="button" className="btn-primary" onClick={openCreate}>+ New Training</button>
           </>
         )}
       />
@@ -453,7 +459,7 @@ export default function TrainingsPage() {
         </div>
       </div>
 
-      <AdminModal open={open} title={form.id ? 'Edit Training' : 'Create Training'} onClose={() => setOpen(false)}>
+      <AdminModal open={open} title={form.id ? 'Edit Training' : 'New Training — opens Studio after save'} onClose={() => setOpen(false)}>
         <form className="space-y-3" onSubmit={submit}>
           {formError ? <p className="text-sm text-rose-600" role="alert">{formError}</p> : null}
           <AdminFormField label="Title"><input className="field-input" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required /></AdminFormField>
