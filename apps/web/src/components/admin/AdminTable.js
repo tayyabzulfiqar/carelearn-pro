@@ -1,6 +1,6 @@
 export default function AdminTable({ columns = [], rows = [], keyField = 'id' }) {
   return (
-    <div className="surface-card overflow-hidden">
+    <div className="surface-card overflow-x-auto">
       <table className="w-full text-left text-sm">
         <thead className="bg-gray-50">
           <tr>

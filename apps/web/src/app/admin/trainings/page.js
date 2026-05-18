@@ -368,22 +368,33 @@ export default function TrainingsPage() {
           {
             key: 'title',
             label: 'Training',
-            render: (row) => (
-              <div className="flex items-center gap-3 py-1">
-                <div className="h-12 w-12 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-                  {row.thumbnail_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={row.thumbnail_url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="grid h-full w-full place-items-center text-[10px] font-semibold text-slate-400">No Img</div>
-                  )}
+            render: (row) => {
+              const rawDesc = String(row.description || '');
+              const cleanDesc = rawDesc.replace(/[*#_`[\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'No description yet';
+              return (
+                <div className="flex items-center gap-3 py-1">
+                  <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                    {row.thumbnail_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={row.thumbnail_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="grid h-full w-full place-items-center text-[10px] font-semibold text-slate-400">No Img</div>
+                    )}
+                  </div>
+                  <div className="min-w-0 max-w-xs">
+                    <p className="truncate text-sm font-semibold text-slate-900">{row.title}</p>
+                    <p className="truncate text-xs text-slate-400">{cleanDesc}</p>
+                    <a
+                      href={`/admin/trainings/${row.id}/studio`}
+                      className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                    >
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      Open Studio
+                    </a>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-900">{row.title}</p>
-                  <p className="truncate text-xs text-slate-500">{row.description || 'No description yet'}</p>
-                </div>
-              </div>
-            ),
+              );
+            },
           },
           { key: 'category', label: 'Category' },
           {
