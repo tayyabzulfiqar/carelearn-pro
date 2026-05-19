@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth.routes');
@@ -77,6 +78,13 @@ app.use(attachApiHelpers);
 app.use(attachTenant);
 app.use(finalizeAudit());
 
+app.get('/uploads/course-:courseId/images/:fileName', (req, res, next) => {
+  const legacyPath = path.join(__dirname, '../uploads', `course-${req.params.courseId}`, 'images', req.params.fileName);
+  if (fs.existsSync(legacyPath)) return res.sendFile(legacyPath);
+  const mediaFallback = path.join(__dirname, '../uploads/media', req.params.fileName);
+  if (fs.existsSync(mediaFallback)) return res.sendFile(mediaFallback);
+  return next();
+});
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/certificates', express.static(CERTIFICATE_ROOT, {
   immutable: false,

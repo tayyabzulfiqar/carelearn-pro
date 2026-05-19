@@ -20,7 +20,7 @@ const INITIAL_STATE = {
   uploadResult: null,
 };
 
-export default function ImportPanel({ courseId, orgId }) {
+export default function ImportPanel({ courseId, orgId, onMappingsResolved }) {
   const [state, setState] = useState(INITIAL_STATE);
   const file1InputRef = useRef(null);
   const file2InputRef = useRef(null);
@@ -87,10 +87,13 @@ export default function ImportPanel({ courseId, orgId }) {
       const res = await api.get(`/admin/cms/import/images/status?courseId=${cId}`);
       const data = res.data?.data || res.data;
       set({ imageStatus: data, imageStatusLoading: false, phase: 'images' });
+      if (typeof onMappingsResolved === 'function') {
+        onMappingsResolved(data);
+      }
     } catch (_err) {
       set({ imageStatusLoading: false });
     }
-  }, []);
+  }, [onMappingsResolved]);
 
   const bulkUploadImages = async (e) => {
     const files = Array.from(e.target.files || []);

@@ -55,31 +55,7 @@ function VideoBlock({ payload }) {
 
 function FileBlock({ payload }) {
   const href = resolveAssetUrl(payload.href);
-  const [pdfFailed, setPdfFailed] = useState(false);
   if (!href) return null;
-
-  const isPdf = payload.fileType === 'pdf' || /\.pdf($|\?)/i.test(href);
-
-  if (isPdf && !pdfFailed) {
-    return (
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-        <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50 px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            <svg className="h-4 w-4 text-rose-500" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
-            <span className="text-sm font-medium text-stone-700">{payload.label || 'PDF Document'}</span>
-          </div>
-          <a href={href} target="_blank" rel="noreferrer" className="text-xs font-medium text-indigo-600 hover:text-indigo-800">Open in new tab ↗</a>
-        </div>
-        <iframe
-          src={href + '#toolbar=1&navpanes=0&scrollbar=1'}
-          title={payload.label || 'PDF Document'}
-          className="w-full"
-          style={{ minHeight: '600px', border: 'none' }}
-          onError={() => setPdfFailed(true)}
-        />
-      </div>
-    );
-  }
 
   return (
     <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors">

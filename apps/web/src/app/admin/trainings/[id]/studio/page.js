@@ -150,6 +150,22 @@ export default function CourseStudioPage({ params }) {
     }
   };
 
+  const isStructuredMappedLesson = useMemo(() => {
+    const blocks = activeLesson?.document?.blocks || [];
+    return blocks.some((b) => b?.type === 'image_slot');
+  }, [activeLesson]);
+
+  const refreshActiveLessonFromServer = useCallback(async () => {
+    if (!activeLesson?.module_id || !activeLesson?.id) return;
+    try {
+      const res = await api.get(`/courses/${courseId}/modules/${activeLesson.module_id}/lessons`);
+      const lesson = (res.data?.lessons || []).find((item) => item.id === activeLesson.id);
+      if (!lesson) return;
+      setActiveLesson({ ...lesson, module_id: activeLesson.module_id, document: normalizeEditorDocument(lesson.content || {}, lesson.title) });
+      await loadAll();
+    } catch (_err) {}
+  }, [activeLesson, courseId, loadAll]);
+
   const saveLesson = useCallback(async (lessonToSave, announce = false) => {
     if (!lessonToSave?.id || !lessonToSave?.module_id) return;
     setAutosave((prev) => ({ ...prev, state: 'saving', message: 'Saving...' }));
@@ -488,9 +504,13 @@ export default function CourseStudioPage({ params }) {
         },
       });
       const uploaded = res.data?.files || [];
-      if (uploaded.length) insertAssetsIntoLesson(uploaded);
+      if (uploaded.length && !isStructuredMappedLesson) insertAssetsIntoLesson(uploaded);
       await loadMediaAssets();
-      pushNotice(uploaded.length > 1 ? `${uploaded.length} files uploaded and inserted.` : 'Media uploaded and inserted.');
+      if (isStructuredMappedLesson) {
+        pushNotice(uploaded.length > 1 ? `${uploaded.length} files uploaded to media library.` : 'File uploaded to media library.');
+      } else {
+        pushNotice(uploaded.length > 1 ? `${uploaded.length} files uploaded and inserted.` : 'Media uploaded and inserted.');
+      }
     } catch (err) {
       setError(toError(err, 'Upload failed.'));
     } finally {
@@ -954,7 +974,7 @@ export default function CourseStudioPage({ params }) {
                 </button>
                 {importPanelOpen && (
                   <div className="p-4">
-                    <ImportPanel courseId={courseId} orgId={null} />
+                    <ImportPanel courseId={courseId} orgId={null} onMappingsResolved={refreshActiveLessonFromServer} />
                   </div>
                 )}
               </div>
@@ -976,6 +996,11 @@ export default function CourseStudioPage({ params }) {
                   <span className="text-xs text-slate-400">Images, videos, PDFs supported. Multi-upload enabled.</span>
                   <input type="file" multiple accept="image/*,video/*,.pdf" className="hidden" onChange={uploadMedia} />
                 </label>
+                {isStructuredMappedLesson ? (
+                  <p className="mt-2 text-[11px] text-amber-700">
+                    Structured import lesson detected: use the 3-File Import panel for deterministic image auto-match. Manual insertion is disabled for this lesson.
+                  </p>
+                ) : null}
                 {uploading ? (
                   <div className="mt-3">
                     <div className="flex items-center justify-between mb-1">
@@ -1009,9 +1034,11 @@ export default function CourseStudioPage({ params }) {
                             <p className="truncate text-xs font-semibold text-slate-800">{asset.file_name}</p>
                             <p className="text-[11px] text-slate-500">{typeLabel}</p>
                           </div>
-                          <button type="button" className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-indigo-700" onClick={() => insertAssetsIntoLesson([asset])}>
-                            Insert into Lesson
-                          </button>
+                          {!isStructuredMappedLesson ? (
+                            <button type="button" className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-indigo-700" onClick={() => insertAssetsIntoLesson([asset])}>
+                              Insert into Lesson
+                            </button>
+                          ) : null}
                         </div>
                       );
                     })}

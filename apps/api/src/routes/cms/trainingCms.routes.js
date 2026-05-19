@@ -112,7 +112,7 @@ const bulkImgCtrl = require('../../controllers/bulkImageUpload.controller');
 const multerMulti = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, cb) => {
-      const dir = require('path').join(__dirname, '../../../../uploads/media');
+      const dir = require('path').join(__dirname, '../../../uploads/media');
       if (!require('fs').existsSync(dir)) require('fs').mkdirSync(dir, { recursive: true });
       cb(null, dir);
     },

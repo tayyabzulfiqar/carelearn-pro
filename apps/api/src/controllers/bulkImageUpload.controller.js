@@ -77,9 +77,7 @@ exports.bulkMatchImages = async (req, res, next) => {
       const mapping = mappingRes.rows[0];
 
       // Build storage URL
-      const storageUrl = courseId
-        ? `${baseUrl}/uploads/course-${courseId}/images/${file.filename}`
-        : `${baseUrl}/uploads/images/${file.filename}`;
+      const storageUrl = `${baseUrl}/uploads/media/${file.filename}`;
 
       // Insert or update media_assets
       const assetId = randomUUID();
