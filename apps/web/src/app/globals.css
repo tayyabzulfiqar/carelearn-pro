@@ -22,6 +22,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* CareLearn 3-File Image Layout Classes */
+.cl-image--full-width { width: 100%; }
+.cl-image--centred-medium { width: 70%; margin: 0 auto; display: block; }
+.cl-image--banner { width: 100%; }
+.cl-image--centred-small { width: 50%; margin: 0 auto; display: block; }
+
+@media (max-width: 768px) {
+  .cl-image--centred-medium { width: 100%; }
+  .cl-image--centred-small { width: 80%; }
+}
+
+/* Frame styles */
+.cl-frame--teal_organic { border-radius: 12px; border: 2px solid #0d9488; overflow: hidden; }
+.cl-frame--dark_teal_clinical { border-radius: 4px; border: 2px solid #0f4c4c; overflow: hidden; }
+.cl-frame--teal_clinical { border-radius: 4px; border: 1px solid #0d9488; overflow: hidden; }
+.cl-frame--teal_organic_square { border-radius: 8px; border: 2px solid #0d9488; overflow: hidden; }
+.cl-frame--none { border: none; border-radius: 0; }
+
 a {
   color: inherit;
   text-decoration: none;

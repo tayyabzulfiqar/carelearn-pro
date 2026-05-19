@@ -106,4 +106,50 @@ router.post('/invitations/:invitationId/revoke', requirePermission('user.write')
 router.get('/settings', requirePermission('settings.write'), ctrl.listOrganisationSettings);
 router.post('/settings', requirePermission('settings.write'), ctrl.upsertOrganisationSetting);
 
+// 3-File Import System routes (additive — no existing routes changed)
+const importCtrl = require('../../controllers/import3file.controller');
+const bulkImgCtrl = require('../../controllers/bulkImageUpload.controller');
+const multerMulti = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const dir = require('path').join(__dirname, '../../../../uploads/media');
+      if (!require('fs').existsSync(dir)) require('fs').mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req, file, cb) => {
+      const ext = require('path').extname(file.originalname).toLowerCase();
+      cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+    },
+  }),
+  limits: { fileSize: 20 * 1024 * 1024, files: 100 },
+});
+
+router.post('/import/parse',
+  requirePermission('training.write'),
+  withAudit('import_parse', 'import'),
+  importCtrl.parseImport);
+
+router.post('/import/assemble',
+  requirePermission('training.write'),
+  withAudit('import_assemble', 'import'),
+  importCtrl.assembleImport);
+
+router.get('/import/jobs',
+  requirePermission('training.read'),
+  importCtrl.listImportJobs);
+
+router.get('/import/jobs/:jobId',
+  requirePermission('training.read'),
+  importCtrl.getImportJob);
+
+router.post('/import/images/match',
+  requirePermission('media.write'),
+  multerMulti.array('images[]', 100),
+  withAudit('bulk_image_match', 'import'),
+  bulkImgCtrl.bulkMatchImages);
+
+router.get('/import/images/status',
+  requirePermission('media.read'),
+  bulkImgCtrl.getImageStatus);
+
 module.exports = router;

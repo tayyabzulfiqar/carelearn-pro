@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import LessonBlockEditor from '@/components/admin/lesson/LessonBlockEditor';
+import ImportPanel from '@/components/admin/lesson/ImportPanel';
 import { normalizeEditorDocument, resolveAssetUrl, serializeLessonDocument } from '@/lib/lesson-blocks';
 
 function move(items, from, to) {
@@ -53,6 +54,7 @@ export default function CourseStudioPage({ params }) {
   const [moduleDropIndex, setModuleDropIndex] = useState(-1);
   const [draggingLesson, setDraggingLesson] = useState(null);
   const [lessonDrop, setLessonDrop] = useState({ moduleId: '', index: -1 });
+  const [importPanelOpen, setImportPanelOpen] = useState(false);
   const autosaveRef = useRef(null);
   const noticeTimeoutRef = useRef(null);
   const quizNoticeTimeoutRef = useRef(null);
@@ -935,6 +937,26 @@ export default function CourseStudioPage({ params }) {
                   />
                   <span className="text-xs text-slate-400">Ctrl/⌘+S to force save</span>
                 </div>
+              </div>
+
+              {/* 3-File Import Panel */}
+              <div className="rounded-2xl border border-indigo-200 bg-white overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setImportPanelOpen(prev => !prev)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-indigo-600 text-sm">📥</span>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-600">3-File Import</p>
+                  </div>
+                  <span className="text-indigo-500 text-xs">{importPanelOpen ? '▲' : '▼'}</span>
+                </button>
+                {importPanelOpen && (
+                  <div className="p-4">
+                    <ImportPanel courseId={courseId} orgId={null} />
+                  </div>
+                )}
               </div>
 
               {/* Media upload */}

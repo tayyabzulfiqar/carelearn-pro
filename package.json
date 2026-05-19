@@ -19,5 +19,13 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.54.2"
+  },
+  "dependencies": {
+    "form-data": "^4.0.5",
+    "node-fetch": "^3.3.2",
+    "ssh2": "^1.17.0"
   }
 }
