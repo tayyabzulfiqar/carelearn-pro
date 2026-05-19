@@ -155,6 +155,10 @@ export default function CourseStudioPage({ params }) {
     return blocks.some((b) => b?.type === 'image_slot');
   }, [activeLesson]);
 
+  // Combines DB flag (authoritative for new lessons) with block-type detection
+  // (fallback for lessons assembled before the flag was added)
+  const isStructuredLesson = activeLesson?.is_structured_import === true || isStructuredMappedLesson;
+
   const refreshActiveLessonFromServer = useCallback(async () => {
     if (!activeLesson?.module_id || !activeLesson?.id) return;
     try {
@@ -504,9 +508,9 @@ export default function CourseStudioPage({ params }) {
         },
       });
       const uploaded = res.data?.files || [];
-      if (uploaded.length && !isStructuredMappedLesson) insertAssetsIntoLesson(uploaded);
+      if (uploaded.length && !isStructuredLesson) insertAssetsIntoLesson(uploaded);
       await loadMediaAssets();
-      if (isStructuredMappedLesson) {
+      if (isStructuredLesson) {
         pushNotice(uploaded.length > 1 ? `${uploaded.length} files uploaded to media library.` : 'File uploaded to media library.');
       } else {
         pushNotice(uploaded.length > 1 ? `${uploaded.length} files uploaded and inserted.` : 'Media uploaded and inserted.');
@@ -982,25 +986,27 @@ export default function CourseStudioPage({ params }) {
               {/* Media upload */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-3 block">Upload Media</label>
-                <label
-                  className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-6 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const dropped = Array.from(e.dataTransfer.files || []);
-                    uploadMediaFiles(dropped);
-                  }}
-                >
-                  <svg className="w-7 h-7 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                  <span className="text-sm text-slate-500 font-medium">Drop files here or click to upload</span>
-                  <span className="text-xs text-slate-400">Images, videos, PDFs supported. Multi-upload enabled.</span>
-                  <input type="file" multiple accept="image/*,video/*,.pdf" className="hidden" onChange={uploadMedia} />
-                </label>
-                {isStructuredMappedLesson ? (
-                  <p className="mt-2 text-[11px] text-amber-700">
-                    Structured import lesson detected: use the 3-File Import panel for deterministic image auto-match. Manual insertion is disabled for this lesson.
-                  </p>
-                ) : null}
+
+                {isStructuredLesson ? (
+                  <div style={{ padding: '12px 16px', background: '#f0fdf4', border: '1px solid #16a34a', borderRadius: '6px', fontSize: '13px', color: '#15803d', marginBottom: '12px' }}>
+                    <strong>Structured Import Lesson</strong> — Use the Bulk Image Upload section to add images. Manual file uploads are disabled for this lesson.
+                  </div>
+                ) : (
+                  <label
+                    className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-6 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const dropped = Array.from(e.dataTransfer.files || []);
+                      uploadMediaFiles(dropped);
+                    }}
+                  >
+                    <svg className="w-7 h-7 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                    <span className="text-sm text-slate-500 font-medium">Drop files here or click to upload</span>
+                    <span className="text-xs text-slate-400">Images, videos, PDFs supported. Multi-upload enabled.</span>
+                    <input type="file" multiple accept="image/*,video/*,.pdf" className="hidden" onChange={uploadMedia} />
+                  </label>
+                )}
                 {uploading ? (
                   <div className="mt-3">
                     <div className="flex items-center justify-between mb-1">
@@ -1034,7 +1040,7 @@ export default function CourseStudioPage({ params }) {
                             <p className="truncate text-xs font-semibold text-slate-800">{asset.file_name}</p>
                             <p className="text-[11px] text-slate-500">{typeLabel}</p>
                           </div>
-                          {!isStructuredMappedLesson ? (
+                          {!isStructuredLesson ? (
                             <button type="button" className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-indigo-700" onClick={() => insertAssetsIntoLesson([asset])}>
                               Insert into Lesson
                             </button>
@@ -1048,7 +1054,7 @@ export default function CourseStudioPage({ params }) {
               </div>
 
               {/* Block editor */}
-              <LessonBlockEditor document={activeLesson.document} onChange={(doc) => queueAutosave({ ...activeLesson, document: doc })} />
+              <LessonBlockEditor document={activeLesson.document} onChange={(doc) => queueAutosave({ ...activeLesson, document: doc })} isStructuredLesson={isStructuredLesson} />
             </div>
           )}
         </main>

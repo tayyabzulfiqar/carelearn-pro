@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const { uploadImages, uploadMedia } = require('../config/upload');
 const ctrl = require('../controllers/upload.controller');
+const structuredLessonGuard = require('../middleware/structuredLessonGuard');
 const superAdminOnly = authorize('super_admin');
 
 router.post('/images',
@@ -12,6 +13,7 @@ router.post('/images',
 
 router.post('/media',
   authenticate, superAdminOnly,
+  structuredLessonGuard,
   uploadMedia.array('files', 20),
   ctrl.uploadMedia
 );

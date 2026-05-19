@@ -73,10 +73,10 @@ async function assembleCourseDom(resolvedCourseDom, courseId, orgId, userId, db)
           },
         };
 
-        // Insert lesson
+        // Insert lesson — is_structured_import=true marks this as a 3-file assembled lesson
         const lessonRes = await client.query(
-          `INSERT INTO lessons (id, module_id, title, content, status, order_index, duration_minutes)
-           VALUES ($1, $2, $3, $4, 'draft', $5, $6)
+          `INSERT INTO lessons (id, module_id, title, content, status, order_index, duration_minutes, is_structured_import)
+           VALUES ($1, $2, $3, $4, 'draft', $5, $6, true)
            RETURNING id`,
           [
             randomUUID(),

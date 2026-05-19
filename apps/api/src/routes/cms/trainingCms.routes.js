@@ -152,4 +152,9 @@ router.get('/import/images/status',
   requirePermission('media.read'),
   bulkImgCtrl.getImageStatus);
 
+router.post('/import/reset',
+  requirePermission('training.write'),
+  withAudit('import_reset', 'import'),
+  importCtrl.resetStructuredImport);
+
 module.exports = router;

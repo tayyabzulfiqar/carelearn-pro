@@ -244,3 +244,128 @@ exports.getImportJob = async (req, res, next) => {
     return next(err);
   }
 };
+
+/**
+ * POST /api/v1/admin/cms/import/reset
+ * Body: { courseId, confirm: "RESET_STRUCTURED_IMPORT" }
+ *
+ * Removes all structured import data for the given courseId.
+ * Manual lessons (is_structured_import = false/NULL) are preserved.
+ * The course record itself is NOT removed.
+ * Storage files are NOT deleted.
+ */
+exports.resetStructuredImport = async (req, res, next) => {
+  try {
+    const { courseId, confirm } = req.body;
+
+    if (!courseId) {
+      return res.status(400).json({ success: false, error: { code: 'MISSING_COURSE_ID', message: 'courseId is required' } });
+    }
+    if (confirm !== 'RESET_STRUCTURED_IMPORT') {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'CONFIRM_REQUIRED',
+          message: 'Send confirm: "RESET_STRUCTURED_IMPORT" to proceed with reset.',
+        },
+      });
+    }
+
+    // Verify course exists
+    const courseCheck = await db.query('SELECT id FROM courses WHERE id = $1', [courseId]);
+    if (!courseCheck.rows.length) {
+      return res.status(404).json({ success: false, error: { code: 'COURSE_NOT_FOUND', message: 'Course not found' } });
+    }
+
+    const client = await db.getClient();
+    let counts = {};
+
+    try {
+      await client.query('BEGIN');
+
+      // Count manual lessons that will be preserved
+      const manualLessonsRes = await client.query(
+        `SELECT COUNT(*) AS cnt FROM lessons l
+         JOIN modules m ON m.id = l.module_id
+         WHERE m.course_id = $1 AND (l.is_structured_import = false OR l.is_structured_import IS NULL)`,
+        [courseId]
+      );
+      counts.manualLessonsPreserved = parseInt(manualLessonsRes.rows[0].cnt, 10);
+
+      // Delete lesson_blocks_parsed for structured lessons in this course
+      const lbpRes = await client.query(
+        `DELETE FROM lesson_blocks_parsed
+         WHERE lesson_id IN (
+           SELECT l.id FROM lessons l
+           JOIN modules m ON m.id = l.module_id
+           WHERE m.course_id = $1 AND l.is_structured_import = true
+         )`,
+        [courseId]
+      );
+      counts.parsedBlocksRemoved = lbpRes.rowCount;
+
+      // NULL out media_assets.image_mapping_id before removing image_mappings
+      await client.query(
+        `UPDATE media_assets SET image_mapping_id = NULL
+         WHERE image_mapping_id IN (
+           SELECT id FROM image_mappings WHERE course_id = $1
+         )`,
+        [courseId]
+      );
+
+      // Delete image_mappings for this course
+      const imRes = await client.query(
+        `DELETE FROM image_mappings WHERE course_id = $1`,
+        [courseId]
+      );
+      counts.imageMappingsRemoved = imRes.rowCount;
+
+      // Delete import_jobs for this course
+      const ijRes = await client.query(
+        `DELETE FROM import_jobs WHERE course_id = $1`,
+        [courseId]
+      );
+      counts.importJobsRemoved = ijRes.rowCount;
+
+      // Delete structured lessons only
+      const slRes = await client.query(
+        `DELETE FROM lessons
+         WHERE module_id IN (SELECT id FROM modules WHERE course_id = $1)
+         AND is_structured_import = true`,
+        [courseId]
+      );
+      counts.structuredLessonsRemoved = slRes.rowCount;
+
+      // Delete modules that now contain NO lessons at all
+      // (preserve modules that still have manual lessons)
+      const modRes = await client.query(
+        `DELETE FROM modules
+         WHERE course_id = $1
+         AND id NOT IN (
+           SELECT DISTINCT module_id FROM lessons WHERE module_id IN (
+             SELECT id FROM modules WHERE course_id = $1
+           )
+         )`,
+        [courseId]
+      );
+      counts.modulesRemoved = modRes.rowCount;
+
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        courseId,
+        ...counts,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};

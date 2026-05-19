@@ -28,7 +28,7 @@ function textInput(value, onChange, placeholder = '') {
   return <input className="field-input" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />;
 }
 
-export default function LessonBlockEditor({ document, onChange }) {
+export default function LessonBlockEditor({ document, onChange, isStructuredLesson }) {
   const blocks = useMemo(() => document?.blocks || [], [document]);
   const [draggingBlockId, setDraggingBlockId] = useState('');
   const [dropTargetId, setDropTargetId] = useState('');
@@ -71,22 +71,26 @@ export default function LessonBlockEditor({ document, onChange }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Insert Block</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <select className="field-input max-w-xs" value={insertType} onChange={(e) => setInsertType(e.target.value)}>
-            {BLOCK_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-          <button type="button" className="btn-primary" onClick={() => appendBlock(insertType)}>Add Block</button>
-          <p className="text-xs text-slate-500">Tip: drag by handle to reorder, Ctrl/Cmd+S to save lesson.</p>
-        </div>
-      </div>
+      {!isStructuredLesson && (
+        <>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Insert Block</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <select className="field-input max-w-xs" value={insertType} onChange={(e) => setInsertType(e.target.value)}>
+                {BLOCK_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <button type="button" className="btn-primary" onClick={() => appendBlock(insertType)}>Add Block</button>
+              <p className="text-xs text-slate-500">Tip: drag by handle to reorder, Ctrl/Cmd+S to save lesson.</p>
+            </div>
+          </div>
 
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-        {BLOCK_OPTIONS.map((option) => (
-          <button key={option.value} type="button" className="btn-secondary" onClick={() => appendBlock(option.value)}>{option.label}</button>
-        ))}
-      </div>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+            {BLOCK_OPTIONS.map((option) => (
+              <button key={option.value} type="button" className="btn-secondary" onClick={() => appendBlock(option.value)}>{option.label}</button>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="space-y-3">
         {blocks.map((block, index) => (

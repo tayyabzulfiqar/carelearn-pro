@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
 const INITIAL_STATE = {
@@ -18,9 +19,14 @@ const INITIAL_STATE = {
   imageStatusLoading: false,
   uploading: false,
   uploadResult: null,
+  resetConfirm: '',
+  resetLoading: false,
+  resetResult: null,
+  resetError: '',
 };
 
 export default function ImportPanel({ courseId, orgId, onMappingsResolved }) {
+  const router = useRouter();
   const [state, setState] = useState(INITIAL_STATE);
   const file1InputRef = useRef(null);
   const file2InputRef = useRef(null);
@@ -73,6 +79,13 @@ export default function ImportPanel({ courseId, orgId, onMappingsResolved }) {
       const res = await api.post('/admin/cms/import/assemble', { importJobId: state.importJobId });
       const data = res.data?.data || res.data;
       set({ assembling: false, assembleResult: data, phase: 'assembled' });
+      // Clear any localStorage keys for this course so learner player re-fetches fresh state
+      if (typeof window !== 'undefined') {
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes(courseId)) localStorage.removeItem(key);
+        });
+      }
+      router.refresh();
       // Auto-load image status
       loadImageStatus(courseId);
     } catch (err) {
@@ -117,7 +130,26 @@ export default function ImportPanel({ courseId, orgId, onMappingsResolved }) {
 
   const reset = () => setState(INITIAL_STATE);
 
-  const { phase, file1, file2, parsing, parseResult, parseError, assembling, assembleResult, assembleError, imageStatus, imageStatusLoading, uploading, uploadResult } = state;
+  const handleReset = async () => {
+    if (state.resetConfirm !== 'RESET') return;
+    set({ resetLoading: true, resetError: '', resetResult: null });
+    try {
+      const res = await api.post('/admin/cms/import/reset', {
+        courseId,
+        confirm: 'RESET_STRUCTURED_IMPORT',
+      });
+      const data = res.data?.data || res.data;
+      set({ resetLoading: false, resetResult: data, resetConfirm: '' });
+      reset();
+    } catch (err) {
+      const msg = err?.response?.data?.error?.message || err?.message || 'Reset failed';
+      set({ resetLoading: false, resetError: msg });
+    }
+  };
+
+  const { phase, file1, file2, parsing, parseResult, parseError, assembling, assembleResult, assembleError, imageStatus, imageStatusLoading, uploading, uploadResult, resetConfirm, resetLoading, resetResult, resetError } = state;
+
+  const hasExistingImport = phase === 'assembled' || phase === 'images' || !!assembleResult;
 
   return (
     <div className="space-y-4">
@@ -370,6 +402,52 @@ export default function ImportPanel({ courseId, orgId, onMappingsResolved }) {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* SECTION E — Reset Structured Import */}
+      {hasExistingImport && (
+        <div style={{ marginTop: '32px', borderTop: '2px solid #fca5a5', paddingTop: '16px' }}>
+          <h4 style={{ color: '#dc2626', margin: '0 0 8px', fontSize: '13px', fontWeight: 700 }}>
+            Reset Structured Import
+          </h4>
+          <p style={{ fontSize: '12px', color: '#666', margin: '0 0 12px' }}>
+            Removes all structured import data for this course. Manual lessons are preserved. Type RESET to confirm.
+          </p>
+          {resetError && (
+            <div className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700 mb-2">{resetError}</div>
+          )}
+          {resetResult && (
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs text-emerald-700 mb-2">
+              Reset complete: {resetResult.structuredLessonsRemoved} structured lessons removed, {resetResult.manualLessonsPreserved} manual lessons preserved.
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder='Type "RESET" to confirm'
+              value={resetConfirm}
+              onChange={e => set({ resetConfirm: e.target.value })}
+              style={{ padding: '6px 10px', border: '1px solid #f87171', borderRadius: '6px', fontSize: '12px', width: '180px' }}
+            />
+            <button
+              type="button"
+              disabled={resetConfirm !== 'RESET' || resetLoading}
+              onClick={handleReset}
+              style={{
+                background: resetConfirm === 'RESET' ? '#dc2626' : '#ccc',
+                color: 'white',
+                border: 'none',
+                padding: '6px 14px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: resetConfirm === 'RESET' ? 'pointer' : 'default',
+              }}
+            >
+              {resetLoading ? 'Resetting…' : 'Reset Import'}
+            </button>
+          </div>
         </div>
       )}
     </div>

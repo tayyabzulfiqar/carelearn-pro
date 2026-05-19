@@ -5,6 +5,7 @@ const l = require('../controllers/lessons.controller');
 const a = require('../controllers/assessments.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 const { withAudit } = require('../middleware/audit');
+const structuredLessonGuard = require('../middleware/structuredLessonGuard');
 const courseAdmin = authorize('super_admin', 'platform_owner', 'agency_admin');
 
 router.get('/categories', authenticate, c.getCategories);
@@ -23,7 +24,7 @@ router.delete('/:courseId/modules/:moduleId', authenticate, courseAdmin, m.delet
 
 router.get('/:courseId/modules/:moduleId/lessons', authenticate, l.getByModule);
 router.post('/:courseId/modules/:moduleId/lessons', authenticate, courseAdmin, l.create);
-router.put('/:courseId/modules/:moduleId/lessons/:lessonId', authenticate, courseAdmin, l.update);
+router.put('/:courseId/modules/:moduleId/lessons/:lessonId', authenticate, courseAdmin, structuredLessonGuard, l.update);
 router.delete('/:courseId/modules/:moduleId/lessons/:lessonId', authenticate, courseAdmin, l.delete);
 
 router.get('/:courseId/questions', authenticate, a.getQuestions);

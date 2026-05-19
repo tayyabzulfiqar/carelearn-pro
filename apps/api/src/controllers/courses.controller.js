@@ -68,22 +68,31 @@ exports.getById = async (req, res, next) => {
        WHERE m.course_id = $1 GROUP BY m.id ORDER BY m.order_index`,
       [req.params.id]
     );
+    const mappedModules = modules.rows.map((module) => ({
+      ...module,
+      lessons: Array.isArray(module.lessons)
+        ? module.lessons.map((lesson) => ({
+            ...lesson,
+            content: normalizeLessonContent({
+              title: lesson.title,
+              content: lesson.content || {},
+            }),
+          }))
+        : [],
+    }));
+
+    const hasStructuredLesson = mappedModules.some((m) =>
+      (m.lessons || []).some((l) => l.is_structured_import === true)
+    );
+    if (hasStructuredLesson) {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
     res.json({
       course: {
         ...course.rows[0],
         runtime_snapshot: runtimeSnapshot,
-        modules: modules.rows.map((module) => ({
-          ...module,
-        lessons: Array.isArray(module.lessons)
-            ? module.lessons.map((lesson) => ({
-                ...lesson,
-                content: normalizeLessonContent({
-                  title: lesson.title,
-                  content: lesson.content || {},
-                }),
-              }))
-            : [],
-        })),
+        modules: mappedModules,
         questions: [],
       }
     });
