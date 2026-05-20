@@ -54,7 +54,7 @@ export default function CourseStudioPage({ params }) {
   const [moduleDropIndex, setModuleDropIndex] = useState(-1);
   const [draggingLesson, setDraggingLesson] = useState(null);
   const [lessonDrop, setLessonDrop] = useState({ moduleId: '', index: -1 });
-  const [importPanelOpen, setImportPanelOpen] = useState(false);
+  const [importPanelOpen, setImportPanelOpen] = useState(true);
   const autosaveRef = useRef(null);
   const noticeTimeoutRef = useRef(null);
   const quizNoticeTimeoutRef = useRef(null);
@@ -923,6 +923,30 @@ export default function CourseStudioPage({ params }) {
 
         {/* ── CENTRE: Lesson Editor ────────────────────────────────── */}
         <main className="overflow-auto bg-white border-r border-slate-200">
+
+          {/* 3-File Import Panel — always visible, course-level, not gated on lesson selection */}
+          <div className="px-5 pt-5">
+            <div className="rounded-2xl border border-indigo-200 bg-white overflow-hidden">
+              <button
+                type="button"
+                data-testid="import-panel-toggle"
+                onClick={() => setImportPanelOpen(prev => !prev)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-indigo-600 text-sm">📥</span>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-600">3-File Import</p>
+                </div>
+                <span className="text-indigo-500 text-xs">{importPanelOpen ? '▲' : '▼'}</span>
+              </button>
+              {importPanelOpen && (
+                <div className="p-4">
+                  <ImportPanel courseId={courseId} orgId={null} onMappingsResolved={refreshActiveLessonFromServer} />
+                </div>
+              )}
+            </div>
+          </div>
+
           {!activeLesson ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-12 text-center">
               <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
@@ -961,26 +985,6 @@ export default function CourseStudioPage({ params }) {
                   />
                   <span className="text-xs text-slate-400">Ctrl/⌘+S to force save</span>
                 </div>
-              </div>
-
-              {/* 3-File Import Panel */}
-              <div className="rounded-2xl border border-indigo-200 bg-white overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setImportPanelOpen(prev => !prev)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-indigo-50 hover:bg-indigo-100 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-indigo-600 text-sm">📥</span>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-600">3-File Import</p>
-                  </div>
-                  <span className="text-indigo-500 text-xs">{importPanelOpen ? '▲' : '▼'}</span>
-                </button>
-                {importPanelOpen && (
-                  <div className="p-4">
-                    <ImportPanel courseId={courseId} orgId={null} onMappingsResolved={refreshActiveLessonFromServer} />
-                  </div>
-                )}
               </div>
 
               {/* Media upload */}

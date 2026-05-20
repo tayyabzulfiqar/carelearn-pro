@@ -152,7 +152,7 @@ export default function ImportPanel({ courseId, orgId, onMappingsResolved }) {
   const hasExistingImport = phase === 'assembled' || phase === 'images' || !!assembleResult;
 
   return (
-    <div className="space-y-4">
+    <div data-testid="import-panel" className="space-y-4">
       {/* SECTION A — File Upload */}
       <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Section A — Content & Mapping Files</p>

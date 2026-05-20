@@ -68,6 +68,10 @@ export default function CoursePlayerPage() {
       try {
         const courseRes = await api.get(`/courses/${courseId}`);
         const courseData = courseRes.data.course;
+        if (!courseData) {
+          setError('Course not found. Please go back and try again.');
+          return;
+        }
         setCourse(courseData);
         // smart-runtime is an optional feature — silently skip if not available
         const smart = await api.get(`/courses/${courseId}/smart-runtime`).catch(() => null);
@@ -314,7 +318,7 @@ export default function CoursePlayerPage() {
 
   if (phase === PHASE.SLIDES) {
     return (
-      <div className={`transition-opacity duration-200 ${transitioning ? 'opacity-60' : 'opacity-100'}`}>
+      <div data-testid="lesson-content" className={`transition-opacity duration-200 ${transitioning ? 'opacity-60' : 'opacity-100'}`}>
         {smartRuntime ? (
           <div className="mx-auto mt-4 max-w-5xl rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-slate-700">
             <p className="font-semibold text-slate-900">Smart Recommendation: {smartRuntime.recommendations?.action || 'resume_lessons'}</p>
