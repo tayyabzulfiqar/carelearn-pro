@@ -4,24 +4,14 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import AdminTable from '@/components/admin/AdminTable';
 import { AdminErrorState, AdminLoadingState } from '@/components/admin/AdminStates';
-import AdminFormField from '@/components/admin/AdminFormField';
-import { cmsDelete, cmsGet, cmsPost } from '@/lib/admin/cmsApi';
+import { cmsDelete, cmsGet } from '@/lib/admin/cmsApi';
 import api from '@/lib/api';
-
-const EMPTY = {
-  file_name: '',
-  storage_path: '',
-  mime_type: '',
-  file_size_bytes: 0,
-  tags: '',
-};
 
 export default function MediaPage() {
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [form, setForm] = useState(EMPTY);
   const [uploadFile, setUploadFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -46,20 +36,6 @@ export default function MediaPage() {
   };
 
   useEffect(() => { loadRows(); }, []);
-
-  const addAsset = async (e) => {
-    e.preventDefault();
-    await cmsPost('/media-assets', {
-      file_name: form.file_name,
-      storage_path: form.storage_path,
-      mime_type: form.mime_type,
-      file_size_bytes: Number(form.file_size_bytes || 0),
-      tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
-      metadata: {},
-    });
-    setForm(EMPTY);
-    await loadRows();
-  };
 
   const beginUpload = async () => {
     if (!uploadFile) return;
@@ -92,13 +68,10 @@ export default function MediaPage() {
       const first = response?.data?.files?.[0];
       const firstAsset = response?.data?.assets?.[0];
       if (first?.filename) {
-        const next = {
+        setLastUpload({
           file_name: firstAsset?.file_name || first.filename,
           storage_path: firstAsset?.storage_path || first.url,
-          mime_type: firstAsset?.mime_type || uploadFile.type || '',
-          file_size_bytes: firstAsset?.file_size_bytes || uploadFile.size || 0,
-        };
-        setLastUpload(next);
+        });
       }
       await loadRows();
     } catch (err) {
@@ -131,17 +104,31 @@ export default function MediaPage() {
         <h1 className="text-xl font-semibold text-slate-900">Media Library</h1>
         <p className="mt-1 text-sm text-slate-600">Store and reuse compliant training assets including images, PDFs, and videos.</p>
       </section>
+
+      {/* Bulk image matching guidance */}
+      <section className="surface-card p-4 border-l-4 border-indigo-400 bg-indigo-50">
+        <p className="text-sm font-semibold text-indigo-900 mb-1">Bulk Image Upload for Structured Courses</p>
+        <p className="text-sm text-indigo-800">
+          To match and upload images for a structured import course, open the course in Studio and use the
+          <strong> 3-File Import panel &rarr; Section D (Image Status)</strong>. Images are matched to
+          lessons automatically by filename (e.g. IMG_101.webp).
+        </p>
+        <a
+          href="/admin/trainings"
+          className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-700 hover:text-indigo-900"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+          Go to Training Catalogue
+        </a>
+      </section>
+
       <section className="surface-card p-4">
         <input className="field-input" placeholder="Search assets by name, type, or tag" value={search} onChange={(e) => setSearch(e.target.value)} />
       </section>
-      <form className="surface-card grid gap-3 p-4 md:grid-cols-2" onSubmit={addAsset}>
-        <AdminFormField label="File Name"><input className="field-input" value={form.file_name} onChange={(e) => setForm((f) => ({ ...f, file_name: e.target.value }))} required /></AdminFormField>
-        <AdminFormField label="Storage Path"><input className="field-input" value={form.storage_path} onChange={(e) => setForm((f) => ({ ...f, storage_path: e.target.value }))} required /></AdminFormField>
-        <AdminFormField label="MIME Type"><input className="field-input" value={form.mime_type} onChange={(e) => setForm((f) => ({ ...f, mime_type: e.target.value }))} /></AdminFormField>
-        <AdminFormField label="File Size Bytes"><input className="field-input" type="number" value={form.file_size_bytes} onChange={(e) => setForm((f) => ({ ...f, file_size_bytes: e.target.value }))} /></AdminFormField>
-        <AdminFormField label="Tags"><input className="field-input" value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="image, onboarding" /></AdminFormField>
-        <div className="flex items-end"><button type="submit" className="btn-primary">Register Asset</button></div>
-      </form>
+
+      {/* Direct Upload — single file upload to media library */}
       <div className="surface-card space-y-3 p-4">
         <p className="text-sm font-semibold text-slate-900">Direct Upload</p>
         <div
@@ -171,7 +158,7 @@ export default function MediaPage() {
               }
             }}
           />
-          <p className="mt-2 text-xs text-slate-500">Drag and drop supported. Max 100MB.</p>
+          <p className="mt-2 text-xs text-slate-500">Drag and drop supported. Max 100MB. Images, videos, and PDFs accepted.</p>
         </div>
         {previewUrl ? <img src={previewUrl} alt="Media preview" className="max-h-48 rounded-lg border border-slate-200 object-contain" /> : null}
         {uploading ? (
@@ -203,7 +190,17 @@ export default function MediaPage() {
             label: 'Actions',
             render: (row) => (
               <div className="flex gap-2">
-                <button type="button" className="btn-secondary" onClick={() => { navigator.clipboard.writeText(row.storage_path); setCopied(row.id); setTimeout(() => setCopied(''), 1200); }}>{copied === row.id ? 'Copied' : 'Copy URL'}</button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(row.storage_path);
+                    setCopied(row.id);
+                    setTimeout(() => setCopied(''), 1200);
+                  }}
+                >
+                  {copied === row.id ? 'Copied' : 'Copy URL'}
+                </button>
                 <button type="button" className="btn-secondary" onClick={() => remove(row)}>Delete</button>
               </div>
             ),

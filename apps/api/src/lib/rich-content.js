@@ -15,7 +15,22 @@ const BLOCK_TYPES = Object.freeze({
   EMBED: 'embed',
 });
 
-const ALLOWED_BLOCK_TYPES = new Set(Object.values(BLOCK_TYPES));
+const ALLOWED_BLOCK_TYPES = new Set([
+  ...Object.values(BLOCK_TYPES),
+  // schema_version:3 structured import block types — ADDITIVE ONLY
+  'key_information',
+  'warning_box',
+  'critical_information',
+  'best_practice',
+  'important_note',
+  'step_list',
+  'objective_list',
+  'image_slot',
+  'quiz_point',
+  'summary',
+  'reflection_prompts',
+  'reference_table',
+]);
 
 const SAFE_URL_PATTERN = /^(https?:\/\/|\/|#)/i;
 
@@ -92,6 +107,70 @@ function normalizeBlockPayload(type, payload = {}) {
         title: cleanText(payload.title, { max: 140 }),
         height: Math.min(1000, Math.max(160, Number(payload.height || 360))),
       };
+
+    // ── schema_version:3 structured import types ─────────────────────
+    // These types are stored by the assembler with structured payloads.
+    // They must pass through with their data intact for RichLessonRenderer.
+
+    case 'key_information':
+    case 'warning_box':
+    case 'critical_information':
+    case 'best_practice':
+    case 'important_note':
+      return {
+        text: cleanText(payload.text, { max: 20000 }),
+        tone: cleanText(payload.tone || 'info', { max: 40 }),
+      };
+
+    case 'step_list':
+      return {
+        steps: Array.isArray(payload.steps)
+          ? payload.steps.map((s) => cleanText(s, { max: 2000 })).filter(Boolean)
+          : [],
+        text: cleanText(payload.text || '', { max: 20000 }),
+      };
+
+    case 'objective_list':
+      return {
+        objectives: Array.isArray(payload.objectives)
+          ? payload.objectives.map((o) => cleanText(o, { max: 2000 })).filter(Boolean)
+          : [],
+        text: cleanText(payload.text || '', { max: 20000 }),
+      };
+
+    case 'image_slot':
+      return {
+        imageId: cleanText(payload.imageId || '', { max: 80 }),
+        position: cleanText(payload.position || 'full_width', { max: 60 }),
+        ratio: cleanText(payload.ratio || '16:9', { max: 20 }),
+        frameStyle: cleanText(payload.frameStyle || 'none', { max: 40 }),
+        alignment: cleanText(payload.alignment || 'center', { max: 20 }),
+        cdnUrl: safeUrl(payload.cdnUrl || ''),
+        resolutionStatus: cleanText(payload.resolutionStatus || 'unresolved', { max: 40 }),
+        isSequentialSet: Boolean(payload.isSequentialSet),
+        sequentialSetKey: payload.sequentialSetKey
+          ? cleanText(payload.sequentialSetKey, { max: 120 })
+          : null,
+        sequentialSetIncomplete: Boolean(payload.sequentialSetIncomplete),
+      };
+
+    case 'quiz_point':
+      return {
+        question: cleanText(payload.question || '', { max: 2000 }),
+        options: Array.isArray(payload.options)
+          ? payload.options.map((o) => cleanText(o, { max: 500 })).filter(Boolean)
+          : [],
+        correct: Number.isFinite(Number(payload.correct)) ? Number(payload.correct) : 0,
+        rationale: cleanText(payload.rationale || '', { max: 2000 }),
+      };
+
+    case 'summary':
+    case 'reflection_prompts':
+    case 'reference_table':
+      return {
+        text: cleanText(payload.text || '', { max: 20000 }),
+      };
+
     default:
       return {};
   }
