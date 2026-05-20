@@ -1,0 +1,199 @@
+{
+  "timestamp": "2026-05-20T03:24:11.897Z",
+  "score": "35/38 (92%)",
+  "p1_resolved": true,
+  "p2_resolved": true,
+  "p3_stabilized": true,
+  "results": [
+    {
+      "name": "API health endpoint responds",
+      "ok": true,
+      "detail": "status: ok"
+    },
+    {
+      "name": "Admin trainings page loads (HTTP 200)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin login redirects away from /login",
+      "ok": true,
+      "detail": "landed: http://187.127.105.253/admin"
+    },
+    {
+      "name": "Admin lands on admin-area page",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin token obtained",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Training catalogue shows at least one course",
+      "ok": true,
+      "detail": "rows: 10"
+    },
+    {
+      "name": "At least one Open Studio link visible",
+      "ok": true,
+      "detail": "studio links: 20"
+    },
+    {
+      "name": "At least one course exists in system",
+      "ok": true,
+      "detail": "using: PARSE-FORMAT-TEST"
+    },
+    {
+      "name": "Studio page loads at correct URL",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Import Panel present in Studio DOM",
+      "ok": true,
+      "detail": "testid: 1, text: true, class: 0"
+    },
+    {
+      "name": "Import Panel visible without requiring toggle (data-testid found)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Import Panel contains textarea inputs",
+      "ok": true,
+      "detail": "in panel: 2, total: 4"
+    },
+    {
+      "name": "Import Panel contains Parse/Validate button",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Studio shows lesson navigation",
+      "ok": false,
+      "detail": "lesson nav items: 0"
+    },
+    {
+      "name": "Upload without lesson_id is not blocked (not 403)",
+      "ok": true,
+      "detail": "status: 500"
+    },
+    {
+      "name": "No structured lesson in DB to test guard against",
+      "ok": true,
+      "detail": "guard exists in code — will activate after next import"
+    },
+    {
+      "name": "Learner login redirects away from /login",
+      "ok": true,
+      "detail": "landed: http://187.127.105.253/dashboard"
+    },
+    {
+      "name": "Learner token obtained",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Learner dashboard has visible content",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Learner has at least one enrollment",
+      "ok": true,
+      "detail": "count: 1"
+    },
+    {
+      "name": "Enrolled course ID available for player navigation",
+      "ok": true,
+      "detail": "courseId: c6416094-2d99-4498-9199-2bcaecac8b33"
+    },
+    {
+      "name": "Player navigation does not redirect away",
+      "ok": true,
+      "detail": "url: http://187.127.105.253/dashboard/courses/c6416094-2d99-4498-9199-2bcaecac8b33/player"
+    },
+    {
+      "name": "No RSC aborts during player navigation",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "Player page has lesson content",
+      "ok": true,
+      "detail": "data-testid: 1"
+    },
+    {
+      "name": "No raw PDF download links in learner player",
+      "ok": true,
+      "detail": "pdf links: 0"
+    },
+    {
+      "name": "Lesson content blocks render",
+      "ok": false,
+      "detail": "blocks: 0"
+    },
+    {
+      "name": "No broken images in player",
+      "ok": true,
+      "detail": "broken: 0"
+    },
+    {
+      "name": "Test course created",
+      "ok": true,
+      "detail": "id: e9179a02-025b-44a3-834c-f59e1e9644eb"
+    },
+    {
+      "name": "Parse returns 200",
+      "ok": true,
+      "detail": "status: 200"
+    },
+    {
+      "name": "Parse detects 1 module",
+      "ok": true,
+      "detail": "modules: 1"
+    },
+    {
+      "name": "Parse detects 1 lesson",
+      "ok": true,
+      "detail": "lessons: 1"
+    },
+    {
+      "name": "Assemble returns 200",
+      "ok": true,
+      "detail": "status: 200"
+    },
+    {
+      "name": "Assemble creates 1 lesson",
+      "ok": true,
+      "detail": "lessons: 1"
+    },
+    {
+      "name": "Assembled lesson has is_structured_import=true",
+      "ok": true,
+      "detail": "flag: true"
+    },
+    {
+      "name": "Import Panel visible in assembled course Studio without lesson selection",
+      "ok": true,
+      "detail": "count: 1"
+    },
+    {
+      "name": "Upload UI hidden for structured lesson",
+      "ok": true,
+      "detail": "visible upload elements: 0"
+    },
+    {
+      "name": "Structured lesson banner visible",
+      "ok": false,
+      "detail": "not found"
+    },
+    {
+      "name": "Zero console errors on training catalogue reload",
+      "ok": true,
+      "detail": "clean"
+    }
+  ]
+}
