@@ -1,7 +1,5 @@
 'use strict';
-const { chromium } = require(
-  'C:/Users/HP/.agents/skills/playwright-skill/node_modules/playwright'
-);
+const { chromium } = require('playwright');
 const fs = require('fs');
 
 const BASE = 'http://187.127.105.253';
