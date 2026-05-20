@@ -39,3 +39,25 @@ test('markdown conversion returns block objects', () => {
   assert.ok(Array.isArray(blocks));
   assert.ok(blocks.length >= 2);
 });
+
+test('preserves pdf_document payload', () => {
+  const normalized = normalizeLessonDocument({
+    title: 'PDF Lesson',
+    content: {
+      blocks: [
+        {
+          type: 'pdf_document',
+          payload: {
+            url: '/uploads/media/abc123.pdf',
+            filename: 'abc123.pdf',
+            mimeType: 'application/pdf',
+          },
+        },
+      ],
+    },
+  });
+
+  assert.equal(normalized.blocks[0].type, 'pdf_document');
+  assert.equal(normalized.blocks[0].payload.url, '/uploads/media/abc123.pdf');
+  assert.equal(normalized.blocks[0].payload.mimeType, 'application/pdf');
+});

@@ -2,8 +2,77 @@ const fs = require('fs');
 const path = require('path');
 const { randomUUID } = require('crypto');
 const db = require('../config/database');
+const { normalizeLessonDocument } = require('../lib/rich-content');
 
 const IMAGE_NAME_PATTERN = /^slide(\d+)_(\d+)\.(jpg|jpeg|png|webp|gif)$/i;
+
+function inferPdfFilename(file = {}) {
+  return file.originalName || file.filename || 'Document.pdf';
+}
+
+function isPdfAsset(file = {}) {
+  return String(file.mimeType || '').toLowerCase().includes('pdf');
+}
+
+async function upsertPdfBlockForLesson({ lessonId, uploadedPdf }) {
+  const lessonResult = await db.query(
+    `SELECT id, title, content
+     FROM lessons
+     WHERE id = $1
+     LIMIT 1`,
+    [lessonId]
+  );
+  if (!lessonResult.rows.length) return { updated: false, reason: 'lesson_not_found' };
+
+  const lesson = lessonResult.rows[0];
+  const normalized = normalizeLessonDocument({
+    title: lesson.title,
+    content: lesson.content || {},
+  });
+  const blocks = Array.isArray(normalized.blocks) ? [...normalized.blocks] : [];
+  const payload = {
+    url: uploadedPdf.url,
+    filename: inferPdfFilename(uploadedPdf),
+    mimeType: 'application/pdf',
+  };
+
+  const matchIndex = blocks.findIndex((block) => (
+    block?.type === 'pdf_document' && (
+      block?.payload?.url === payload.url
+      || String(block?.payload?.filename || '').toLowerCase() === payload.filename.toLowerCase()
+    )
+  ));
+
+  if (matchIndex >= 0) {
+    blocks[matchIndex] = {
+      ...blocks[matchIndex],
+      payload: { ...(blocks[matchIndex].payload || {}), ...payload },
+    };
+  } else {
+    blocks.push({
+      id: randomUUID(),
+      type: 'pdf_document',
+      order: blocks.length,
+      payload,
+    });
+  }
+
+  const nextContent = normalizeLessonDocument({
+    title: lesson.title,
+    content: {
+      ...normalized,
+      blocks,
+    },
+  });
+
+  await db.query(
+    `UPDATE lessons
+     SET content = $1, updated_at = NOW()
+     WHERE id = $2`,
+    [nextContent, lessonId]
+  );
+  return { updated: true };
+}
 
 exports.uploadImages = async (req, res, next) => {
   try {
@@ -58,6 +127,7 @@ exports.uploadMedia = async (req, res, next) => {
     }));
 
     const organisationId = req.tenant?.organisationId || null;
+    const lessonId = req.body?.lesson_id || req.query?.lesson_id || null;
     const insertedAssets = [];
 
     for (const file of uploaded) {
@@ -82,7 +152,29 @@ exports.uploadMedia = async (req, res, next) => {
       insertedAssets.push(created.rows[0]);
     }
 
-    return res.success({ files: uploaded, assets: insertedAssets, count: uploaded.length });
+    let lessonPdfSync = null;
+    if (lessonId) {
+      const pdfs = uploaded.filter(isPdfAsset);
+      if (pdfs.length) {
+        let updatedCount = 0;
+        for (const pdf of pdfs) {
+          const result = await upsertPdfBlockForLesson({ lessonId, uploadedPdf: pdf });
+          if (result.updated) updatedCount += 1;
+        }
+        lessonPdfSync = {
+          lesson_id: lessonId,
+          attempted: pdfs.length,
+          updated: updatedCount,
+        };
+      }
+    }
+
+    return res.success({
+      files: uploaded,
+      assets: insertedAssets,
+      count: uploaded.length,
+      lesson_pdf_sync: lessonPdfSync,
+    });
   } catch (err) {
     return next(err);
   }

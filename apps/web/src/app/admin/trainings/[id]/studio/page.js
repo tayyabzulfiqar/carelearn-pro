@@ -468,7 +468,11 @@ export default function CourseStudioPage({ params }) {
     const fileType = mime.includes('pdf') ? 'pdf' : (mime.split('/')[1] || '');
 
     if (mime.includes('pdf')) {
-      return { id: `media-${Date.now()}-${indexOffset}`, type: 'file', payload: { href: url, label, fileType: 'pdf' } };
+      return {
+        id: `media-${Date.now()}-${indexOffset}`,
+        type: 'pdf_document',
+        payload: { url, filename: label, mimeType: 'application/pdf' },
+      };
     }
     if (mime.includes('video')) {
       return { id: `media-${Date.now()}-${indexOffset}`, type: 'video', payload: { src: url, title: label, provider: 'direct' } };
@@ -497,6 +501,7 @@ export default function CourseStudioPage({ params }) {
     if (!files.length || !activeLesson) return;
     const formData = new FormData();
     files.forEach((f) => formData.append('files', f));
+    formData.append('lesson_id', activeLesson.id);
     setUploading(true);
     setUploadProgress(0);
     try {
@@ -508,7 +513,10 @@ export default function CourseStudioPage({ params }) {
         },
       });
       const uploaded = res.data?.files || [];
-      if (uploaded.length && !isStructuredLesson) insertAssetsIntoLesson(uploaded);
+      if (uploaded.length && !isStructuredLesson) {
+        const nonPdfUploads = uploaded.filter((file) => !String(file?.mimeType || '').toLowerCase().includes('pdf'));
+        if (nonPdfUploads.length) insertAssetsIntoLesson(nonPdfUploads);
+      }
       await loadMediaAssets();
       if (isStructuredLesson) {
         pushNotice(uploaded.length > 1 ? `${uploaded.length} files uploaded to media library.` : 'File uploaded to media library.');

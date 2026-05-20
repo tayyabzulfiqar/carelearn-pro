@@ -12,6 +12,7 @@ export const BLOCK_TYPES = {
   QUIZ_EMBED: 'quiz_embed',
   CTA: 'cta',
   EMBED: 'embed',
+  PDF_DOCUMENT: 'pdf_document',
 };
 
 const SAFE_URL = /^(https?:\/\/|\/|#)/i;
@@ -133,6 +134,12 @@ export function sanitizeBlockForSave(block, index = 0) {
     safe.payload = { label: sanitizeText(payload.label), href: url(payload.href), variant: ['primary', 'secondary', 'ghost'].includes(payload.variant) ? payload.variant : 'primary' };
   } else if (type === BLOCK_TYPES.EMBED) {
     safe.payload = { src: url(payload.src), title: sanitizeText(payload.title), height: Math.min(1000, Math.max(160, Number(payload.height || 360))) };
+  } else if (type === BLOCK_TYPES.PDF_DOCUMENT) {
+    safe.payload = {
+      url: url(payload.url || payload.href),
+      filename: sanitizeText(payload.filename || payload.fileName || payload.label || 'Document.pdf'),
+      mimeType: sanitizeText(payload.mimeType || 'application/pdf'),
+    };
   }
 
   return safe;

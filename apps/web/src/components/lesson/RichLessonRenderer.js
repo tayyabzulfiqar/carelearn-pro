@@ -354,6 +354,44 @@ function QuizPoint({ payload }) {
   );
 }
 
+function PdfDocumentBlock({ payload }) {
+  const url = resolveAssetUrl(payload.url || payload.href);
+  const filename = payload.filename || payload.fileName || 'Document.pdf';
+  const canEmbed = /\.pdf($|\?)/i.test(url || '') || String(payload.mimeType || '').toLowerCase().includes('pdf');
+
+  if (!url) {
+    return (
+      <div data-testid="block-pdf_document" className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
+        PDF unavailable
+      </div>
+    );
+  }
+
+  return (
+    <div data-testid="block-pdf_document" className="space-y-3 rounded-xl border border-slate-200 bg-white p-3">
+      {canEmbed ? (
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <iframe
+            src={url}
+            title={filename}
+            className="w-full"
+            style={{ minHeight: '420px' }}
+            loading="lazy"
+          />
+        </div>
+      ) : null}
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+      >
+        Download PDF: {filename}
+      </a>
+    </div>
+  );
+}
+
 const COMPONENTS = {
   [BLOCK_TYPES.RICH_TEXT]: RichText,
   [BLOCK_TYPES.HEADING]: Heading,
@@ -378,6 +416,7 @@ const COMPONENTS = {
   reflection_prompts:   ReflectionPrompts,
   reference_table:      ReferenceTable,
   quiz_point:           QuizPoint,
+  pdf_document:         PdfDocumentBlock,
 };
 
 export default function RichLessonRenderer({ blocks = [], isStudioMode = false }) {

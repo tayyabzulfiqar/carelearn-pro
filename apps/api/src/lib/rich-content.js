@@ -13,6 +13,7 @@ const BLOCK_TYPES = Object.freeze({
   QUIZ_EMBED: 'quiz_embed',
   CTA: 'cta',
   EMBED: 'embed',
+  PDF_DOCUMENT: 'pdf_document',
 });
 
 const ALLOWED_BLOCK_TYPES = new Set([
@@ -30,6 +31,7 @@ const ALLOWED_BLOCK_TYPES = new Set([
   'summary',
   'reflection_prompts',
   'reference_table',
+  'pdf_document',
 ]);
 
 const SAFE_URL_PATTERN = /^(https?:\/\/|\/|#)/i;
@@ -106,6 +108,12 @@ function normalizeBlockPayload(type, payload = {}) {
         src: safeUrl(payload.src),
         title: cleanText(payload.title, { max: 140 }),
         height: Math.min(1000, Math.max(160, Number(payload.height || 360))),
+      };
+    case BLOCK_TYPES.PDF_DOCUMENT:
+      return {
+        url: safeUrl(payload.url || payload.href || ''),
+        filename: cleanText(payload.filename || payload.fileName || payload.label || 'Document.pdf', { max: 240 }),
+        mimeType: cleanText(payload.mimeType || 'application/pdf', { max: 80 }),
       };
 
     // ── schema_version:3 structured import types ─────────────────────
