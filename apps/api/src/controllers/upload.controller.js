@@ -67,7 +67,7 @@ async function upsertPdfBlockForLesson({ lessonId, uploadedPdf }) {
 
   await db.query(
     `UPDATE lessons
-     SET content = $1, updated_at = NOW()
+     SET content = $1
      WHERE id = $2`,
     [nextContent, lessonId]
   );
