@@ -56,3 +56,18 @@ test('stage2 injects conservative tags for messy copied lines', () => {
     '[SECTION_TITLE] ADMINISTRATION SAFETY OVERVIEW',
   ].join('\n'));
 });
+
+test('stage3 inserts lesson title tag only on strong lesson heading boundaries', () => {
+  const input = [
+    'Lesson 2.1 Medication Storage',
+    'This line remains normal text.',
+    '[LESSON_TITLE] Already Tagged Lesson',
+  ].join('\n');
+
+  const output = preprocess(input);
+  assert.equal(output, [
+    '[LESSON_TITLE] Lesson 2.1 Medication Storage',
+    'This line remains normal text.',
+    '[LESSON_TITLE] Already Tagged Lesson',
+  ].join('\n'));
+});

@@ -18,6 +18,7 @@ const BARE_IMG_RE = /^IMG_\d+$/i;
 const SEPARATOR_RE = /^-{3,}$/;
 const TAGGED_LINE_RE = /^\[[A-Z_]+\]/;
 const NUMBERED_STEP_RE = /^\d{1,2}[.)]\s+\S/;
+const LESSON_HEADING_RE = /^lesson\s+\d+(?:\.\d+)?(?:\s*[:\-]\s*|\s+).+/i;
 
 function injectHeuristicTag(line) {
   const trimmed = line.trim();
@@ -61,6 +62,17 @@ function injectHeuristicTag(line) {
   return line;
 }
 
+function injectLessonBoundary(line) {
+  const trimmed = line.trim();
+  if (!trimmed || TAGGED_LINE_RE.test(trimmed)) return line;
+
+  if (LESSON_HEADING_RE.test(trimmed) && trimmed.length <= 120) {
+    return `[LESSON_TITLE] ${trimmed}`;
+  }
+
+  return line;
+}
+
 function preprocess(input) {
   const text = typeof input === 'string' ? input : String(input ?? '');
   if (!text) return text;
@@ -82,8 +94,9 @@ function preprocess(input) {
     }
 
     const injected = injectHeuristicTag(line);
-    if (injected !== line) changed = true;
-    kept.push(injected);
+    const segmented = injectLessonBoundary(injected);
+    if (segmented !== line) changed = true;
+    kept.push(segmented);
   }
 
   if (!changed) return text;
