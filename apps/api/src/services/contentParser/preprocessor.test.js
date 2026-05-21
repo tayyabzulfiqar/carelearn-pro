@@ -36,3 +36,23 @@ test('stage1 strips known contamination lines conservatively', () => {
   ].join('\n'));
 });
 
+test('stage2 injects conservative tags for messy copied lines', () => {
+  const dirty = [
+    'OBJECTIVES:',
+    '1. Check patient identity',
+    'WARNING: Never skip allergy checks',
+    'Q: What is the first step?',
+    'SUMMARY:',
+    'ADMINISTRATION SAFETY OVERVIEW',
+  ].join('\n');
+
+  const output = preprocess(dirty);
+  assert.equal(output, [
+    '[OBJECTIVE_LIST]',
+    '[STEP_LIST] 1. Check patient identity',
+    '[WARNING_BOX] Never skip allergy checks',
+    '[QUIZ_POINT] Question: What is the first step?',
+    '[SUMMARY]',
+    '[SECTION_TITLE] ADMINISTRATION SAFETY OVERVIEW',
+  ].join('\n'));
+});
