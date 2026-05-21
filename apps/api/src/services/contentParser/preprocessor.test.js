@@ -71,3 +71,18 @@ test('stage3 inserts lesson title tag only on strong lesson heading boundaries',
     '[LESSON_TITLE] Already Tagged Lesson',
   ].join('\n'));
 });
+
+test('microfix merges consecutive numbered procedural lines into one step_list section', () => {
+  const input = [
+    '1. Check responsiveness',
+    '2. Call emergency services',
+    '3. Start CPR',
+  ].join('\n');
+
+  const output = preprocess(input);
+  assert.equal(output, [
+    '[STEP_LIST] 1. Check responsiveness',
+    '2. Call emergency services',
+    '3. Start CPR',
+  ].join('\n'));
+});

@@ -73,6 +73,36 @@ function injectLessonBoundary(line) {
   return line;
 }
 
+function mergeConsecutiveStepListLines(lines) {
+  const out = [];
+  const stepPrefix = '[STEP_LIST]';
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed.startsWith(stepPrefix)) {
+      out.push(line);
+      continue;
+    }
+
+    const firstPayload = trimmed.slice(stepPrefix.length).trim();
+    out.push(`${stepPrefix}${firstPayload ? ` ${firstPayload}` : ''}`);
+
+    let j = i + 1;
+    while (j < lines.length) {
+      const nextTrimmed = lines[j].trim();
+      if (!nextTrimmed.startsWith(stepPrefix)) break;
+      const payload = nextTrimmed.slice(stepPrefix.length).trim();
+      if (payload) out.push(payload);
+      j += 1;
+    }
+    i = j - 1;
+  }
+
+  return out;
+}
+
 function preprocess(input) {
   const text = typeof input === 'string' ? input : String(input ?? '');
   if (!text) return text;
@@ -99,8 +129,11 @@ function preprocess(input) {
     kept.push(segmented);
   }
 
+  const merged = mergeConsecutiveStepListLines(kept);
+  if (merged.join('\n') !== kept.join('\n')) changed = true;
+
   if (!changed) return text;
-  return kept.join(newline);
+  return merged.join(newline);
 }
 
 module.exports = { preprocess };
