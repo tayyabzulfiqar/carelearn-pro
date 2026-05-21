@@ -30,6 +30,7 @@ export default function ImportPanel({ courseId, orgId, onMappingsResolved }) {
   const [state, setState] = useState(INITIAL_STATE);
   const file1InputRef = useRef(null);
   const file2InputRef = useRef(null);
+  const pdfInputRef = useRef(null);
   const imageInputRef = useRef(null);
 
   const set = (patch) => setState(prev => ({ ...prev, ...patch }));
@@ -51,6 +52,28 @@ export default function ImportPanel({ courseId, orgId, onMappingsResolved }) {
     const file = e.target.files?.[0];
     if (!file) return;
     set({ file2: await readFileAsText(file) });
+  };
+
+  const extractPdfToFile1 = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    set({ parsing: true, parseError: '' });
+    try {
+      const formData = new FormData();
+      formData.append('pdf', file);
+      const res = await api.post('/admin/cms/import/extract-pdf', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const data = res.data || {};
+      if (data.success && typeof data.text === 'string') {
+        set({ parsing: false, file1: data.text });
+      } else {
+        set({ parsing: false, parseError: 'PDF text extraction failed. Use pdf_document fallback/manual content.' });
+      }
+    } catch (_err) {
+      set({ parsing: false, parseError: 'PDF text extraction failed. Use pdf_document fallback/manual content.' });
+    }
+    e.target.value = '';
   };
 
   const parseAndValidate = async () => {
@@ -160,10 +183,16 @@ export default function ImportPanel({ courseId, orgId, onMappingsResolved }) {
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-xs font-semibold text-slate-600">FILE 1 — Content File</label>
-            <label className="text-xs text-indigo-600 cursor-pointer hover:text-indigo-800">
-              Load from file
-              <input ref={file1InputRef} type="file" accept=".txt,.md" className="hidden" onChange={loadFile1} />
-            </label>
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-indigo-600 cursor-pointer hover:text-indigo-800">
+                Load from file
+                <input ref={file1InputRef} type="file" accept=".txt,.md" className="hidden" onChange={loadFile1} />
+              </label>
+              <label className="text-xs text-indigo-600 cursor-pointer hover:text-indigo-800">
+                Extract from PDF
+                <input ref={pdfInputRef} type="file" accept=".pdf" className="hidden" onChange={extractPdfToFile1} />
+              </label>
+            </div>
           </div>
           <textarea
             value={file1}

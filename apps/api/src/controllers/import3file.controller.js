@@ -4,9 +4,16 @@ const { randomUUID } = require('crypto');
 const db = require('../config/database');
 const { parseContentPackage } = require('../services/contentParser/index');
 const { assembleCourseDom } = require('../services/contentParser/courseAssembler');
+const { extractTextFromPdf } = require('../services/contentParser/pdfExtractor');
 
 const MAX_FILE1_BYTES = 500 * 1024; // 500 KB
 const MAX_FILE2_BYTES = 100 * 1024; // 100 KB
+const MIN_EXTRACTED_TEXT_CHARS = 200;
+
+function injectPdfPageBreakHints(input) {
+  if (typeof input !== 'string' || !input.includes('\f')) return input;
+  return input.replace(/\f+/g, '\n\n[SECTION_TITLE] Page Break\n\n');
+}
 
 /**
  * POST /api/v1/admin/cms/import/parse
@@ -15,12 +22,13 @@ const MAX_FILE2_BYTES = 100 * 1024; // 100 KB
 exports.parseImport = async (req, res, next) => {
   try {
     const { courseId, file1Content, file2Content } = req.body;
+    const normalizedFile1Content = injectPdfPageBreakHints(file1Content);
 
     if (!courseId) return res.status(400).json({ success: false, error: { code: 'MISSING_COURSE_ID', message: 'courseId is required' } });
-    if (!file1Content) return res.status(400).json({ success: false, error: { code: 'MISSING_FILE1', message: 'file1Content (Content File) is required' } });
+    if (!normalizedFile1Content) return res.status(400).json({ success: false, error: { code: 'MISSING_FILE1', message: 'file1Content (Content File) is required' } });
     if (!file2Content) return res.status(400).json({ success: false, error: { code: 'MISSING_FILE2', message: 'file2Content (Mapping File) is required' } });
 
-    if (Buffer.byteLength(file1Content, 'utf8') > MAX_FILE1_BYTES) {
+    if (Buffer.byteLength(normalizedFile1Content, 'utf8') > MAX_FILE1_BYTES) {
       return res.status(400).json({ success: false, error: { code: 'FILE1_TOO_LARGE', message: 'file1Content exceeds 500 KB limit' } });
     }
     if (Buffer.byteLength(file2Content, 'utf8') > MAX_FILE2_BYTES) {
@@ -35,11 +43,11 @@ exports.parseImport = async (req, res, next) => {
     await db.query(
       `INSERT INTO import_jobs (id, organisation_id, created_by, course_id, status, file1_content, file2_content)
        VALUES ($1, $2, $3, $4, 'parsing', $5, $6)`,
-      [jobId, orgId, userId, courseId, file1Content, file2Content]
+      [jobId, orgId, userId, courseId, normalizedFile1Content, file2Content]
     );
 
     // Run the parser
-    const parseResult = await parseContentPackage(file1Content, file2Content, courseId, db);
+    const parseResult = await parseContentPackage(normalizedFile1Content, file2Content, courseId, db);
 
     const stats = parseResult.stats || {};
     const validationResult = parseResult.validationResult || { isValid: false, blockingErrors: [], warnings: [] };
@@ -112,6 +120,27 @@ exports.parseImport = async (req, res, next) => {
     });
   } catch (err) {
     return next(err);
+  }
+};
+
+/**
+ * POST /api/v1/admin/cms/import/extract-pdf
+ * FormData: { pdf: File }
+ */
+exports.extractPdf = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(200).json({ success: false, fallback: 'pdf_document' });
+    }
+
+    const text = await extractTextFromPdf(req.file.buffer);
+    if (!text || text.length < MIN_EXTRACTED_TEXT_CHARS) {
+      return res.status(200).json({ success: false, fallback: 'pdf_document' });
+    }
+
+    return res.status(200).json({ success: true, text });
+  } catch (_error) {
+    return res.status(200).json({ success: false, fallback: 'pdf_document' });
   }
 };
 

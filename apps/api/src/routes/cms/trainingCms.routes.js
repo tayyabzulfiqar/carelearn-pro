@@ -123,11 +123,18 @@ const multerMulti = multer({
   }),
   limits: { fileSize: 20 * 1024 * 1024, files: 100 },
 });
+const multerSinglePdf = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024, files: 1 } });
 
 router.post('/import/parse',
   requirePermission('training.write'),
   withAudit('import_parse', 'import'),
   importCtrl.parseImport);
+
+router.post('/import/extract-pdf',
+  requirePermission('training.write'),
+  withAudit('import_extract_pdf', 'import'),
+  multerSinglePdf.single('pdf'),
+  importCtrl.extractPdf);
 
 router.post('/import/assemble',
   requirePermission('training.write'),
