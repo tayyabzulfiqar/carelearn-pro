@@ -103,6 +103,31 @@ function mergeConsecutiveStepListLines(lines) {
   return out;
 }
 
+function removeEmptySummaryHeadings(lines) {
+  const out = [];
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const trimmed = lines[i].trim();
+    if (trimmed !== '[SUMMARY]') {
+      out.push(lines[i]);
+      continue;
+    }
+
+    let hasSummaryContentAhead = false;
+    for (let j = i + 1; j < lines.length; j += 1) {
+      const t = lines[j].trim();
+      if (!t) continue;
+      if (TAGGED_LINE_RE.test(t)) break;
+      hasSummaryContentAhead = true;
+      break;
+    }
+
+    if (hasSummaryContentAhead) out.push(lines[i]);
+  }
+
+  return out;
+}
+
 function preprocess(input) {
   const text = typeof input === 'string' ? input : String(input ?? '');
   if (!text) return text;
@@ -130,10 +155,12 @@ function preprocess(input) {
   }
 
   const merged = mergeConsecutiveStepListLines(kept);
+  const summaryFixed = removeEmptySummaryHeadings(merged);
   if (merged.join('\n') !== kept.join('\n')) changed = true;
+  if (summaryFixed.join('\n') !== merged.join('\n')) changed = true;
 
   if (!changed) return text;
-  return merged.join(newline);
+  return summaryFixed.join(newline);
 }
 
 module.exports = { preprocess };

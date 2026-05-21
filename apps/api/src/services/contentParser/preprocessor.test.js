@@ -52,7 +52,6 @@ test('stage2 injects conservative tags for messy copied lines', () => {
     '[STEP_LIST] 1. Check patient identity',
     '[WARNING_BOX] Never skip allergy checks',
     '[QUIZ_POINT] Question: What is the first step?',
-    '[SUMMARY]',
     '[SECTION_TITLE] ADMINISTRATION SAFETY OVERVIEW',
   ].join('\n'));
 });
@@ -84,5 +83,17 @@ test('microfix merges consecutive numbered procedural lines into one step_list s
     '[STEP_LIST] 1. Check responsiveness',
     '2. Call emergency services',
     '3. Start CPR',
+  ].join('\n'));
+});
+
+test('microfix removes empty summary heading when no summary content follows', () => {
+  const input = [
+    'SUMMARY:',
+    'ADMINISTRATION SAFETY OVERVIEW',
+  ].join('\n');
+
+  const output = preprocess(input);
+  assert.equal(output, [
+    '[SECTION_TITLE] ADMINISTRATION SAFETY OVERVIEW',
   ].join('\n'));
 });
