@@ -1,6 +1,7 @@
 'use strict';
 
 const { tokenise } = require('./tokeniser');
+const { preprocess } = require('./preprocessor');
 const { buildTree } = require('./treeBuilder');
 const { parseMapping } = require('./mappingParser');
 const { validate } = require('./validator');
@@ -16,7 +17,8 @@ async function parseContentPackage(file1Text, file2Text, courseId, db) {
   // Stage 1: Tokenise FILE 1
   let tokens;
   try {
-    tokens = tokenise(file1Text);
+    const cleaned = preprocess(file1Text);
+    tokens = tokenise(cleaned);
   } catch (err) {
     return _fatal(`Stage 1 (tokenise) failed: ${err.message}`);
   }
