@@ -16,6 +16,8 @@ const CONTAMINATION_PREFIXES = [
 const PREFIX_RE = new RegExp(`^(?:${CONTAMINATION_PREFIXES.join('|')})\\s*:`, 'i');
 const BARE_IMG_RE = /^IMG_\d+$/i;
 const SEPARATOR_RE = /^-{3,}$/;
+const BRACKETED_IMG_RE = /^\[IMAGE:\s*IMG_\d+\]/i;
+const AI_PROMPT_RE = /^AI\s+IMAGE\s+PROMPT/i;
 const TAGGED_LINE_RE = /^\[[A-Z_]+\]/;
 const NUMBERED_STEP_RE = /^\d{1,2}[.)]\s+\S/;
 const LESSON_HEADING_RE = /^lesson\s+\d+(?:\.\d+)?(?:\s*[:\-]\s*|\s+).+/i;
@@ -141,7 +143,9 @@ function preprocess(input) {
     const trimmed = line.trim();
     const isContamination = PREFIX_RE.test(trimmed)
       || BARE_IMG_RE.test(trimmed)
-      || SEPARATOR_RE.test(trimmed);
+      || SEPARATOR_RE.test(trimmed)
+      || BRACKETED_IMG_RE.test(trimmed)
+      || AI_PROMPT_RE.test(trimmed);
 
     if (isContamination) {
       changed = true;

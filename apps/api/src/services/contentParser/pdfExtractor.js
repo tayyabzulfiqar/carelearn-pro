@@ -4,10 +4,15 @@ const pdfParse = require('pdf-parse');
 
 async function extractTextFromPdf(buffer) {
   if (!Buffer.isBuffer(buffer) || !buffer.length) {
-    throw new Error('Invalid PDF buffer');
+    return { success: false, text: null };
   }
-  const result = await pdfParse(buffer);
-  return String(result?.text || '').trim();
+  try {
+    const result = await pdfParse(buffer);
+    const text = String(result?.text || '').trim();
+    return { success: true, text };
+  } catch {
+    return { success: false, text: null };
+  }
 }
 
 module.exports = { extractTextFromPdf };

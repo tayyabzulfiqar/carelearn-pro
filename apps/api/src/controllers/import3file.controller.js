@@ -50,6 +50,14 @@ exports.parseImport = async (req, res, next) => {
     const parseResult = await parseContentPackage(normalizedFile1Content, file2Content, courseId, db);
 
     const stats = parseResult.stats || {};
+
+    if (!stats.moduleCount || stats.moduleCount < 1) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'PARSE_NO_MODULES', message: 'PDF content yielded 0 modules — import blocked' },
+      });
+    }
+
     const validationResult = parseResult.validationResult || { isValid: false, blockingErrors: [], warnings: [] };
     const resolutionReport = parseResult.resolutionReport || {};
 
@@ -130,17 +138,17 @@ exports.parseImport = async (req, res, next) => {
 exports.extractPdf = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(200).json({ success: false, fallback: 'pdf_document' });
+      return res.status(400).json({ error: 'PDF extraction failed', code: 'PDF_EXTRACTION_FAILED' });
     }
 
-    const text = await extractTextFromPdf(req.file.buffer);
-    if (!text || text.length < MIN_EXTRACTED_TEXT_CHARS) {
-      return res.status(200).json({ success: false, fallback: 'pdf_document' });
+    const result = await extractTextFromPdf(req.file.buffer);
+    if (!result.success || !result.text || result.text.length < MIN_EXTRACTED_TEXT_CHARS) {
+      return res.status(400).json({ error: 'PDF extraction failed', code: 'PDF_EXTRACTION_FAILED' });
     }
 
-    return res.status(200).json({ success: true, text });
+    return res.status(200).json({ success: true, text: result.text });
   } catch (_error) {
-    return res.status(200).json({ success: false, fallback: 'pdf_document' });
+    return res.status(400).json({ error: 'PDF extraction failed', code: 'PDF_EXTRACTION_FAILED' });
   }
 };
 
