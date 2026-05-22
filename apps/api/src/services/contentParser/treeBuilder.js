@@ -57,10 +57,12 @@ function buildTree(tokens) {
   for (const token of tokens) {
     if (token.type === 'BLOCK_CONTENT') {
       const prev = merged[merged.length - 1];
-      if (prev && prev.type === 'BLOCK_OPEN') {
+      const prevIsBoundary = prev && prev.type === 'BLOCK_OPEN'
+        && (prev.blockType === 'LESSON_TITLE' || prev.blockType === 'MODULE_TITLE');
+      if (prev && prev.type === 'BLOCK_OPEN' && !prevIsBoundary) {
         prev.content = prev.content ? `${prev.content}\n${token.content}` : token.content;
       } else {
-        // No preceding block — attach as orphan rich_text
+        // Orphan content (no preceding block, or follows a boundary tag) → INTRO_TEXT
         merged.push({
           type: 'BLOCK_OPEN',
           blockType: 'INTRO_TEXT',
