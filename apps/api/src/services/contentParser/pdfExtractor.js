@@ -1,8 +1,8 @@
 'use strict';
 
-const pdfParse = require('pdf-parse');
-
 async function extractTextFromPdf(buffer) {
+  // lazy-load to prevent startup crash when pdf-parse loads test fixtures at require time
+  const pdfParse = require('pdf-parse');
   if (!Buffer.isBuffer(buffer) || !buffer.length) {
     return { success: false, text: null };
   }
