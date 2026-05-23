@@ -1,0 +1,11 @@
+{
+  "started_at": "2026-05-23T23:33:38.200Z",
+  "keep_course_id": "b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7",
+  "pre_course_guard": "total_courses | bls_count \n---------------+-----------\n            19 |         1\n(1 row)",
+  "cleanup_code": 0,
+  "cleanup_out": "BEGIN\nCREATE TABLE\nINSERT 0 1\nSELECT 18\nSELECT 14\nSELECT 17\nSELECT 10\nDELETE 5\nDELETE 0\nDELETE 0\nDELETE 1\nDELETE 0\nDELETE 90\nDELETE 5\nDELETE 1\nDELETE 0\nDELETE 18\nDELETE 10\nDELETE 17\nDELETE 14\nDELETE 18\nDELETE 14\nCOMMIT",
+  "cleanup_err": "",
+  "verify": "total_courses | bls_count \n---------------+-----------\n             1 |         1\n(1 row)\n\n                  id                  | title |  status   \n--------------------------------------+-------+-----------\n b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7 | BLS   | published\n(1 row)\n\n        chk         | count \n--------------------+-------\n orphan_modules     |     0\n orphan_lessons     |     0\n orphan_enrollments |     0\n orphan_progress    |     0\n(4 rows)\n\n                                                                                            counts                                                                                             \n-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n {\"courses\" : 1, \"modules\" : 1, \"lessons\" : 1, \"enrollments\" : 1, \"progress\" : 0, \"assessment_attempts\" : 0, \"assessment_questions\" : 0, \"quizzes\" : 0, \"import_jobs\" : 0, \"media_assets\" : 1}\n(1 row)",
+  "api_health": "{\"status\":\"ok\",\"service\":\"CareLearn API\",\"version\":\"1.0.0\"}",
+  "done_at": "2026-05-23T23:33:40.903Z"
+}
