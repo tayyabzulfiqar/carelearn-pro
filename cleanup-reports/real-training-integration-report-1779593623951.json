@@ -1,0 +1,30 @@
+{
+  "at": "2026-05-24T03:33:43.950Z",
+  "source_root": "C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse",
+  "courses": [
+    {
+      "key": "bls",
+      "id": "b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7",
+      "lessons": 11,
+      "questions": 3
+    },
+    {
+      "key": "epilepsy",
+      "id": "3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4",
+      "lessons": 15,
+      "questions": 0
+    },
+    {
+      "key": "catheter",
+      "id": "f9fe3f1e-2c4c-49d1-bb6f-9ecbc6a95f8a",
+      "lessons": 14,
+      "questions": 10
+    }
+  ],
+  "demo_learner": {
+    "email": "demo.learner@carelearn.local",
+    "password": "DemoLearner123!"
+  },
+  "validation_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-validation-1779593617068.json",
+  "verification": "id                  |              title               |               slug               |  status   \n--------------------------------------+----------------------------------+----------------------------------+-----------\n b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7 | Basic Life Support               | basic-life-support               | published\n 3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4 | Caring for Someone with Epilepsy | caring-for-someone-with-epilepsy | published\n f9fe3f1e-2c4c-49d1-bb6f-9ecbc6a95f8a | Catheter Care                    | catheter-care                    | published\n(3 rows)\n\n              title               | lesson_count \n----------------------------------+--------------\n Basic Life Support               |           11\n Caring for Someone with Epilepsy |           15\n Catheter Care                    |           14\n(3 rows)\n\n              title               | final_questions \n----------------------------------+-----------------\n Basic Life Support               |               3\n Caring for Someone with Epilepsy |               0\n Catheter Care                    |              10\n(3 rows)"
+}

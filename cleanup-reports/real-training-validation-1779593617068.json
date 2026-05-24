@@ -1,0 +1,409 @@
+{
+  "at": "2026-05-24T03:33:37.045Z",
+  "root": "C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse",
+  "courses": [
+    {
+      "key": "bls",
+      "id": "b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7",
+      "title": "Basic Life Support",
+      "folder": "Basic Life Support",
+      "lesson_files": [
+        "lesson_01.json",
+        "lesson_02.json",
+        "lesson_03.json",
+        "lesson_04.json",
+        "lesson_05.json",
+        "lesson_06.json",
+        "lesson_08.json",
+        "lesson_10.json",
+        "lesson_11.json",
+        "lesson_12.json",
+        "lesson_13.json"
+      ],
+      "lesson_numbers_source": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        10,
+        11,
+        12,
+        13
+      ],
+      "lesson_count_normalized": 11,
+      "assessment_files": [
+        "assessment_01.json"
+      ],
+      "assessment_question_count": 3,
+      "image_files": [
+        "IMG_1001.webp",
+        "IMG_101.webp",
+        "IMG_1101.webp",
+        "IMG_1201.webp",
+        "IMG_1301.webp",
+        "IMG_201.webp",
+        "IMG_301.webp",
+        "IMG_401.webp",
+        "IMG_501.webp",
+        "IMG_502.webp",
+        "IMG_601.webp",
+        "IMG_801.webp",
+        "IMG_802.webp"
+      ],
+      "image_ref_count": 13,
+      "orphan_images": [],
+      "issues": [],
+      "warnings": [
+        "Missing lesson numbers in source range 1-13: 7, 9"
+      ],
+      "normalized_numbering": [
+        {
+          "source_file": "lesson_01.json",
+          "source_number": 1,
+          "normalized_number": 1
+        },
+        {
+          "source_file": "lesson_02.json",
+          "source_number": 2,
+          "normalized_number": 2
+        },
+        {
+          "source_file": "lesson_03.json",
+          "source_number": 3,
+          "normalized_number": 3
+        },
+        {
+          "source_file": "lesson_04.json",
+          "source_number": 4,
+          "normalized_number": 4
+        },
+        {
+          "source_file": "lesson_05.json",
+          "source_number": 5,
+          "normalized_number": 5
+        },
+        {
+          "source_file": "lesson_06.json",
+          "source_number": 6,
+          "normalized_number": 6
+        },
+        {
+          "source_file": "lesson_08.json",
+          "source_number": 8,
+          "normalized_number": 7
+        },
+        {
+          "source_file": "lesson_10.json",
+          "source_number": 10,
+          "normalized_number": 8
+        },
+        {
+          "source_file": "lesson_11.json",
+          "source_number": 11,
+          "normalized_number": 9
+        },
+        {
+          "source_file": "lesson_12.json",
+          "source_number": 12,
+          "normalized_number": 10
+        },
+        {
+          "source_file": "lesson_13.json",
+          "source_number": 13,
+          "normalized_number": 11
+        }
+      ]
+    },
+    {
+      "key": "epilepsy",
+      "id": "3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4",
+      "title": "Caring for Someone with Epilepsy",
+      "folder": "Caring for Someone with Epilepsy",
+      "lesson_files": [
+        "lesson_01.json",
+        "lesson_02.json",
+        "lesson_03.json",
+        "lesson_04.json",
+        "lesson_05.json",
+        "lesson_06.json",
+        "lesson_07.json",
+        "lesson_08.json",
+        "lesson_09.json",
+        "lesson_10.json",
+        "lesson_11.json",
+        "lesson_12.json",
+        "lesson_13.json",
+        "lesson_14.json",
+        "lesson_15.json"
+      ],
+      "lesson_numbers_source": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "lesson_count_normalized": 15,
+      "assessment_files": [],
+      "assessment_question_count": 0,
+      "image_files": [
+        "IMG_201.webp",
+        "IMG_202.webp",
+        "IMG_203.webp",
+        "IMG_204.webp",
+        "IMG_205.webp",
+        "IMG_206.webp",
+        "IMG_207.webp",
+        "IMG_208.webp",
+        "IMG_209.webp",
+        "IMG_210.webp",
+        "IMG_211.webp",
+        "IMG_212.webp",
+        "IMG_213.webp"
+      ],
+      "image_ref_count": 12,
+      "orphan_images": [
+        "IMG_201.webp"
+      ],
+      "issues": [],
+      "warnings": [
+        "Orphan images not referenced by lesson JSON: IMG_201.webp"
+      ],
+      "normalized_numbering": [
+        {
+          "source_file": "lesson_01.json",
+          "source_number": 1,
+          "normalized_number": 1
+        },
+        {
+          "source_file": "lesson_02.json",
+          "source_number": 2,
+          "normalized_number": 2
+        },
+        {
+          "source_file": "lesson_03.json",
+          "source_number": 3,
+          "normalized_number": 3
+        },
+        {
+          "source_file": "lesson_04.json",
+          "source_number": 4,
+          "normalized_number": 4
+        },
+        {
+          "source_file": "lesson_05.json",
+          "source_number": 5,
+          "normalized_number": 5
+        },
+        {
+          "source_file": "lesson_06.json",
+          "source_number": 6,
+          "normalized_number": 6
+        },
+        {
+          "source_file": "lesson_07.json",
+          "source_number": 7,
+          "normalized_number": 7
+        },
+        {
+          "source_file": "lesson_08.json",
+          "source_number": 8,
+          "normalized_number": 8
+        },
+        {
+          "source_file": "lesson_09.json",
+          "source_number": 9,
+          "normalized_number": 9
+        },
+        {
+          "source_file": "lesson_10.json",
+          "source_number": 10,
+          "normalized_number": 10
+        },
+        {
+          "source_file": "lesson_11.json",
+          "source_number": 11,
+          "normalized_number": 11
+        },
+        {
+          "source_file": "lesson_12.json",
+          "source_number": 12,
+          "normalized_number": 12
+        },
+        {
+          "source_file": "lesson_13.json",
+          "source_number": 13,
+          "normalized_number": 13
+        },
+        {
+          "source_file": "lesson_14.json",
+          "source_number": 14,
+          "normalized_number": 14
+        },
+        {
+          "source_file": "lesson_15.json",
+          "source_number": 15,
+          "normalized_number": 15
+        }
+      ]
+    },
+    {
+      "key": "catheter",
+      "id": "f9fe3f1e-2c4c-49d1-bb6f-9ecbc6a95f8a",
+      "title": "Catheter Care",
+      "folder": "Catheter Care",
+      "lesson_files": [
+        "lesson_16.json",
+        "lesson_17.json",
+        "lesson_18.json",
+        "lesson_20.json",
+        "lesson_21.json",
+        "lesson_22.json",
+        "lesson_23.json",
+        "lesson_24.json",
+        "lesson_25.json",
+        "lesson_26.json",
+        "lesson_27.json",
+        "lesson_28.json",
+        "lesson_29.json",
+        "lesson_30.json"
+      ],
+      "lesson_numbers_source": [
+        16,
+        17,
+        18,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "lesson_count_normalized": 14,
+      "assessment_files": [
+        "assessment_03.json"
+      ],
+      "assessment_question_count": 10,
+      "image_files": [
+        "IMG_214.webp",
+        "IMG_215.webp",
+        "IMG_216.webp",
+        "IMG_217.webp",
+        "IMG_218.webp",
+        "IMG_219.webp",
+        "IMG_220.webp",
+        "IMG_221.webp",
+        "IMG_222.webp",
+        "IMG_223.webp",
+        "IMG_224.webp",
+        "IMG_225.webp",
+        "IMG_226.webp",
+        "IMG_227.webp"
+      ],
+      "image_ref_count": 13,
+      "orphan_images": [
+        "IMG_217.webp"
+      ],
+      "issues": [],
+      "warnings": [
+        "Missing lesson numbers in source range 16-30: 19",
+        "Orphan images not referenced by lesson JSON: IMG_217.webp"
+      ],
+      "normalized_numbering": [
+        {
+          "source_file": "lesson_16.json",
+          "source_number": 16,
+          "normalized_number": 1
+        },
+        {
+          "source_file": "lesson_17.json",
+          "source_number": 17,
+          "normalized_number": 2
+        },
+        {
+          "source_file": "lesson_18.json",
+          "source_number": 18,
+          "normalized_number": 3
+        },
+        {
+          "source_file": "lesson_20.json",
+          "source_number": 20,
+          "normalized_number": 4
+        },
+        {
+          "source_file": "lesson_21.json",
+          "source_number": 21,
+          "normalized_number": 5
+        },
+        {
+          "source_file": "lesson_22.json",
+          "source_number": 22,
+          "normalized_number": 6
+        },
+        {
+          "source_file": "lesson_23.json",
+          "source_number": 23,
+          "normalized_number": 7
+        },
+        {
+          "source_file": "lesson_24.json",
+          "source_number": 24,
+          "normalized_number": 8
+        },
+        {
+          "source_file": "lesson_25.json",
+          "source_number": 25,
+          "normalized_number": 9
+        },
+        {
+          "source_file": "lesson_26.json",
+          "source_number": 26,
+          "normalized_number": 10
+        },
+        {
+          "source_file": "lesson_27.json",
+          "source_number": 27,
+          "normalized_number": 11
+        },
+        {
+          "source_file": "lesson_28.json",
+          "source_number": 28,
+          "normalized_number": 12
+        },
+        {
+          "source_file": "lesson_29.json",
+          "source_number": 29,
+          "normalized_number": 13
+        },
+        {
+          "source_file": "lesson_30.json",
+          "source_number": 30,
+          "normalized_number": 14
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_courses": 3,
+    "warnings_total": 4,
+    "issues_total": 0
+  }
+}
