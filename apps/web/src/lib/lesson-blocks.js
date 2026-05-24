@@ -23,6 +23,9 @@ export function resolveAssetUrl(input = '') {
   if (input.startsWith('/certificates')) return `${API_ORIGIN}${input}`;
   if (input.startsWith('/api/v1')) return `${API_BASE}${input.replace(/^\/api\/v1/, '')}`;
   if (input.startsWith('/uploads')) return `${API_BASE}${input}`;
+  // Static course assets served from Next.js public/ — pass through as-is
+  if (input.startsWith('/bls/')) return input;
+  if (input.startsWith('/course-assets/')) return input;
   return `${API_BASE}${input.startsWith('/') ? input : `/${input}`}`;
 }
 

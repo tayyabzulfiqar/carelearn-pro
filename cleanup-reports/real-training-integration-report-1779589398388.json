@@ -1,0 +1,12 @@
+{
+  "at": "2026-05-24T02:23:18.388Z",
+  "source_root": "C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse",
+  "bls_lessons": 11,
+  "epilepsy_lessons": 15,
+  "bls_questions": 3,
+  "demo_learner": {
+    "email": "demo.learner@carelearn.local",
+    "password": "DemoLearner123!"
+  },
+  "verification": "id                  |              title               |               slug               |  status   \n--------------------------------------+----------------------------------+----------------------------------+-----------\n b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7 | Basic Life Support               | basic-life-support               | published\n 3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4 | Caring for Someone with Epilepsy | caring-for-someone-with-epilepsy | published\n(2 rows)\n\n              title               | lesson_count \n----------------------------------+--------------\n Basic Life Support               |           11\n Caring for Someone with Epilepsy |           15\n(2 rows)\n\n final_questions \n-----------------\n               3\n(1 row)"
+}

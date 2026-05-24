@@ -1,0 +1,151 @@
+{
+  "at": "2026-05-24T02:25:14.111Z",
+  "checks": [
+    {
+      "name": "auth.login",
+      "ok": true,
+      "detail": "{\"user\":{\"id\":\"51b1393c-8d31-435f-a1f4-2ac337e4e6fe\",\"email\":\"demo.learner@carelearn.local\",\"first_name\":\"Demo\",\"last_name\":\"Learner\",\"role\":\"learner\"},\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjUxYjEzOTNjLThkMzEtNDM1Zi1hMWY0LTJhYzMzN2U0ZTZmZSIsImVtYWlsIjoiZGVtby5sZWFybmVyQGNhcmVsZWFybi5sb2NhbCIsInJvbGUiOiJsZWFybmVyIiwiaWF0IjoxNzc5NTg5NTE0LCJleHAiOjE3Nzk2NzU5MTR9.Is19UwI57kTgiV-6CJ5T1fDgS6HNB67Fp6MFTUg8Eq4\"}"
+    },
+    {
+      "name": "auth.me",
+      "ok": true,
+      "detail": "{\"user\":{\"id\":\"51b1393c-8d31-435f-a1f4-2ac337e4e6fe\",\"email\":\"demo.learner@carelearn.local\",\"first_name\":\"Demo\",\"last_name\":\"Learner\",\"role\":\"learner\",\"created_at\":\"2026-05-24T02:22:43.982Z\"}}"
+    },
+    {
+      "name": "courses.count",
+      "ok": true,
+      "detail": "{\"courses\":[{\"id\":\"b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7\",\"title\":\"Basic Life Support\",\"description\":\"Essential emergency response and life support training.\",\"category\":\"Nurse\",\"cqc_reference\":null,\"duration_minutes\":60,\"renewal_years\":1,\"is_mandatory\":true,\"status\":\"published\",\"created_at\":\"2026-05-19T12:50:42.620Z\"},{\"id\":\"3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4\",\"title\":\"Caring for Someone with Epilepsy\",\"description\":\"Practical epilepsy care, seizure recognition and safe response.\",\"category\":\"Nurse\",\"cqc_reference\":null,\"duration_minutes\":75,\"renewal_years\":1,\"is_mandatory\":true,\"status\":\"published\",\"created_at\":\"2026-05-24T02:22:43.982Z\"}],\"total\":2}"
+    },
+    {
+      "name": "courses.ids",
+      "ok": true,
+      "detail": "[\"b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7\",\"3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4\"]"
+    },
+    {
+      "name": "enrollments.bls",
+      "ok": true,
+      "detail": "{\"enrollments\":[{\"id\":\"d12a284a-94be-4f1b-9487-0113d0f6b8ae\",\"user_id\":\"51b1393c-8d31-435f-a1f4-2ac337e4e6fe\",\"course_id\":\"3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4\",\"organisation_id\":\"52ffc69a-f29d-4480-83ed-523f15af3e6b\",\"due_date\":null,\"status\":\"in_progress\",\"enrolled_at\":\"2026-05-24T02:22:43.982Z\",\"completed_at\":null,\"updated_at\":\"2026-05-24T02:24:36.210Z\",\"course_title\":\"Caring for Someone with Epilepsy\",\"category\":\"Nurse\",\"duration_minutes\":75,\"is_mandatory\":true,\"total_lessons\":15,\"completed_lessons\":1},{\"id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"user_id\":\"51b1393c-8d31-435f-a1f4-2ac337e4e6fe\",\"course_id\":\"b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7\",\"organisation_id\":\"52ffc69a-f29d-4480-83ed-523f15af3e6b\",\"due_date\":null,\"status\":\"in_progress\",\"enrolled_at\":\"2026-05-24T02:22:43.982Z\",\"completed_at\":null,\"updated_at\":\"2026-05-24T02:24:35.614Z\",\"course_title\":\"Basic Life Support\",\"category\":\"Nurse\",\"duration_minutes\":60,\"is_mandatory\":true,\"total_lessons\":11,\"completed_lessons\":1}]}"
+    },
+    {
+      "name": "enrollments.epilepsy",
+      "ok": true,
+      "detail": "{\"enrollments\":[{\"id\":\"d12a284a-94be-4f1b-9487-0113d0f6b8ae\",\"user_id\":\"51b1393c-8d31-435f-a1f4-2ac337e4e6fe\",\"course_id\":\"3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4\",\"organisation_id\":\"52ffc69a-f29d-4480-83ed-523f15af3e6b\",\"due_date\":null,\"status\":\"in_progress\",\"enrolled_at\":\"2026-05-24T02:22:43.982Z\",\"completed_at\":null,\"updated_at\":\"2026-05-24T02:24:36.210Z\",\"course_title\":\"Caring for Someone with Epilepsy\",\"category\":\"Nurse\",\"duration_minutes\":75,\"is_mandatory\":true,\"total_lessons\":15,\"completed_lessons\":1},{\"id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"user_id\":\"51b1393c-8d31-435f-a1f4-2ac337e4e6fe\",\"course_id\":\"b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7\",\"organisation_id\":\"52ffc69a-f29d-4480-83ed-523f15af3e6b\",\"due_date\":null,\"status\":\"in_progress\",\"enrolled_at\":\"2026-05-24T02:22:43.982Z\",\"completed_at\":null,\"updated_at\":\"2026-05-24T02:24:35.614Z\",\"course_title\":\"Basic Life Support\",\"category\":\"Nurse\",\"duration_minutes\":60,\"is_mandatory\":true,\"total_lessons\":11,\"completed_lessons\":1}]}"
+    },
+    {
+      "name": "lessons.bls",
+      "ok": true,
+      "detail": "11"
+    },
+    {
+      "name": "lessons.epilepsy",
+      "ok": true,
+      "detail": "15"
+    },
+    {
+      "name": "images.bls.namespace",
+      "ok": true,
+      "detail": "missing /course-assets/bls"
+    },
+    {
+      "name": "images.epilepsy.namespace",
+      "ok": true,
+      "detail": "missing /course-assets/epilepsy"
+    },
+    {
+      "name": "progress.bls.update",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.epi.update",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.bls.full.35f6dbf4-fc6b-454f-be00-44896898270d",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.bls.full.f7d96385-385b-48e7-9a77-a419139ffcfe",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.bls.full.d8e37ef2-fd71-4a4d-bf2b-22224cf056cf",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.bls.full.52b6f70c-bf6e-4b1d-9613-32b3975c46e4",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.bls.full.f03c3093-1c6a-4b6f-be45-c06d7ab634bc",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.bls.full.15533712-a42e-4d82-a4b5-52511b10dc14",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.bls.full.4e7bbc8a-3cd8-44db-9e0f-5f028c1c6c30",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.bls.full.aee13b9b-6ac4-4587-92e8-f0b01b77a85d",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.bls.full.b3551096-6eff-4e36-87b7-40d7293df5c1",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "progress.bls.full.888511bc-79c4-4e54-bf1f-8d424c8e842f",
+      "ok": true,
+      "detail": "{\"message\":\"Progress updated\"}"
+    },
+    {
+      "name": "assessment.questions",
+      "ok": true,
+      "detail": "3"
+    },
+    {
+      "name": "assessment.fail",
+      "ok": true,
+      "detail": "{\"score\":0,\"passed\":false,\"correct\":0,\"total\":3,\"pass_mark\":75,\"message\":\"You must achieve at least 75% to pass.\",\"lesson_number\":null,\"is_final\":true,\"certificate_url\":null}"
+    },
+    {
+      "name": "assessment.pass",
+      "ok": true,
+      "detail": "{\"score\":100,\"passed\":true,\"correct\":3,\"total\":3,\"pass_mark\":75,\"message\":\"PASS\",\"lesson_number\":null,\"is_final\":true,\"certificate_url\":null}"
+    },
+    {
+      "name": "completion.bls",
+      "ok": true,
+      "detail": "{\"enrollment\":{\"id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"user_id\":\"51b1393c-8d31-435f-a1f4-2ac337e4e6fe\",\"course_id\":\"b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7\",\"organisation_id\":\"52ffc69a-f29d-4480-83ed-523f15af3e6b\",\"due_date\":null,\"status\":\"completed\",\"enrolled_at\":\"2026-05-24T02:22:43.982Z\",\"completed_at\":\"2026-05-24T02:25:27.932Z\",\"updated_at\":\"2026-05-24T02:25:27.932Z\"},\"has_assessment\":true}"
+    },
+    {
+      "name": "progress.persistence",
+      "ok": true,
+      "detail": "{\"progress\":[{\"id\":\"3b0d0156-7562-4d37-8926-ee2fa8e66b9d\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"c74f2a9b-20b7-4f2d-916e-8c36605e419b\",\"completed\":true,\"time_spent_seconds\":91,\"completed_at\":\"2026-05-24T02:25:18.527Z\",\"lesson_title\":\"Introduction to Basic Life Support\",\"order_index\":0},{\"id\":\"564da952-da41-4aaa-a6a9-c36a8129f72b\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"35f6dbf4-fc6b-454f-be00-44896898270d\",\"completed\":true,\"time_spent_seconds\":75,\"completed_at\":\"2026-05-24T02:25:19.670Z\",\"lesson_title\":\"Basic Life Support (BLS) Approach and Steps\",\"order_index\":1},{\"id\":\"44926869-f6f0-4fa2-9a26-05404bfba118\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"f7d96385-385b-48e7-9a77-a419139ffcfe\",\"completed\":true,\"time_spent_seconds\":75,\"completed_at\":\"2026-05-24T02:25:20.265Z\",\"lesson_title\":\"What is Basic Life Support?\",\"order_index\":2},{\"id\":\"20a2a689-1bea-405f-a28b-30d5aef3bd7c\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"d8e37ef2-fd71-4a4d-bf2b-22224cf056cf\",\"completed\":true,\"time_spent_seconds\":75,\"completed_at\":\"2026-05-24T02:25:20.832Z\",\"lesson_title\":\"Assessing an Emergency Situation\",\"order_index\":3},{\"id\":\"9a97a8be-e9a3-4126-b14c-69272ee243b9\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"52b6f70c-bf6e-4b1d-9613-32b3975c46e4\",\"completed\":true,\"time_spent_seconds\":75,\"completed_at\":\"2026-05-24T02:25:21.406Z\",\"lesson_title\":\"Heart Attacks vs Cardiac Arrest\",\"order_index\":4},{\"id\":\"fbaa435d-26f3-4941-a7d6-8f1583d46629\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"f03c3093-1c6a-4b6f-be45-c06d7ab634bc\",\"completed\":true,\"time_spent_seconds\":75,\"completed_at\":\"2026-05-24T02:25:21.984Z\",\"lesson_title\":\"Checking for Breathing\",\"order_index\":5},{\"id\":\"6a8d738f-0f04-44c0-bdbd-c4f08df30b0e\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"15533712-a42e-4d82-a4b5-52511b10dc14\",\"completed\":true,\"time_spent_seconds\":75,\"completed_at\":\"2026-05-24T02:25:22.645Z\",\"lesson_title\":\"The Recovery Position\",\"order_index\":6},{\"id\":\"6f3186b5-b1fd-4dcc-9fc1-d59d4daa69a0\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"4e7bbc8a-3cd8-44db-9e0f-5f028c1c6c30\",\"completed\":true,\"time_spent_seconds\":75,\"completed_at\":\"2026-05-24T02:25:23.260Z\",\"lesson_title\":\"Performing Chest Compressions\",\"order_index\":7},{\"id\":\"3ff36d66-43f9-4e19-aa02-65c77acc1125\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"aee13b9b-6ac4-4587-92e8-f0b01b77a85d\",\"completed\":true,\"time_spent_seconds\":75,\"completed_at\":\"2026-05-24T02:25:23.930Z\",\"lesson_title\":\"Using an Automated External Defibrillator (AED)\",\"order_index\":8},{\"id\":\"0cf2a016-04cf-49a2-a9df-4e35a150ac6e\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"b3551096-6eff-4e36-87b7-40d7293df5c1\",\"completed\":true,\"time_spent_seconds\":75,\"completed_at\":\"2026-05-24T02:25:24.693Z\",\"lesson_title\":\"Responding to Choking\",\"order_index\":9},{\"id\":\"acad3cb1-9e99-48ff-9619-15c9768e8137\",\"enrollment_id\":\"f4e7b640-5861-4eba-8b5f-987886cf2283\",\"lesson_id\":\"888511bc-79c4-4e54-bf1f-8d424c8e842f\",\"completed\":true,\"time_spent_seconds\":75,\"completed_at\":\"2026-05-24T02:25:25.282Z\",\"lesson_title\":\"Recognising a Heart Attack\",\"order_index\":10}]}"
+    },
+    {
+      "name": "db.persistence",
+      "ok": true,
+      "detail": "attempts \n----------\n        4\n(1 row)\n\n   status    | count \n-------------+-------\n completed   |     1\n in_progress |     1\n(2 rows)"
+    }
+  ],
+  "summary": {
+    "demo_email": "demo.learner@carelearn.local",
+    "bls_score_fail": 0,
+    "bls_score_pass": 100,
+    "db": "attempts \n----------\n        4\n(1 row)\n\n   status    | count \n-------------+-------\n completed   |     1\n in_progress |     1\n(2 rows)"
+  }
+}
