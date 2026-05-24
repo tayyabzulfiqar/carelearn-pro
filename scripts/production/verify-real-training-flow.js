@@ -9,6 +9,7 @@ const COURSES = [
   { key: 'bls', id: 'b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7', assetSlug: 'bls', expectsAssessment: true },
   { key: 'epilepsy', id: '3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4', assetSlug: 'epilepsy', expectsAssessment: false },
   { key: 'catheter', id: 'f9fe3f1e-2c4c-49d1-bb6f-9ecbc6a95f8a', assetSlug: 'catheter-care', expectsAssessment: true },
+  { key: 'conflict', id: '3d85e58e-dc48-4b10-a298-8e33332326d0', assetSlug: 'conflict-resolution-complaints-handling', expectsAssessment: true },
 ];
 
 async function req(method, path, token, body) {
@@ -44,7 +45,7 @@ async function run() {
   check('courses.list.status', coursesRes.status === 200, JSON.stringify(coursesRes.data));
   const courses = coursesRes.data?.courses || [];
   const ids = new Set(courses.map((c) => c.id));
-  check('courses.count', courses.length === 3, `expected 3 got ${courses.length}`);
+  check('courses.count', courses.length === 4, `expected 4 got ${courses.length}`);
   for (const c of COURSES) {
     check(`courses.has.${c.key}`, ids.has(c.id), JSON.stringify([...ids]));
   }

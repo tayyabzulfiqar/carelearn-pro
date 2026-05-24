@@ -57,6 +57,20 @@ const COURSES = [
     mandatory: true,
     assessmentPattern: /^assessment_\d+\.json$/i,
   },
+  {
+    key: 'conflict',
+    id: '3d85e58e-dc48-4b10-a298-8e33332326d0',
+    title: 'Conflict Resolution and Complaints Handling',
+    slug: 'conflict-resolution-and-complaints-handling',
+    description: 'Practical conflict prevention, de-escalation, incident support and complaints handling for healthcare teams.',
+    category: 'Nurse',
+    duration: 90,
+    folder: 'Conflict Resolution and Complaints Handling',
+    assetSlug: 'conflict-resolution-complaints-handling',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_\d+\.json$/i,
+  },
 ];
 
 const DEMO = {
@@ -286,9 +300,22 @@ function parseAssessments(courseDir, pattern, courseKey) {
         issues.push(`${file} question ${i + 1}: options must have at least 2 entries`);
         return;
       }
-      const options = q.options.map((o) => String(o?.text || '').trim());
-      const correctAnswer = q.options.findIndex((o) => Boolean(o?.isCorrect));
-      if (correctAnswer < 0) {
+      const optionsAreObjects = q.options.every((o) => typeof o === 'object' && o !== null);
+      const options = optionsAreObjects
+        ? q.options.map((o) => String(o?.text || '').trim())
+        : q.options.map((o) => String(o || '').trim());
+
+      let correctAnswer = q.options.findIndex((o) => Boolean(o?.isCorrect));
+      if (correctAnswer < 0 && Array.isArray(q.correct_answers) && q.correct_answers.length) {
+        correctAnswer = Number(q.correct_answers[0]);
+        if (q.correct_answers.length > 1) {
+          warnings.push(`${file} question ${i + 1}: multiple correct_answers provided; using first index ${correctAnswer} for single-answer runtime compatibility`);
+        }
+      }
+      if (correctAnswer < 0 && Number.isInteger(q.correct_answer)) {
+        correctAnswer = Number(q.correct_answer);
+      }
+      if (correctAnswer < 0 || correctAnswer >= options.length) {
         issues.push(`${file} question ${i + 1}: missing correct option`);
         return;
       }
