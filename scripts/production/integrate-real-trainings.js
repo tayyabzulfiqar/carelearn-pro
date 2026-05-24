@@ -66,6 +66,12 @@ const DEMO = {
   lastName: 'Learner',
 };
 
+const REQUESTED_KEYS = String(process.env.COURSE_KEYS || '')
+  .split(',')
+  .map((x) => x.trim())
+  .filter(Boolean);
+const IMPORT_MODE = String(process.env.IMPORT_MODE || 'full').trim().toLowerCase();
+
 function exec(conn, command, timeout = 300000) {
   return new Promise((resolve, reject) => {
     let out = '';
@@ -324,7 +330,8 @@ SET password_hash='${sqlEsc(demoPasswordHash)}', first_name='${DEMO.firstName}',
 WHERE email='${DEMO.email}';
 `;
 
-  sql += `
+  if (IMPORT_MODE === 'full') {
+    sql += `
 DELETE FROM progress WHERE enrollment_id IN (
   SELECT e.id FROM enrollments e WHERE e.course_id NOT IN (${keepIds})
 );
@@ -344,6 +351,7 @@ DELETE FROM lessons WHERE module_id IN (SELECT id FROM modules WHERE course_id N
 DELETE FROM modules WHERE course_id NOT IN (${keepIds});
 DELETE FROM courses WHERE id NOT IN (${keepIds});
 `;
+  }
 
   for (const course of normalizedCourses) {
     sql += `
@@ -411,7 +419,14 @@ ON CONFLICT (user_id, course_id) DO NOTHING;
 }
 
 async function run() {
-  const sourceCourses = COURSES.map((c) => ({ ...c, dir: path.join(COURSE_ROOT, c.folder) }));
+  const selectedCourses = REQUESTED_KEYS.length
+    ? COURSES.filter((c) => REQUESTED_KEYS.includes(c.key))
+    : COURSES;
+  if (!selectedCourses.length) {
+    throw new Error(`No courses selected. COURSE_KEYS=${REQUESTED_KEYS.join(',')}`);
+  }
+
+  const sourceCourses = selectedCourses.map((c) => ({ ...c, dir: path.join(COURSE_ROOT, c.folder) }));
   for (const c of sourceCourses) {
     if (!fs.existsSync(c.dir)) throw new Error(`Missing course folder: ${c.dir}`);
   }
