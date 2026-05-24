@@ -71,6 +71,20 @@ const COURSES = [
     mandatory: true,
     assessmentPattern: /^assessment_\d+\.json$/i,
   },
+  {
+    key: 'dementia',
+    id: '218fd893-1f3a-41ef-acdc-785a73f5bfaf',
+    title: 'Dementia Level 1',
+    slug: 'dementia-level-1',
+    description: 'Foundational dementia awareness, communication, environment and person-centred care in healthcare settings.',
+    category: 'Nurse',
+    duration: 60,
+    folder: 'Dementia Level 1',
+    assetSlug: 'dementia-level-1',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_\d+\.json$/i,
+  },
 ];
 
 const DEMO = {
@@ -314,6 +328,10 @@ function parseAssessments(courseDir, pattern, courseKey) {
       }
       if (correctAnswer < 0 && Number.isInteger(q.correct_answer)) {
         correctAnswer = Number(q.correct_answer);
+      }
+      if (correctAnswer < 0 && typeof q.answer === 'string') {
+        const normalizedAnswer = q.answer.trim().toLowerCase();
+        correctAnswer = options.findIndex((opt) => String(opt || '').trim().toLowerCase() === normalizedAnswer);
       }
       if (correctAnswer < 0 || correctAnswer >= options.length) {
         issues.push(`${file} question ${i + 1}: missing correct option`);
