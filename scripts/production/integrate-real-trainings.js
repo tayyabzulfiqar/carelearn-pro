@@ -85,6 +85,20 @@ const COURSES = [
     mandatory: true,
     assessmentPattern: /^assessment_\d+\.json$/i,
   },
+  {
+    key: 'endoflife',
+    id: 'ae24c1d2-4afa-48f0-a17e-db234dd7f0f7',
+    title: 'End of Life Care',
+    slug: 'end-of-life-care',
+    description: 'Compassionate end of life support, symptom management, communication and bereavement care in healthcare settings.',
+    category: 'Nurse',
+    duration: 90,
+    folder: 'End of Life Care',
+    assetSlug: 'end-of-life-care',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_\d+\.json$/i,
+  },
 ];
 
 const DEMO = {
