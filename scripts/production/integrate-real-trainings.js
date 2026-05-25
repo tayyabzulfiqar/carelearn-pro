@@ -99,6 +99,20 @@ const COURSES = [
     mandatory: true,
     assessmentPattern: /^assessment_\d+\.json$/i,
   },
+  {
+    key: 'equality',
+    id: '6a20c887-9d52-4b73-aff4-fc8d1e193f9d',
+    title: 'Equality, Diversity & LGBTQ+',
+    slug: 'equality-diversity-and-lgbtq',
+    description: 'Core equality, diversity, inclusion, human rights and LGBTQ+ awareness for healthcare practice.',
+    category: 'Nurse',
+    duration: 75,
+    folder: 'Equality, Diversity & LGBTQ+',
+    assetSlug: 'equality-diversity-lgbtq',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_\d+\.json$/i,
+  },
 ];
 
 const DEMO = {
@@ -318,12 +332,16 @@ function parseAssessments(courseDir, pattern, courseKey) {
       issues.push(`${file}: malformed JSON`);
       return;
     }
-    if (!Array.isArray(raw.questions) || raw.questions.length === 0) {
+    const questionsRaw = Array.isArray(raw.questions)
+      ? raw.questions
+      : (Array.isArray(raw.assessment) ? raw.assessment : []);
+
+    if (!questionsRaw.length) {
       warnings.push(`${file}: no questions array`);
       return;
     }
 
-    raw.questions.forEach((q, i) => {
+    questionsRaw.forEach((q, i) => {
       if (!Array.isArray(q.options) || q.options.length < 2) {
         issues.push(`${file} question ${i + 1}: options must have at least 2 entries`);
         return;
