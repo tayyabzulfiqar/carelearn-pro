@@ -1,0 +1,21 @@
+{
+  "at": "2026-06-01T09:40:40Z",
+  "deployment_type": "production_lms_integration",
+  "course_key": "foodhygiene",
+  "course_id": "10f6c183-7e20-493e-9863-a6d576e5440f",
+  "source_folder": "C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse\\Food Hygiene",
+  "pipeline": {
+    "script": "scripts/production/integrate-real-trainings.js",
+    "mode": "partial",
+    "course_keys": "foodhygiene",
+    "lesson_range": "132-143",
+    "assessment_file": "assessment_10.json"
+  },
+  "artifacts": {
+    "validation_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-validation-1780306699263.json",
+    "integration_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-integration-report-1780306774799.json",
+    "e2e_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-e2e-report-1780306793429.json",
+    "public_verification_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\food-hygiene-public-verification-1780306816313.json"
+  },
+  "result": "success"
+}

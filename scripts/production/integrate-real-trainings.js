@@ -16,6 +16,20 @@ const COURSE_ROOT = process.env.HEALTHCARE_TRAININGS_ROOT || 'C:\\Users\\HP\\Des
 
 const COURSES = [
   {
+    key: 'foodhygiene',
+    id: '10f6c183-7e20-493e-9863-a6d576e5440f',
+    title: 'Food Hygiene',
+    slug: 'food-hygiene',
+    description: 'Core food hygiene principles, contamination prevention, and safe handling in healthcare settings.',
+    category: 'Nurse',
+    duration: 75,
+    folder: 'Food Hygiene',
+    assetSlug: 'food-hygiene',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_\d+\.json$/i,
+  },
+  {
     key: 'firstaid',
     id: 'e5c7342d-ffae-46f6-bcb6-e943760e5b40',
     title: 'First Aid',

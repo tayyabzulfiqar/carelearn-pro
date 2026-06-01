@@ -1,0 +1,130 @@
+{
+  "at": "2026-06-01T09:38:19.166Z",
+  "root": "C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse",
+  "courses": [
+    {
+      "key": "foodhygiene",
+      "id": "10f6c183-7e20-493e-9863-a6d576e5440f",
+      "title": "Food Hygiene",
+      "folder": "Food Hygiene",
+      "lesson_files": [
+        "lesson_132.json",
+        "lesson_133.json",
+        "lesson_134.json",
+        "lesson_135.json",
+        "lesson_136.json",
+        "lesson_137.json",
+        "lesson_138.json",
+        "lesson_139.json",
+        "lesson_140.json",
+        "lesson_141.json",
+        "lesson_142.json",
+        "lesson_143.json"
+      ],
+      "lesson_numbers_source": [
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143
+      ],
+      "lesson_count_normalized": 12,
+      "assessment_files": [
+        "assessment_10.json"
+      ],
+      "assessment_question_count": 6,
+      "image_files": [
+        "IMG_329.webp",
+        "IMG_330.webp",
+        "IMG_331.webp",
+        "IMG_332.webp",
+        "IMG_333.webp",
+        "IMG_334.webp",
+        "IMG_335.webp",
+        "IMG_336.webp",
+        "IMG_337.webp",
+        "IMG_338.webp",
+        "IMG_339.webp",
+        "IMG_340.webp"
+      ],
+      "image_ref_count": 12,
+      "orphan_images": [],
+      "issues": [],
+      "warnings": [],
+      "normalized_numbering": [
+        {
+          "source_file": "lesson_132.json",
+          "source_number": 132,
+          "normalized_number": 1
+        },
+        {
+          "source_file": "lesson_133.json",
+          "source_number": 133,
+          "normalized_number": 2
+        },
+        {
+          "source_file": "lesson_134.json",
+          "source_number": 134,
+          "normalized_number": 3
+        },
+        {
+          "source_file": "lesson_135.json",
+          "source_number": 135,
+          "normalized_number": 4
+        },
+        {
+          "source_file": "lesson_136.json",
+          "source_number": 136,
+          "normalized_number": 5
+        },
+        {
+          "source_file": "lesson_137.json",
+          "source_number": 137,
+          "normalized_number": 6
+        },
+        {
+          "source_file": "lesson_138.json",
+          "source_number": 138,
+          "normalized_number": 7
+        },
+        {
+          "source_file": "lesson_139.json",
+          "source_number": 139,
+          "normalized_number": 8
+        },
+        {
+          "source_file": "lesson_140.json",
+          "source_number": 140,
+          "normalized_number": 9
+        },
+        {
+          "source_file": "lesson_141.json",
+          "source_number": 141,
+          "normalized_number": 10
+        },
+        {
+          "source_file": "lesson_142.json",
+          "source_number": 142,
+          "normalized_number": 11
+        },
+        {
+          "source_file": "lesson_143.json",
+          "source_number": 143,
+          "normalized_number": 12
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_courses": 1,
+    "warnings_total": 0,
+    "issues_total": 0
+  }
+}
