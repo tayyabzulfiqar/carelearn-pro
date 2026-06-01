@@ -1,0 +1,21 @@
+{
+  "at": "2026-06-01T08:13:30Z",
+  "deployment_type": "production_lms_integration",
+  "course_key": "firstaid",
+  "course_id": "e5c7342d-ffae-46f6-bcb6-e943760e5b40",
+  "source_folder": "C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse\\First Aid",
+  "pipeline": {
+    "script": "scripts/production/integrate-real-trainings.js",
+    "mode": "partial",
+    "course_keys": "firstaid",
+    "lesson_range": "115-131",
+    "assessment_file": "assessment_09.json"
+  },
+  "artifacts": {
+    "validation_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-validation-1780301406288.json",
+    "integration_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-integration-report-1780301490458.json",
+    "e2e_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-e2e-report-1780301501227.json",
+    "public_verification_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\first-aid-public-verification-1780301544368.json"
+  },
+  "result": "success"
+}

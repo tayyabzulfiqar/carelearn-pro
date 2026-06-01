@@ -8,6 +8,8 @@ const API = process.env.API_BASE || `${BASE}/api/v1`;
 const EMAIL = process.env.DEMO_EMAIL || 'demo.learner@carelearn.local';
 const PASSWORD = process.env.DEMO_PASSWORD || 'DemoLearner123!';
 const COURSE_ID = process.env.COURSE_ID || '91fd81e6-f9d9-4dda-9d91-5fbc07f22f37';
+const COURSE_KEY = process.env.COURSE_KEY || 'fire-safety';
+const ASSET_SLUG = process.env.ASSET_SLUG || COURSE_KEY;
 
 async function req(method, p, token, body) {
   const r = await fetch(`${API}${p}`, {
@@ -53,7 +55,7 @@ async function run() {
     await page.click('button[type="submit"]');
     await page.waitForFunction(() => !window.location.pathname.startsWith('/login'), { timeout: 30000 });
 
-    const dashboardShot = path.join(outDir, `fire-safety-verify-dashboard-${Date.now()}.png`);
+    const dashboardShot = path.join(outDir, `${COURSE_KEY}-verify-dashboard-${Date.now()}.png`);
     await page.screenshot({ path: dashboardShot, fullPage: true });
     report.screenshots.push(dashboardShot);
     check('learner.dashboard.visible', /\/dashboard|\/courses/.test(page.url()), page.url());
@@ -65,18 +67,19 @@ async function run() {
     const enrollments = await req('GET', '/enrollments/my', token);
     check('api.enrollments.my', enrollments.status === 200, JSON.stringify(enrollments.data));
     const enrollment = (enrollments.data?.enrollments || []).find((e) => e.course_id === COURSE_ID);
-    check('api.fire_safety.enrollment.exists', !!enrollment, JSON.stringify((enrollments.data?.enrollments || []).map((e) => e.course_id)));
+    check(`api.${COURSE_KEY}.enrollment.exists`, !!enrollment, JSON.stringify((enrollments.data?.enrollments || []).map((e) => e.course_id)));
 
     const detail = await req('GET', `/courses/${COURSE_ID}`, token);
-    check('api.fire_safety.course.load', detail.status === 200, JSON.stringify(detail.data));
+    check(`api.${COURSE_KEY}.course.load`, detail.status === 200, JSON.stringify(detail.data));
     const lessons = (detail.data?.course?.modules || []).flatMap((m) => m.lessons || []);
-    check('api.fire_safety.lessons.present', lessons.length > 0, `count=${lessons.length}`);
+    check(`api.${COURSE_KEY}.lessons.present`, lessons.length > 0, `count=${lessons.length}`);
 
     const playerUrl = `${BASE}/dashboard/courses/${COURSE_ID}/player`;
     await page.goto(playerUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForLoadState('networkidle').catch(() => null);
+    await page.evaluate((slug) => { window.__COURSE_ASSET_SLUG__ = slug; }, ASSET_SLUG);
 
-    const playerShot = path.join(outDir, `fire-safety-verify-player-${Date.now()}.png`);
+    const playerShot = path.join(outDir, `${COURSE_KEY}-verify-player-${Date.now()}.png`);
     await page.screenshot({ path: playerShot, fullPage: true });
     report.screenshots.push(playerShot);
     check('learner.lesson.rendering', !/\/(login|error)/.test(page.url()), page.url());
@@ -84,11 +87,12 @@ async function run() {
     let imageRender = false;
     for (let i = 0; i < 6; i++) {
       imageRender = await page.evaluate(() => {
-        const nodes = [...document.querySelectorAll('[data-testid=\"block-image\"], img, [style*=\"course-assets/fire-safety\"]')];
+        const slug = window.__COURSE_ASSET_SLUG__;
+        const nodes = [...document.querySelectorAll('[data-testid=\"block-image\"], img, [style*=\"course-assets/\"]')];
         return nodes.some((el) => {
           const src = el.getAttribute?.('src') || '';
           const style = el.getAttribute?.('style') || '';
-          return src.includes('/course-assets/fire-safety/') || style.includes('/course-assets/fire-safety/');
+          return src.includes(`/course-assets/${slug}/`) || style.includes(`/course-assets/${slug}/`);
         });
       });
       if (imageRender) break;
@@ -101,10 +105,10 @@ async function run() {
       }
     }
     if (!imageRender) {
-      report.warnings.push('Image rendering issue: player shows no rendered Fire Safety image in DOM (expected /course-assets/fire-safety/*).');
-      report.checks.push({ name: 'learner.image.rendering', ok: false, detail: 'no /course-assets/fire-safety/ image detected in DOM' });
+      report.warnings.push(`Image rendering issue: player shows no rendered ${COURSE_KEY} image in DOM (expected /course-assets/${ASSET_SLUG}/*).`);
+      report.checks.push({ name: 'learner.image.rendering', ok: false, detail: `no /course-assets/${ASSET_SLUG}/ image detected in DOM` });
     } else {
-      report.checks.push({ name: 'learner.image.rendering', ok: true, detail: 'fire-safety image block rendered' });
+      report.checks.push({ name: 'learner.image.rendering', ok: true, detail: `${COURSE_KEY} image block rendered` });
     }
 
     for (const lesson of lessons) {
@@ -124,7 +128,7 @@ async function run() {
     const qs = questions.data?.questions || [];
     check('api.assessment.questions', questions.status === 200 && qs.length > 0, JSON.stringify(questions.data));
 
-    const assessmentShot = path.join(outDir, `fire-safety-verify-assessment-${Date.now()}.png`);
+    const assessmentShot = path.join(outDir, `${COURSE_KEY}-verify-assessment-${Date.now()}.png`);
     await page.screenshot({ path: assessmentShot, fullPage: true });
     report.screenshots.push(assessmentShot);
 
@@ -139,11 +143,23 @@ async function run() {
     const complete = await req('POST', '/enrollments/complete', token, { enrollment_id: enrollment.id });
     check('api.completion.mark', complete.status === 200, JSON.stringify(complete.data));
 
+    const certIssue = await req('POST', '/certificates', token, {
+      enrollment_id: enrollment.id,
+      user_id: login.data?.user?.id,
+      course_id: COURSE_ID,
+      organisation_id: enrollment.organisation_id,
+    });
+    const certUrl = certIssue.data?.certificate?.certificate_url || certIssue.data?.certificate_url || certIssue.data?.certificate?.pdf_url;
+    check('api.certificate.generate', [200, 201].includes(certIssue.status) && !!certUrl, JSON.stringify(certIssue.data));
+
+    const certFile = await fetch(`${BASE}${certUrl}`);
+    check('api.certificate.file_access', certFile.status === 200, `${certFile.status} ${certUrl}`);
+
     const enrollmentsAfter = await req('GET', '/enrollments/my', token);
     const after = (enrollmentsAfter.data?.enrollments || []).find((e) => e.id === enrollment.id);
     check('api.completion.persistence', !!after && after.status === 'completed', JSON.stringify(after));
 
-    const completionShot = path.join(outDir, `fire-safety-verify-completion-${Date.now()}.png`);
+    const completionShot = path.join(outDir, `${COURSE_KEY}-verify-completion-${Date.now()}.png`);
     await page.goto(`${BASE}/dashboard/courses`, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.screenshot({ path: completionShot, fullPage: true });
     report.screenshots.push(completionShot);
@@ -152,7 +168,7 @@ async function run() {
     await browser.close();
   }
 
-  const reportPath = path.join(outDir, `fire-safety-public-verification-${Date.now()}.json`);
+  const reportPath = path.join(outDir, `${COURSE_KEY}-public-verification-${Date.now()}.json`);
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
   console.log(`Public verification complete.\nReport: ${reportPath}`);
 }

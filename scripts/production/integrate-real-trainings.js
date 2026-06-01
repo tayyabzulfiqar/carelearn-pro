@@ -16,6 +16,20 @@ const COURSE_ROOT = process.env.HEALTHCARE_TRAININGS_ROOT || 'C:\\Users\\HP\\Des
 
 const COURSES = [
   {
+    key: 'firstaid',
+    id: 'e5c7342d-ffae-46f6-bcb6-e943760e5b40',
+    title: 'First Aid',
+    slug: 'first-aid',
+    description: 'Essential first aid response, assessment, and emergency care in healthcare settings.',
+    category: 'Nurse',
+    duration: 90,
+    folder: 'First Aid',
+    assetSlug: 'first-aid',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_\d+\.json$/i,
+  },
+  {
     key: 'firesafety',
     id: '91fd81e6-f9d9-4dda-9d91-5fbc07f22f37',
     title: 'Fire Safety',
@@ -191,6 +205,15 @@ function writeRemoteBuffer(conn, remotePath, contentBuffer) {
   });
 }
 
+function getSftp(conn) {
+  return new Promise((resolve, reject) => {
+    conn.sftp((err, sftp) => {
+      if (err) return reject(err);
+      resolve(sftp);
+    });
+  });
+}
+
 function sqlEsc(v) {
   return String(v ?? '').replace(/'/g, "''");
 }
@@ -205,7 +228,38 @@ function toCanonicalType(type, block) {
   return 'rich_text';
 }
 
-function normalizeBlock(block, idx, imageSet, issues, lessonFile) {
+function canonicalImageName(name = '') {
+  const raw = String(name || '').trim();
+  const m = raw.match(/^IMG[\s_]*(\d+)\.(webp|png|jpg|jpeg)$/i);
+  if (!m) return '';
+  return `IMG_${Number(m[1])}.${m[2].toLowerCase()}`;
+}
+
+function buildAssetIndex(rootDir) {
+  const index = new Map();
+  const stack = [rootDir];
+  while (stack.length) {
+    const current = stack.pop();
+    let entries = [];
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(full);
+        continue;
+      }
+      const key = canonicalImageName(entry.name);
+      if (key && !index.has(key)) index.set(key, full);
+    }
+  }
+  return index;
+}
+
+function normalizeBlock(block, idx, imageSet, assetIndex, issues, lessonFile) {
   const canonical = toCanonicalType(block?.type, block);
   const base = {
     id: crypto.randomUUID(),
@@ -229,7 +283,8 @@ function normalizeBlock(block, idx, imageSet, issues, lessonFile) {
 
   const rawSrc = String(block?.src || block?.image || block?.payload?.src || '').trim();
   const fileName = rawSrc.split('/').pop();
-  if (fileName && /^IMG_\d+\.webp$/i.test(fileName) && !imageSet.has(fileName)) {
+  const canonicalName = canonicalImageName(fileName);
+  if (canonicalName && !imageSet.has(canonicalName) && !assetIndex.has(canonicalName)) {
     issues.push(`${lessonFile}: missing image asset ${fileName}`);
   }
   return {
@@ -253,7 +308,7 @@ function parseJsonFile(filePath) {
   return JSON.parse(utf16);
 }
 
-function validateAndParseLessons(courseDir) {
+function validateAndParseLessons(courseDir, assetIndex) {
   const files = fs.readdirSync(courseDir);
   const lessonFiles = files.filter((f) => /^lesson_\d+\.json$/i.test(f))
     .filter((f) => {
@@ -264,8 +319,8 @@ function validateAndParseLessons(courseDir) {
       return true;
     })
     .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]));
-  const imageFiles = files.filter((f) => /^IMG_\d+\.webp$/i.test(f));
-  const imageSet = new Set(imageFiles);
+  const imageFiles = files.filter((f) => !!canonicalImageName(f));
+  const imageSet = new Set(imageFiles.map((f) => canonicalImageName(f)).filter(Boolean));
 
   const issues = [];
   const warnings = [];
@@ -304,12 +359,13 @@ function validateAndParseLessons(courseDir) {
     const title = String(raw.lessonTitle || raw.title || '').trim() || `Lesson ${sortedIndex + 1}`;
     const durationMinutes = Number(String(raw.lessonDuration || '').match(/\d+/)?.[0] || 5);
 
-    const blocks = rawBlocks.map((b, idx) => normalizeBlock(b, idx, imageSet, issues, file));
+    const blocks = rawBlocks.map((b, idx) => normalizeBlock(b, idx, imageSet, assetIndex, issues, file));
     for (const block of blocks) {
       if (block.type === 'image') {
         const src = String(block.payload?.src || '').trim();
         const name = src.split('/').pop();
-        if (name && /^IMG_\d+\.webp$/i.test(name)) referencedImages.add(name);
+        const normalized = canonicalImageName(name);
+        if (normalized) referencedImages.add(normalized);
       }
     }
 
@@ -328,7 +384,7 @@ function validateAndParseLessons(courseDir) {
     });
   });
 
-  const orphanImages = imageFiles.filter((img) => !referencedImages.has(img));
+  const orphanImages = imageFiles.filter((img) => !referencedImages.has(canonicalImageName(img)));
   if (orphanImages.length) warnings.push(`Orphan images not referenced by lesson JSON: ${orphanImages.join(', ')}`);
 
   return {
@@ -380,18 +436,24 @@ async function syncCourseAssets(conn, course, lessons) {
   const names = collectReferencedImageNames(lessons);
   const localDir = course.dir;
   const hostDir = `/root/carelearn-pro/apps/web/public/course-assets/${course.assetSlug}`;
+  const assetIndex = buildAssetIndex(COURSE_ROOT);
 
   await exec(conn, `mkdir -p ${hostDir}`);
+  const sftp = await getSftp(conn);
 
   const missingLocal = [];
   for (const name of names) {
-    const localPath = path.join(localDir, name);
-    if (!fs.existsSync(localPath)) {
+    const directPath = path.join(localDir, name);
+    const canonical = canonicalImageName(name);
+    const indexedPath = canonical ? assetIndex.get(canonical) : null;
+    const localPath = fs.existsSync(directPath) ? directPath : indexedPath;
+    if (!localPath || !fs.existsSync(localPath)) {
       missingLocal.push(name);
       continue;
     }
-    const buf = fs.readFileSync(localPath);
-    await writeRemoteBuffer(conn, `${hostDir}/${name}`, buf);
+    await new Promise((resolve, reject) => {
+      sftp.fastPut(localPath, `${hostDir}/${name}`, {}, (err) => (err ? reject(err) : resolve()));
+    });
   }
 
   const verify = await exec(conn, `cd /root/carelearn-pro && ls -1 apps/web/public/course-assets/${course.assetSlug} | wc -l`);
@@ -600,9 +662,10 @@ async function run() {
 
   const validation = { at: new Date().toISOString(), root: COURSE_ROOT, courses: [] };
   const normalizedCourses = [];
+  const assetIndex = buildAssetIndex(COURSE_ROOT);
 
   for (const c of sourceCourses) {
-    const lessonValidation = validateAndParseLessons(c.dir);
+    const lessonValidation = validateAndParseLessons(c.dir, assetIndex);
     const assessmentValidation = parseAssessments(c.dir, c.assessmentPattern, c.key);
 
     const allIssues = [...lessonValidation.issues, ...assessmentValidation.issues];
