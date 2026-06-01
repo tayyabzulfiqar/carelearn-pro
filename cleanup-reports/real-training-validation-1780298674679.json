@@ -1,0 +1,152 @@
+{
+  "at": "2026-06-01T07:24:34.648Z",
+  "root": "C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse",
+  "courses": [
+    {
+      "key": "firesafety",
+      "id": "91fd81e6-f9d9-4dda-9d91-5fbc07f22f37",
+      "title": "Fire Safety",
+      "folder": "Fire Safety",
+      "lesson_files": [
+        "lesson_98.json",
+        "lesson_99.json",
+        "lesson_100.json",
+        "lesson_101.json",
+        "lesson_102.json",
+        "lesson_103.json",
+        "lesson_104.json",
+        "lesson_105.json",
+        "lesson_106.json",
+        "lesson_107.json",
+        "lesson_108.json",
+        "lesson_109.json",
+        "lesson_110.json",
+        "lesson_111.json",
+        "lesson_112.json",
+        "lesson_113.json",
+        "lesson_114.json"
+      ],
+      "lesson_numbers_source": [
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114
+      ],
+      "lesson_count_normalized": 17,
+      "assessment_files": [
+        "assessment_08.json"
+      ],
+      "assessment_question_count": 6,
+      "image_files": [],
+      "image_ref_count": 0,
+      "orphan_images": [],
+      "issues": [],
+      "warnings": [],
+      "normalized_numbering": [
+        {
+          "source_file": "lesson_98.json",
+          "source_number": 98,
+          "normalized_number": 1
+        },
+        {
+          "source_file": "lesson_99.json",
+          "source_number": 99,
+          "normalized_number": 2
+        },
+        {
+          "source_file": "lesson_100.json",
+          "source_number": 100,
+          "normalized_number": 3
+        },
+        {
+          "source_file": "lesson_101.json",
+          "source_number": 101,
+          "normalized_number": 4
+        },
+        {
+          "source_file": "lesson_102.json",
+          "source_number": 102,
+          "normalized_number": 5
+        },
+        {
+          "source_file": "lesson_103.json",
+          "source_number": 103,
+          "normalized_number": 6
+        },
+        {
+          "source_file": "lesson_104.json",
+          "source_number": 104,
+          "normalized_number": 7
+        },
+        {
+          "source_file": "lesson_105.json",
+          "source_number": 105,
+          "normalized_number": 8
+        },
+        {
+          "source_file": "lesson_106.json",
+          "source_number": 106,
+          "normalized_number": 9
+        },
+        {
+          "source_file": "lesson_107.json",
+          "source_number": 107,
+          "normalized_number": 10
+        },
+        {
+          "source_file": "lesson_108.json",
+          "source_number": 108,
+          "normalized_number": 11
+        },
+        {
+          "source_file": "lesson_109.json",
+          "source_number": 109,
+          "normalized_number": 12
+        },
+        {
+          "source_file": "lesson_110.json",
+          "source_number": 110,
+          "normalized_number": 13
+        },
+        {
+          "source_file": "lesson_111.json",
+          "source_number": 111,
+          "normalized_number": 14
+        },
+        {
+          "source_file": "lesson_112.json",
+          "source_number": 112,
+          "normalized_number": 15
+        },
+        {
+          "source_file": "lesson_113.json",
+          "source_number": 113,
+          "normalized_number": 16
+        },
+        {
+          "source_file": "lesson_114.json",
+          "source_number": 114,
+          "normalized_number": 17
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_courses": 1,
+    "warnings_total": 0,
+    "issues_total": 0
+  }
+}

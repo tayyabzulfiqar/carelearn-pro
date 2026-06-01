@@ -16,6 +16,20 @@ const COURSE_ROOT = process.env.HEALTHCARE_TRAININGS_ROOT || 'C:\\Users\\HP\\Des
 
 const COURSES = [
   {
+    key: 'firesafety',
+    id: '91fd81e6-f9d9-4dda-9d91-5fbc07f22f37',
+    title: 'Fire Safety',
+    slug: 'fire-safety',
+    description: 'Healthcare fire safety awareness, prevention, response, and compliance practice.',
+    category: 'Nurse',
+    duration: 90,
+    folder: 'Fire Safety',
+    assetSlug: 'fire-safety',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_\d+\.json$/i,
+  },
+  {
     key: 'bls',
     id: 'b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7',
     title: 'Basic Life Support',
@@ -127,6 +141,9 @@ const REQUESTED_KEYS = String(process.env.COURSE_KEYS || '')
   .map((x) => x.trim())
   .filter(Boolean);
 const IMPORT_MODE = String(process.env.IMPORT_MODE || 'full').trim().toLowerCase();
+const LESSON_MIN = Number(process.env.LESSON_MIN || 0);
+const LESSON_MAX = Number(process.env.LESSON_MAX || 0);
+const ASSESSMENT_FILE = String(process.env.ASSESSMENT_FILE || '').trim();
 
 function exec(conn, command, timeout = 300000) {
   return new Promise((resolve, reject) => {
@@ -215,9 +232,24 @@ function normalizeBlock(block, idx, imageSet, issues, lessonFile) {
   };
 }
 
+function parseJsonFile(filePath) {
+  const buf = fs.readFileSync(filePath);
+  const utf8 = buf.toString('utf8').replace(/^\uFEFF/, '').trim();
+  try { return JSON.parse(utf8); } catch {}
+  const utf16 = buf.toString('utf16le').replace(/^\uFEFF/, '').trim();
+  return JSON.parse(utf16);
+}
+
 function validateAndParseLessons(courseDir) {
   const files = fs.readdirSync(courseDir);
   const lessonFiles = files.filter((f) => /^lesson_\d+\.json$/i.test(f))
+    .filter((f) => {
+      if (!LESSON_MIN && !LESSON_MAX) return true;
+      const n = Number(f.match(/\d+/)?.[0] || 0);
+      if (LESSON_MIN && n < LESSON_MIN) return false;
+      if (LESSON_MAX && n > LESSON_MAX) return false;
+      return true;
+    })
     .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]));
   const imageFiles = files.filter((f) => /^IMG_\d+\.webp$/i.test(f));
   const imageSet = new Set(imageFiles);
@@ -244,7 +276,7 @@ function validateAndParseLessons(courseDir) {
     const lessonPath = path.join(courseDir, file);
     let raw;
     try {
-      raw = JSON.parse(fs.readFileSync(lessonPath, 'utf8'));
+      raw = parseJsonFile(lessonPath);
     } catch {
       issues.push(`${file}: malformed JSON`);
       return;
@@ -318,7 +350,10 @@ function rewriteImageSrcForPublic(lessons, assetSlug) {
 }
 
 function parseAssessments(courseDir, pattern, courseKey) {
-  const files = fs.readdirSync(courseDir).filter((f) => pattern.test(f)).sort();
+  const files = fs.readdirSync(courseDir)
+    .filter((f) => pattern.test(f))
+    .filter((f) => !ASSESSMENT_FILE || f.toLowerCase() === ASSESSMENT_FILE.toLowerCase())
+    .sort();
   const issues = [];
   const warnings = [];
   const questions = [];
@@ -327,7 +362,7 @@ function parseAssessments(courseDir, pattern, courseKey) {
     const assessmentPath = path.join(courseDir, file);
     let raw;
     try {
-      raw = JSON.parse(fs.readFileSync(assessmentPath, 'utf8'));
+      raw = parseJsonFile(assessmentPath);
     } catch {
       issues.push(`${file}: malformed JSON`);
       return;

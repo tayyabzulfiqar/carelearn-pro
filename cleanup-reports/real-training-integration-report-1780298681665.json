@@ -1,0 +1,18 @@
+{
+  "at": "2026-06-01T07:24:41.664Z",
+  "source_root": "C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse",
+  "courses": [
+    {
+      "key": "firesafety",
+      "id": "91fd81e6-f9d9-4dda-9d91-5fbc07f22f37",
+      "lessons": 17,
+      "questions": 6
+    }
+  ],
+  "demo_learner": {
+    "email": "demo.learner@carelearn.local",
+    "password": "DemoLearner123!"
+  },
+  "validation_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-validation-1780298674679.json",
+  "verification": "id                  |                    title                    |                    slug                     |  status   \n--------------------------------------+---------------------------------------------+---------------------------------------------+-----------\n e8c3da7b-dba2-4e8a-a951-988a38f78bcc | APPVER-1779640897867                        | appver-1779640897867                        | draft\n b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7 | Basic Life Support                          | basic-life-support                          | published\n 3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4 | Caring for Someone with Epilepsy            | caring-for-someone-with-epilepsy            | published\n f9fe3f1e-2c4c-49d1-bb6f-9ecbc6a95f8a | Catheter Care                               | catheter-care                               | published\n 3d85e58e-dc48-4b10-a298-8e33332326d0 | Conflict Resolution and Complaints Handling | conflict-resolution-and-complaints-handling | published\n 218fd893-1f3a-41ef-acdc-785a73f5bfaf | Dementia Level 1                            | dementia-level-1                            | published\n ae24c1d2-4afa-48f0-a17e-db234dd7f0f7 | End of Life Care                            | end-of-life-care                            | published\n 6a20c887-9d52-4b73-aff4-fc8d1e193f9d | Equality, Diversity & LGBTQ+                | equality-diversity-and-lgbtq                | published\n 91fd81e6-f9d9-4dda-9d91-5fbc07f22f37 | Fire Safety                                 | fire-safety                                 | published\n(9 rows)\n\n                    title                    | lesson_count \n---------------------------------------------+--------------\n APPVER-1779640897867                        |            0\n Basic Life Support                          |           11\n Caring for Someone with Epilepsy            |           15\n Catheter Care                               |           15\n Conflict Resolution and Complaints Handling |           17\n Dementia Level 1                            |            8\n End of Life Care                            |           25\n Equality, Diversity & LGBTQ+                |           15\n Fire Safety                                 |           17\n(9 rows)\n\n                    title                    | final_questions \n---------------------------------------------+-----------------\n APPVER-1779640897867                        |               0\n Basic Life Support                          |               3\n Caring for Someone with Epilepsy            |               0\n Catheter Care                               |              10\n Conflict Resolution and Complaints Handling |              11\n Dementia Level 1                            |              10\n End of Life Care                            |               9\n Equality, Diversity & LGBTQ+                |               7\n Fire Safety                                 |               6\n(9 rows)"
+}

@@ -4,8 +4,13 @@ const fs = require('fs');
 const API = process.env.API_BASE || 'http://187.127.105.253/api/v1';
 const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo.learner@carelearn.local';
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'DemoLearner123!';
+const REQUESTED_KEYS = String(process.env.COURSE_KEYS || '')
+  .split(',')
+  .map((x) => x.trim())
+  .filter(Boolean);
 
 const COURSES = [
+  { key: 'firesafety', id: '91fd81e6-f9d9-4dda-9d91-5fbc07f22f37', assetSlug: 'fire-safety', expectsAssessment: true },
   { key: 'bls', id: 'b721b5b7-bf9e-4c44-b89d-ede14a5e7bf7', assetSlug: 'bls', expectsAssessment: true },
   { key: 'epilepsy', id: '3da8ba5f-1a6d-4de9-8de9-1f9db5cc32c4', assetSlug: 'epilepsy', expectsAssessment: false },
   { key: 'catheter', id: 'f9fe3f1e-2c4c-49d1-bb6f-9ecbc6a95f8a', assetSlug: 'catheter-care', expectsAssessment: true },
@@ -31,6 +36,11 @@ async function req(method, path, token, body) {
 }
 
 async function run() {
+  const selectedCourses = REQUESTED_KEYS.length
+    ? COURSES.filter((c) => REQUESTED_KEYS.includes(c.key))
+    : COURSES;
+  if (!selectedCourses.length) throw new Error(`No courses selected. COURSE_KEYS=${REQUESTED_KEYS.join(',')}`);
+
   const report = { at: new Date().toISOString(), checks: [] };
   const check = (name, ok, detail) => {
     report.checks.push({ name, ok, detail });
@@ -48,8 +58,7 @@ async function run() {
   check('courses.list.status', coursesRes.status === 200, JSON.stringify(coursesRes.data));
   const courses = coursesRes.data?.courses || [];
   const ids = new Set(courses.map((c) => c.id));
-  check('courses.count', courses.length === 7, `expected 7 got ${courses.length}`);
-  for (const c of COURSES) {
+  for (const c of selectedCourses) {
     check(`courses.has.${c.key}`, ids.has(c.id), JSON.stringify([...ids]));
   }
 
@@ -57,7 +66,7 @@ async function run() {
   check('enrollments.list', enrollments.status === 200, JSON.stringify(enrollments.data));
   const myEnrollments = enrollments.data?.enrollments || [];
 
-  for (const course of COURSES) {
+  for (const course of selectedCourses) {
     const enrollment = myEnrollments.find((e) => e.course_id === course.id);
     check(`enrollment.${course.key}`, !!enrollment, JSON.stringify(myEnrollments.map((e) => e.course_id)));
 

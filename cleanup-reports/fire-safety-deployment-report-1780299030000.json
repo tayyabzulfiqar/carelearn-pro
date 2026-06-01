@@ -1,0 +1,20 @@
+{
+  "at": "2026-06-01T07:30:30Z",
+  "deployment_type": "production_database_content_deploy",
+  "course_key": "firesafety",
+  "course_id": "91fd81e6-f9d9-4dda-9d91-5fbc07f22f37",
+  "source_folder": "C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse\\Fire Safety",
+  "pipeline": {
+    "script": "scripts/production/integrate-real-trainings.js",
+    "mode": "partial",
+    "course_keys": "firesafety",
+    "lesson_range": "98-114",
+    "assessment_file": "assessment_08.json"
+  },
+  "artifacts": {
+    "validation_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-validation-1780298674679.json",
+    "integration_sql": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-integration-1780298675515.sql",
+    "integration_report": "C:\\Users\\HP\\carelearn-pro\\cleanup-reports\\real-training-integration-report-1780298681665.json"
+  },
+  "result": "success"
+}
