@@ -141,6 +141,7 @@ const REQUESTED_KEYS = String(process.env.COURSE_KEYS || '')
   .map((x) => x.trim())
   .filter(Boolean);
 const IMPORT_MODE = String(process.env.IMPORT_MODE || 'full').trim().toLowerCase();
+const ASSETS_ONLY = String(process.env.ASSETS_ONLY || '').trim().toLowerCase() === 'true';
 const LESSON_MIN = Number(process.env.LESSON_MIN || 0);
 const LESSON_MAX = Number(process.env.LESSON_MAX || 0);
 const ASSESSMENT_FILE = String(process.env.ASSESSMENT_FILE || '').trim();
@@ -174,6 +175,18 @@ function writeRemoteFile(conn, remotePath, content) {
       stream.on('error', reject);
       stream.on('close', resolve);
       stream.end(content);
+    });
+  });
+}
+
+function writeRemoteBuffer(conn, remotePath, contentBuffer) {
+  return new Promise((resolve, reject) => {
+    conn.sftp((err, sftp) => {
+      if (err) return reject(err);
+      const stream = sftp.createWriteStream(remotePath, { flags: 'w', mode: 0o644 });
+      stream.on('error', reject);
+      stream.on('close', resolve);
+      stream.end(contentBuffer);
     });
   });
 }
@@ -347,6 +360,48 @@ function rewriteImageSrcForPublic(lessons, assetSlug) {
       }),
     },
   }));
+}
+
+function collectReferencedImageNames(lessons) {
+  const names = new Set();
+  for (const lesson of lessons) {
+    const blocks = lesson?.content?.blocks || [];
+    for (const block of blocks) {
+      if (block?.type !== 'image') continue;
+      const src = String(block?.payload?.src || '').trim();
+      const name = src.split('/').pop();
+      if (name) names.add(name);
+    }
+  }
+  return [...names];
+}
+
+async function syncCourseAssets(conn, course, lessons) {
+  const names = collectReferencedImageNames(lessons);
+  const localDir = course.dir;
+  const hostDir = `/root/carelearn-pro/apps/web/public/course-assets/${course.assetSlug}`;
+
+  await exec(conn, `mkdir -p ${hostDir}`);
+
+  const missingLocal = [];
+  for (const name of names) {
+    const localPath = path.join(localDir, name);
+    if (!fs.existsSync(localPath)) {
+      missingLocal.push(name);
+      continue;
+    }
+    const buf = fs.readFileSync(localPath);
+    await writeRemoteBuffer(conn, `${hostDir}/${name}`, buf);
+  }
+
+  const verify = await exec(conn, `cd /root/carelearn-pro && ls -1 apps/web/public/course-assets/${course.assetSlug} | wc -l`);
+  const hostCount = Number(String(verify.out || '0').trim() || 0);
+  return {
+    referenced: names.length,
+    uploaded: names.length - missingLocal.length,
+    missingLocal,
+    hostCount,
+  };
 }
 
 function parseAssessments(courseDir, pattern, courseKey) {
@@ -603,6 +658,31 @@ async function run() {
   });
 
   try {
+    const assetSync = [];
+    for (const c of normalizedCourses) {
+      const result = await syncCourseAssets(conn, c, c.lessons);
+      assetSync.push({ key: c.key, assetSlug: c.assetSlug, ...result });
+    }
+
+    const webDeployCmd = 'cd /root/carelearn-pro && docker compose -f docker-compose.production.yml --env-file .env.production build web && docker compose -f docker-compose.production.yml --env-file .env.production up -d web nginx';
+    const webDeploy = await exec(conn, webDeployCmd, 900000);
+    if (webDeploy.code !== 0) throw new Error(webDeploy.err || 'Failed to rebuild/restart web service');
+
+    if (ASSETS_ONLY) {
+      const report = {
+        at: new Date().toISOString(),
+        mode: 'assets_only',
+        source_root: COURSE_ROOT,
+        courses: normalizedCourses.map((c) => ({ key: c.key, id: c.id, lessons: c.lessons.length })),
+        asset_sync: assetSync,
+        web_deploy: webDeploy.out || webDeploy.err,
+      };
+      const reportPath = path.resolve(process.cwd(), 'cleanup-reports', `real-training-assets-sync-report-${Date.now()}.json`);
+      fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+      console.log(`Asset sync complete.\nReport: ${reportPath}`);
+      return;
+    }
+
     await exec(conn, 'mkdir -p /root/carelearn-pro/backups');
     const remoteSql = '/root/carelearn-pro/backups/real-training-integration.sql';
     await writeRemoteFile(conn, remoteSql, sql);
@@ -621,6 +701,7 @@ async function run() {
       courses: normalizedCourses.map((c) => ({ key: c.key, id: c.id, lessons: c.lessons.length, questions: c.assessmentQuestions.length })),
       demo_learner: { email: DEMO.email, password: DEMO.password },
       validation_report: validationReportPath,
+      asset_sync: assetSync,
       verification: verified.out,
     };
     const reportPath = path.resolve(process.cwd(), 'cleanup-reports', `real-training-integration-report-${Date.now()}.json`);

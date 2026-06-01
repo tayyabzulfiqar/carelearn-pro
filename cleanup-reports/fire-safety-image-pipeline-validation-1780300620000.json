@@ -1,0 +1,14 @@
+{
+  "at": "2026-06-01T07:57:00Z",
+  "course_id": "91fd81e6-f9d9-4dda-9d91-5fbc07f22f37",
+  "course_slug": "fire-safety",
+  "scope": "image_pipeline_only",
+  "checks": [
+    { "name": "stored_lesson_paths", "status": "PASS", "detail": "API lesson blocks include /course-assets/fire-safety/*.png" },
+    { "name": "physical_files_on_vps", "status": "PASS", "detail": "/root/carelearn-pro/apps/web/public/course-assets/fire-safety contains 16 png files" },
+    { "name": "public_asset_urls", "status": "PASS", "detail": "GET /course-assets/fire-safety/slide2_2.png = 200 image/png" },
+    { "name": "frontend_player_render", "status": "PASS", "detail": "Public learner verification check learner.image.rendering = true" },
+    { "name": "deployment_asset_copy_step", "status": "PASS", "detail": "Pipeline updated to sync referenced image assets and rebuild web service" }
+  ],
+  "result": "PASS"
+}
