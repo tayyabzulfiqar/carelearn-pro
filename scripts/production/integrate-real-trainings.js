@@ -16,6 +16,20 @@ const COURSE_ROOT = process.env.HEALTHCARE_TRAININGS_ROOT || 'C:\\Users\\HP\\Des
 
 const COURSES = [
   {
+    key: 'healthsafety',
+    id: '817950ac-da8f-4cc3-8344-295c1a5c8276',
+    title: 'Health, Safety and Welfare (inc COSHH & RIDDOR)',
+    slug: 'health-safety-welfare-coshh-riddor',
+    description: 'Comprehensive health, safety and welfare training covering COSHH hazardous substances management and RIDDOR incident reporting for healthcare settings.',
+    category: 'Nurse',
+    duration: 90,
+    folder: 'Health, Safety and Welfare (inc COSHH & RIDDOR)',
+    assetSlug: 'health-safety-welfare',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_\d+\.json$/i,
+  },
+  {
     key: 'foodhygiene',
     id: '10f6c183-7e20-493e-9863-a6d576e5440f',
     title: 'Food Hygiene',

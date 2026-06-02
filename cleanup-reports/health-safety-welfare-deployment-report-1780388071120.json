@@ -1,0 +1,67 @@
+{
+  "at": "2026-06-02T08:14:31.118Z",
+  "course": {
+    "id": "817950ac-da8f-4cc3-8344-295c1a5c8276",
+    "title": "Health, Safety and Welfare (inc COSHH & RIDDOR)",
+    "slug": "health-safety-welfare-coshh-riddor",
+    "category": "Nurse",
+    "status": "published",
+    "duration_minutes": 90,
+    "pass_mark": 75,
+    "mandatory": true,
+    "lessons": 19,
+    "assessment_questions": 11,
+    "images": 16
+  },
+  "deployment": {
+    "assets_uploaded": 16,
+    "assets_missing": 0,
+    "host_asset_count": 16,
+    "asset_slug": "health-safety-welfare",
+    "db_lessons_inserted": 19,
+    "db_questions_inserted": 11,
+    "web_rebuild": "success"
+  },
+  "verification": {
+    "auth_login": "PASS",
+    "auth_session": "PASS",
+    "courses_list_visible": "PASS",
+    "course_present_in_list": "PASS",
+    "enrollment_exists": "PASS",
+    "course_load": "PASS",
+    "lesson_count_correct": "PASS",
+    "image_namespace": "PASS",
+    "progress_update": "PASS",
+    "progress_persist": "PASS",
+    "assessment_questions": "PASS",
+    "assessment_fail_flow": "PASS",
+    "assessment_pass_flow": "PASS"
+  },
+  "screenshots": {
+    "dashboard": "cleanup-reports/health-safety-welfare-verify-dashboard-1780388012318.png",
+    "player": "cleanup-reports/health-safety-welfare-verify-player-1780388012318.png",
+    "assessment": "cleanup-reports/health-safety-welfare-verify-assessment-1780388012318.png",
+    "completion": "cleanup-reports/health-safety-welfare-verify-completion-1780388012318.png"
+  },
+  "qa_checks": {
+    "lesson_count_correct": {
+      "expected": 19,
+      "actual": 19,
+      "result": "PASS"
+    },
+    "assessment_linked": {
+      "expected": 11,
+      "actual": 11,
+      "result": "PASS"
+    },
+    "images_render": "PASS",
+    "broken_image_urls": 0,
+    "missing_lessons": 0,
+    "duplicate_lessons": 0,
+    "orphan_assets": 0,
+    "course_visible_to_learners": "PASS",
+    "course_playable": "PASS"
+  },
+  "warnings": [],
+  "status": "PASS"
+}

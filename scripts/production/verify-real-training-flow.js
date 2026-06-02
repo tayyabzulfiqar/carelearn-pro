@@ -10,6 +10,7 @@ const REQUESTED_KEYS = String(process.env.COURSE_KEYS || '')
   .filter(Boolean);
 
 const COURSES = [
+  { key: 'healthsafety', id: '817950ac-da8f-4cc3-8344-295c1a5c8276', assetSlug: 'health-safety-welfare', expectsAssessment: true },
   { key: 'foodhygiene', id: '10f6c183-7e20-493e-9863-a6d576e5440f', assetSlug: 'food-hygiene', expectsAssessment: true },
   { key: 'firstaid', id: 'e5c7342d-ffae-46f6-bcb6-e943760e5b40', assetSlug: 'first-aid', expectsAssessment: true },
   { key: 'firesafety', id: '91fd81e6-f9d9-4dda-9d91-5fbc07f22f37', assetSlug: 'fire-safety', expectsAssessment: true },

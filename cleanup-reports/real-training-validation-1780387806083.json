@@ -1,0 +1,183 @@
+{
+  "at": "2026-06-02T08:10:06.059Z",
+  "root": "C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse",
+  "courses": [
+    {
+      "key": "healthsafety",
+      "id": "817950ac-da8f-4cc3-8344-295c1a5c8276",
+      "title": "Health, Safety and Welfare (inc COSHH & RIDDOR)",
+      "folder": "Health, Safety and Welfare (inc COSHH & RIDDOR)",
+      "lesson_files": [
+        "lesson_144.json",
+        "lesson_145.json",
+        "lesson_146.json",
+        "lesson_147.json",
+        "lesson_148.json",
+        "lesson_149.json",
+        "lesson_150.json",
+        "lesson_151.json",
+        "lesson_152.json",
+        "lesson_153.json",
+        "lesson_154.json",
+        "lesson_155.json",
+        "lesson_156.json",
+        "lesson_157.json",
+        "lesson_158.json",
+        "lesson_159.json",
+        "lesson_160.json",
+        "lesson_161.json",
+        "lesson_162.json"
+      ],
+      "lesson_numbers_source": [
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162
+      ],
+      "lesson_count_normalized": 19,
+      "assessment_files": [
+        "assessment_11.json"
+      ],
+      "assessment_question_count": 11,
+      "image_files": [
+        "IMG_341.webp",
+        "IMG_342.webp",
+        "IMG_343.webp",
+        "IMG_344.webp",
+        "IMG_345.webp",
+        "IMG_346.webp",
+        "IMG_347.webp",
+        "IMG_348.webp",
+        "IMG_349.webp",
+        "IMG_350.webp",
+        "IMG_351.webp",
+        "IMG_352.webp",
+        "IMG_353.webp",
+        "IMG_354.webp",
+        "IMG_355.webp",
+        "IMG_356.webp"
+      ],
+      "image_ref_count": 16,
+      "orphan_images": [],
+      "issues": [],
+      "warnings": [],
+      "normalized_numbering": [
+        {
+          "source_file": "lesson_144.json",
+          "source_number": 144,
+          "normalized_number": 1
+        },
+        {
+          "source_file": "lesson_145.json",
+          "source_number": 145,
+          "normalized_number": 2
+        },
+        {
+          "source_file": "lesson_146.json",
+          "source_number": 146,
+          "normalized_number": 3
+        },
+        {
+          "source_file": "lesson_147.json",
+          "source_number": 147,
+          "normalized_number": 4
+        },
+        {
+          "source_file": "lesson_148.json",
+          "source_number": 148,
+          "normalized_number": 5
+        },
+        {
+          "source_file": "lesson_149.json",
+          "source_number": 149,
+          "normalized_number": 6
+        },
+        {
+          "source_file": "lesson_150.json",
+          "source_number": 150,
+          "normalized_number": 7
+        },
+        {
+          "source_file": "lesson_151.json",
+          "source_number": 151,
+          "normalized_number": 8
+        },
+        {
+          "source_file": "lesson_152.json",
+          "source_number": 152,
+          "normalized_number": 9
+        },
+        {
+          "source_file": "lesson_153.json",
+          "source_number": 153,
+          "normalized_number": 10
+        },
+        {
+          "source_file": "lesson_154.json",
+          "source_number": 154,
+          "normalized_number": 11
+        },
+        {
+          "source_file": "lesson_155.json",
+          "source_number": 155,
+          "normalized_number": 12
+        },
+        {
+          "source_file": "lesson_156.json",
+          "source_number": 156,
+          "normalized_number": 13
+        },
+        {
+          "source_file": "lesson_157.json",
+          "source_number": 157,
+          "normalized_number": 14
+        },
+        {
+          "source_file": "lesson_158.json",
+          "source_number": 158,
+          "normalized_number": 15
+        },
+        {
+          "source_file": "lesson_159.json",
+          "source_number": 159,
+          "normalized_number": 16
+        },
+        {
+          "source_file": "lesson_160.json",
+          "source_number": 160,
+          "normalized_number": 17
+        },
+        {
+          "source_file": "lesson_161.json",
+          "source_number": 161,
+          "normalized_number": 18
+        },
+        {
+          "source_file": "lesson_162.json",
+          "source_number": 162,
+          "normalized_number": 19
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_courses": 1,
+    "warnings_total": 0,
+    "issues_total": 0
+  }
+}
