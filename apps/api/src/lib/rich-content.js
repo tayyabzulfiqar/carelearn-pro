@@ -18,6 +18,7 @@ const BLOCK_TYPES = Object.freeze({
 
 const ALLOWED_BLOCK_TYPES = new Set([
   ...Object.values(BLOCK_TYPES),
+  'bullet_list',
   // schema_version:3 structured import block types — ADDITIVE ONLY
   'key_information',
   'warning_box',
@@ -33,6 +34,14 @@ const ALLOWED_BLOCK_TYPES = new Set([
   'reference_table',
   'pdf_document',
 ]);
+
+const LEGACY_BLOCK_TYPE_MAP = Object.freeze({
+  paragraph: BLOCK_TYPES.RICH_TEXT,
+  hero_image: BLOCK_TYPES.IMAGE,
+  numbered_steps: 'step_list',
+  learning_objectives: 'objective_list',
+  info_box: 'key_information',
+});
 
 const SAFE_URL_PATTERN = /^(https?:\/\/|\/|#)/i;
 
@@ -116,6 +125,13 @@ function normalizeBlockPayload(type, payload = {}) {
         mimeType: cleanText(payload.mimeType || 'application/pdf', { max: 80 }),
       };
 
+    case 'bullet_list':
+      return {
+        items: Array.isArray(payload.items)
+          ? payload.items.map((item) => cleanText(item, { max: 2000 })).filter(Boolean)
+          : [],
+      };
+
     // ── schema_version:3 structured import types ─────────────────────
     // These types are stored by the assembler with structured payloads.
     // They must pass through with their data intact for RichLessonRenderer.
@@ -133,7 +149,9 @@ function normalizeBlockPayload(type, payload = {}) {
     case 'step_list':
       return {
         steps: Array.isArray(payload.steps)
-          ? payload.steps.map((s) => cleanText(s, { max: 2000 })).filter(Boolean)
+          ? payload.steps
+            .map((s) => cleanText(typeof s === 'string' ? s : (s?.text || s?.title || ''), { max: 2000 }))
+            .filter(Boolean)
           : [],
         text: cleanText(payload.text || '', { max: 20000 }),
       };
@@ -185,15 +203,41 @@ function normalizeBlockPayload(type, payload = {}) {
 }
 
 function normalizeBlock(block = {}, index = 0) {
-  const type = ALLOWED_BLOCK_TYPES.has(block.type) ? block.type : BLOCK_TYPES.RICH_TEXT;
+  const resolvedType = LEGACY_BLOCK_TYPE_MAP[block.type] || block.type;
+  const type = ALLOWED_BLOCK_TYPES.has(resolvedType) ? resolvedType : BLOCK_TYPES.RICH_TEXT;
   const id = cleanText(block.id, { max: 80 }) || randomUUID();
   const order = Number.isFinite(Number(block.order)) ? Number(block.order) : index;
+  const payload = block.payload || {};
+
+  const normalizedPayload = type === BLOCK_TYPES.HEADING
+    ? { text: payload.text || block.text, level: payload.level || block.level }
+    : type === BLOCK_TYPES.RICH_TEXT
+      ? { text: payload.text || block.text || block.content }
+      : type === BLOCK_TYPES.IMAGE
+        ? {
+          src: payload.src || block.src,
+          alt: payload.alt || block.alt,
+          caption: payload.caption || block.caption,
+          width: payload.width || block.width,
+          align: payload.align || block.align,
+        }
+        : type === 'bullet_list'
+          ? { items: payload.items || block.items }
+          : type === 'step_list'
+            ? { steps: payload.steps || block.steps, text: payload.text || block.text }
+            : type === 'objective_list'
+              ? { objectives: payload.objectives || block.items, text: payload.text || block.text }
+              : type === 'key_information' || type === 'warning_box' || type === 'critical_information' || type === 'best_practice' || type === 'important_note'
+                ? { text: payload.text || block.text || block.content, tone: payload.tone || block.tone }
+                : type === 'summary' || type === 'reflection_prompts' || type === 'reference_table'
+                  ? { text: payload.text || block.text || block.content }
+                  : payload;
 
   return {
     id,
     type,
     order,
-    payload: normalizeBlockPayload(type, block.payload || {}),
+    payload: normalizeBlockPayload(type, normalizedPayload),
     meta: {
       analyticsKey: cleanText(block.meta?.analyticsKey || `${type}_${index + 1}`, { max: 120 }),
       tags: Array.isArray(block.meta?.tags)
