@@ -11,6 +11,7 @@ const { buildQuizFromCanonical, scoreQuizAttempt } = require('../../lib/ai-quiz-
 const { buildSummaryFromCanonical } = require('../../lib/ai-summary-engine');
 const { buildNarrationFromCanonical } = require('../../lib/ai-narration-engine');
 const { buildAnalyticsSnapshot, buildComplianceSnapshot } = require('../../lib/layer4-intelligence');
+const { validatePublishableLessons } = require('../../lib/course-content-integrity');
 const { getProvider } = require('../../services/storage');
 const { parsePagination } = require('../../utils/pagination');
 
@@ -71,6 +72,18 @@ async function resolveOrganisationId(req) {
      LIMIT 1`
   );
   return row.rows[0]?.id || null;
+}
+
+async function getCourseLessons(courseId) {
+  const result = await db.query(
+    `SELECT l.*
+     FROM lessons l
+     JOIN modules m ON m.id = l.module_id
+     WHERE m.course_id = $1
+     ORDER BY m.order_index ASC, l.order_index ASC, l.created_at ASC`,
+    [courseId]
+  );
+  return result.rows;
 }
 
 function buildImageManifest(imageFiles = []) {
@@ -515,6 +528,18 @@ exports.publishTrainingDeterministic = async (req, res, next) => {
     const organisationId = await resolveOrganisationId(req);
     if (!organisationId) return res.fail('Organisation context is required', 'TENANT_REQUIRED', 400);
     const trainingId = req.params.id;
+    const lessons = await getCourseLessons(trainingId);
+    const publishValidation = lessons.length > 0
+      ? validatePublishableLessons(lessons)
+      : { passed: true, errors: [] };
+    if (!publishValidation.passed) {
+      return res.fail(
+        'Training failed publish validation',
+        'PUBLISH_VALIDATION_FAILED',
+        422,
+        publishValidation.errors,
+      );
+    }
     const workflow = await getOrgSetting({
       organisationId,
       key: `layer2_publish_workflow_${trainingId}`,
