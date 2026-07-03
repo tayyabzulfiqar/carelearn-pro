@@ -84,6 +84,7 @@ const createTables = async () => {
       metadata JSONB DEFAULT '{}',
       order_index INTEGER NOT NULL DEFAULT 0,
       duration_minutes INTEGER DEFAULT 5,
+      is_structured_import BOOLEAN DEFAULT false,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
@@ -539,7 +540,8 @@ const createTables = async () => {
       ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'draft',
       ADD COLUMN IF NOT EXISTS is_visible BOOLEAN DEFAULT true,
       ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ,
-      ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';
+      ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS is_structured_import BOOLEAN DEFAULT false;
 
     ALTER TABLE certificates
       ADD COLUMN IF NOT EXISTS verification_token VARCHAR(120);
@@ -582,6 +584,9 @@ const createTables = async () => {
     CREATE INDEX IF NOT EXISTS idx_courses_slug ON courses(slug);
     CREATE INDEX IF NOT EXISTS idx_modules_course_parent ON modules(course_id, parent_module_id);
     CREATE INDEX IF NOT EXISTS idx_lessons_module_order ON lessons(module_id, order_index);
+    CREATE INDEX IF NOT EXISTS idx_lessons_structured_import
+      ON lessons(is_structured_import)
+      WHERE is_structured_import = true;
     CREATE INDEX IF NOT EXISTS idx_quizzes_course_status ON quizzes(course_id, status);
     CREATE INDEX IF NOT EXISTS idx_quiz_questions_quiz_order ON quiz_questions(quiz_id, order_index);
     CREATE INDEX IF NOT EXISTS idx_certificates_verification_token ON certificates(verification_token);
