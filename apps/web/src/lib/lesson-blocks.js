@@ -1,5 +1,6 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
-const API_ORIGIN = API_BASE ? API_BASE.replace(/\/api\/v1\/?$/, '') : '';
+import mediaResolution from '@/lib/media-resolution';
+
+const { resolveMediaAssetUrl } = mediaResolution;
 
 export const BLOCK_TYPES = {
   RICH_TEXT: 'rich_text',
@@ -204,15 +205,7 @@ export function prepareLessonPresentationBlocks(blocks = []) {
 }
 
 export function resolveAssetUrl(input = '') {
-  if (!input || typeof input !== 'string') return '';
-  if (input.startsWith('http://') || input.startsWith('https://')) return input;
-  if (input.startsWith('/certificates')) return `${API_ORIGIN}${input}`;
-  if (input.startsWith('/api/v1')) return `${API_BASE}${input.replace(/^\/api\/v1/, '')}`;
-  if (input.startsWith('/uploads')) return `${API_BASE}${input}`;
-  // Static course assets served from Next.js public/ — pass through as-is
-  if (input.startsWith('/bls/')) return input;
-  if (input.startsWith('/course-assets/')) return input;
-  return `${API_BASE}${input.startsWith('/') ? input : `/${input}`}`;
+  return resolveMediaAssetUrl(input);
 }
 
 function normalizeLegacyStepList(block = {}) {

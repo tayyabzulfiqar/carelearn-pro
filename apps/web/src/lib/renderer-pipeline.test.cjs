@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const Module = require('node:module');
 
+process.env.NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://carelearn-pro-api.vercel.app/api/v1';
+
 function resolveAlias(specifier) {
   if (!specifier.startsWith('@/')) return specifier;
   return path.join(__dirname, '..', specifier.slice(2));
@@ -206,4 +208,11 @@ test('mixed legacy and structured blocks normalize into one shared render pipeli
   assert.ok(presented.some((block) => block.type === 'step_list'));
   assert.ok(presented.some((block) => block.type === 'image_slot'));
   assert.ok(presented.some((block) => block.type === 'reflection_prompts'));
+});
+
+test('resolves uploaded lesson assets against the api origin', () => {
+  assert.equal(
+    lessonBlocks.resolveAssetUrl('/uploads/media/example-image.webp'),
+    'https://carelearn-pro-api.vercel.app/uploads/media/example-image.webp'
+  );
 });

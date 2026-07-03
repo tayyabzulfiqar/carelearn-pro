@@ -1,4 +1,5 @@
 const { normalizeLessonDocument, validateLessonDocument } = require('./rich-content');
+const { validateMediaReference } = require('./media-reference-validation');
 
 function buildError(code, lesson, message, blockType = null) {
   return {
@@ -39,17 +40,23 @@ function validateBlockIntegrity(lesson, block) {
     case 'embed':
     case 'pdf_document': {
       const source = block.payload?.src || block.payload?.href || block.payload?.url || '';
-      return hasMeaningfulText(source)
+      const validation = validateMediaReference(source);
+      return validation.ok
         ? []
-        : [buildError('MEDIA_SOURCE_REQUIRED', lesson, 'Media blocks must include a usable source before publishing.', block.type)];
+        : [buildError(validation.code, lesson, validation.message, block.type)];
     }
     case 'image_slot':
       if (block.payload?.resolutionStatus !== 'resolved') {
         return [buildError('IMAGE_SLOT_SOURCE_REQUIRED', lesson, 'Image slots must be resolved before publishing.', block.type)];
       }
-      return hasMeaningfulText(block.payload?.cdnUrl)
+      if (!hasMeaningfulText(block.payload?.cdnUrl)) {
+        return [buildError('IMAGE_SLOT_SOURCE_REQUIRED', lesson, 'Image slots must include a resolved asset URL before publishing.', block.type)];
+      }
+
+      const validation = validateMediaReference(block.payload.cdnUrl);
+      return validation.ok
         ? []
-        : [buildError('IMAGE_SLOT_SOURCE_REQUIRED', lesson, 'Image slots must include a resolved asset URL before publishing.', block.type)];
+        : [buildError(validation.code, lesson, validation.message, block.type)];
     default:
       return [];
   }

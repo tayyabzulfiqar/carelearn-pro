@@ -54,6 +54,13 @@ test('resolves upload paths against local api host', () => {
   );
 });
 
+test('resolves uploaded media paths against the api origin instead of the api namespace', () => {
+  assert.equal(
+    resolveImageUrl('/uploads/media/example-image.webp'),
+    'https://carelearn-pro-api.vercel.app/uploads/media/example-image.webp'
+  );
+});
+
 test('returns empty image url for unresolved image objects', () => {
   assert.equal(
     resolveImageUrl({ src: '' }),

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { resolveAssetUrl, BLOCK_TYPES } from '@/lib/lesson-blocks';
+import { prepareLessonPresentationBlocks, resolveAssetUrl, BLOCK_TYPES } from '@/lib/lesson-blocks';
 
 function RichText({ payload }) {
   return <p className="text-[15px] leading-7 text-stone-700 whitespace-pre-wrap">{payload.text}</p>;
@@ -136,6 +136,7 @@ function ImageSlotBlock({ payload, isStudioMode = false }) {
   const posClass = POSITION_CLASS_MAP[payload.position] || 'cl-image--full-width';
   const frameClass = `cl-frame--${payload.frameStyle || 'none'}`;
   const pct = ratioPct(payload.ratio);
+  const src = resolveAssetUrl(payload.cdnUrl);
 
   if (payload.sequentialSetIncomplete && isStudioMode) {
     return (
@@ -154,12 +155,12 @@ function ImageSlotBlock({ payload, isStudioMode = false }) {
     );
   }
 
-  if (payload.resolutionStatus === 'resolved' && payload.cdnUrl && !imgFailed) {
+  if (payload.resolutionStatus === 'resolved' && src && !imgFailed) {
     return (
       <div className={`${posClass} ${frameClass}`} style={{ position: 'relative', paddingBottom: `${pct}%` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={payload.cdnUrl}
+          src={src}
           alt={payload.imageId || ''}
           loading="lazy"
           onError={() => setImgFailed(true)}
@@ -237,6 +238,17 @@ function ImportantNote({ payload }) {
         <p className="text-sm leading-7 text-teal-900 whitespace-pre-wrap">{payload.text}</p>
       </div>
     </div>
+  );
+}
+
+function BulletList({ payload }) {
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  return (
+    <ul className="space-y-2 pl-5">
+      {items.map((item, i) => (
+        <li key={i} className="list-disc text-[15px] leading-7 text-stone-700">{item}</li>
+      ))}
+    </ul>
   );
 }
 
@@ -403,6 +415,8 @@ const COMPONENTS = {
   [BLOCK_TYPES.QUIZ_EMBED]: QuizEmbed,
   [BLOCK_TYPES.CTA]: Cta,
   [BLOCK_TYPES.EMBED]: Embed,
+  // BLS block types
+  bullet_list:          BulletList,
   // 3-File block types
   image_slot:           ImageSlotBlock,
   key_information:      KeyInformation,
@@ -420,13 +434,15 @@ const COMPONENTS = {
 };
 
 export default function RichLessonRenderer({ blocks = [], isStudioMode = false }) {
-  if (!Array.isArray(blocks) || !blocks.length) {
+  const presentedBlocks = prepareLessonPresentationBlocks(blocks);
+
+  if (!Array.isArray(presentedBlocks) || !presentedBlocks.length) {
     return <p className="text-sm text-stone-500">No lesson blocks available.</p>;
   }
 
   return (
-    <div className="space-y-5">
-      {blocks.map((block) => {
+    <div data-testid="lesson-renderer" className="space-y-5">
+      {presentedBlocks.map((block) => {
         const Component = COMPONENTS[block.type];
         if (!Component) {
           if (process.env.NODE_ENV === 'development') {
