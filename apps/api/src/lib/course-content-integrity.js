@@ -19,6 +19,10 @@ function hasMeaningfulText(text = '') {
   return String(text || '').trim().length > 0;
 }
 
+function hasMeaningfulLinkList(items = []) {
+  return Array.isArray(items) && items.some((item) => hasMeaningfulText(item?.label) && hasMeaningfulText(item?.href));
+}
+
 function validateBlockIntegrity(lesson, block) {
   switch (block.type) {
     case 'objective_list':
@@ -26,11 +30,11 @@ function validateBlockIntegrity(lesson, block) {
         ? []
         : [buildError('OBJECTIVES_REQUIRED', lesson, 'Objective blocks must include at least one objective.', block.type)];
     case 'reference_table':
-      return hasMeaningfulText(block.payload?.text)
+      return hasMeaningfulText(block.payload?.text) || hasMeaningfulLinkList(block.payload?.citations)
         ? []
         : [buildError('REFERENCES_REQUIRED', lesson, 'Reference blocks must include source or standards text.', block.type)];
     case 'reflection_prompts':
-      return hasMeaningfulText(block.payload?.text)
+      return hasMeaningfulText(block.payload?.text) || (Array.isArray(block.payload?.prompts) && block.payload.prompts.some((prompt) => hasMeaningfulText(prompt)))
         ? []
         : [buildError('REFLECTION_REQUIRED', lesson, 'Reflection blocks must include at least one prompt.', block.type)];
     case 'image':

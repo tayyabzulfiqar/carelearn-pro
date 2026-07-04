@@ -308,21 +308,42 @@ function ObjectiveList({ payload }) {
 
 function ReflectionPrompts({ payload }) {
   const lines = (payload.text || '').split('\n').map(l => l.trim()).filter(Boolean);
+  const prompts = Array.isArray(payload.prompts) && payload.prompts.length ? payload.prompts : lines;
+  const links = Array.isArray(payload.links) ? payload.links.filter((link) => link && link.href) : [];
   return (
     <div className="rounded-xl border border-stone-200 bg-stone-50/50 p-4 space-y-3">
       <p className="text-xs font-bold uppercase tracking-[0.15em] text-stone-500">Reflection</p>
-      {lines.map((line, i) => (
+      {prompts.map((line, i) => (
         <p key={i} className="text-sm leading-7 text-stone-600 italic">{line}</p>
       ))}
+      {links.length ? (
+        <div className="pt-2 space-y-2 border-t border-stone-200">
+          {links.map((link, i) => (
+            <a key={i} href={resolveAssetUrl(link.href)} className="block text-sm font-medium text-indigo-700 hover:text-indigo-900 underline">
+              {link.label || link.href}
+            </a>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
 
 function ReferenceTable({ payload }) {
+  const citations = Array.isArray(payload.citations) && payload.citations.length ? payload.citations : [];
   return (
     <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
       <p className="text-xs font-bold uppercase tracking-[0.15em] text-stone-500 mb-2">Reference</p>
       <p className="text-sm leading-7 text-stone-700 whitespace-pre-wrap">{payload.text}</p>
+      {citations.length ? (
+        <div className="mt-3 space-y-2 border-t border-stone-200 pt-3">
+          {citations.map((citation, i) => (
+            <a key={i} href={resolveAssetUrl(citation.href)} className="block text-sm font-medium text-indigo-700 hover:text-indigo-900 underline">
+              {citation.label || citation.href}
+            </a>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

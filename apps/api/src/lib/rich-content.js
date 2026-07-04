@@ -60,7 +60,32 @@ function safeUrl(value) {
   return url;
 }
 
-function normalizeBlockPayload(type, payload = {}) {
+function normalizeLinkEntry(entry = {}, fallbackLabel = '') {
+  if (typeof entry === 'string') {
+    const text = cleanText(entry, { max: 240 });
+    return text ? { label: text, href: '' } : null;
+  }
+
+  const label = cleanText(entry.label || entry.text || entry.title || fallbackLabel, { max: 240 });
+  const href = safeUrl(entry.href || entry.url || '');
+
+  if (!label && !href) return null;
+  return { label, href };
+}
+
+function normalizeLinkList(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => normalizeLinkEntry(item))
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function isValidHref(value = '') {
+  const href = cleanText(value, { max: 2048 });
+  return Boolean(href) && safeUrl(href) === href;
+}
+
+function normalizeBlockPayload(type, payload = {}, block = {}) {
   switch (type) {
     case BLOCK_TYPES.HEADING:
       return {
@@ -191,10 +216,21 @@ function normalizeBlockPayload(type, payload = {}) {
       };
 
     case 'summary':
+      return {
+        text: cleanText(payload.text || '', { max: 20000 }),
+      };
+
     case 'reflection_prompts':
+      return {
+        text: cleanText(payload.text || '', { max: 20000 }),
+        prompts: Array.isArray(payload.prompts) ? payload.prompts.map((prompt) => cleanText(prompt, { max: 1000 })).filter(Boolean) : [],
+        links: normalizeLinkList(payload.links || block.links || []),
+      };
+
     case 'reference_table':
       return {
         text: cleanText(payload.text || '', { max: 20000 }),
+        citations: normalizeLinkList(payload.citations || block.citations || payload.references || block.references || []),
       };
 
     default:
@@ -229,15 +265,26 @@ function normalizeBlock(block = {}, index = 0) {
               ? { objectives: payload.objectives || block.items, text: payload.text || block.text }
               : type === 'key_information' || type === 'warning_box' || type === 'critical_information' || type === 'best_practice' || type === 'important_note'
                 ? { text: payload.text || block.text || block.content, tone: payload.tone || block.tone }
-                : type === 'summary' || type === 'reflection_prompts' || type === 'reference_table'
-                  ? { text: payload.text || block.text || block.content }
+            : type === 'summary'
+              ? { text: payload.text || block.text || block.content }
+              : type === 'reflection_prompts'
+                ? {
+                  text: payload.text || block.text || block.content,
+                  prompts: payload.prompts || block.prompts || block.items,
+                  links: payload.links || block.links,
+                }
+                : type === 'reference_table'
+                  ? {
+                    text: payload.text || block.text || block.content,
+                    citations: payload.citations || block.citations || payload.references || block.references,
+                  }
                   : payload;
 
   return {
     id,
     type,
     order,
-    payload: normalizeBlockPayload(type, normalizedPayload),
+    payload: normalizeBlockPayload(type, normalizedPayload, block),
     meta: {
       analyticsKey: cleanText(block.meta?.analyticsKey || `${type}_${index + 1}`, { max: 120 }),
       tags: Array.isArray(block.meta?.tags)
@@ -346,6 +393,15 @@ function validateLessonDocument({ title, content = {} }) {
         const url = block.payload.src || block.payload.href || '';
         return !url || SAFE_URL_PATTERN.test(url);
       }),
+    validReferences: blocks
+      .filter((block) => block.type === 'reference_table')
+      .every((block) => !Array.isArray(block.payload.citations) || block.payload.citations.every((citation) => Boolean(citation.label) && isValidHref(citation.href))),
+    validReflections: blocks
+      .filter((block) => block.type === 'reflection_prompts')
+      .every((block) => (
+        (!Array.isArray(block.payload.prompts) || block.payload.prompts.every((prompt) => Boolean(cleanText(prompt, { max: 1000 }))))
+        && (!Array.isArray(block.payload.links) || block.payload.links.every((link) => Boolean(link.label) && isValidHref(link.href)))
+      )),
   };
 
   return {

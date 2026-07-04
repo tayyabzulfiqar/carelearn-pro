@@ -14,6 +14,8 @@ const BLOCK_OPTIONS = [
   { label: 'Quiz Embed', value: BLOCK_TYPES.QUIZ_EMBED },
   { label: 'Button CTA', value: BLOCK_TYPES.CTA },
   { label: 'Iframe Embed', value: BLOCK_TYPES.EMBED },
+  { label: 'Reference', value: 'reference_table' },
+  { label: 'Reflection', value: 'reflection_prompts' },
 ];
 
 function move(items, from, to) {
@@ -26,6 +28,10 @@ function move(items, from, to) {
 
 function textInput(value, onChange, placeholder = '') {
   return <input className="field-input" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />;
+}
+
+function listInput(value, onChange, placeholder = '') {
+  return <textarea className="field-input min-h-[80px]" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />;
 }
 
 export default function LessonBlockEditor({ document, onChange, isStructuredLesson }) {
@@ -169,6 +175,109 @@ export default function LessonBlockEditor({ document, onChange, isStructuredLess
               <div className="grid gap-2 md:grid-cols-2">
                 {textInput(block.payload?.quizId, (value) => patchBlock(block.id, (current) => ({ ...current, payload: { ...current.payload, quizId: value } })), 'Quiz ID')}
                 {textInput(block.payload?.title, (value) => patchBlock(block.id, (current) => ({ ...current, payload: { ...current.payload, title: value } })), 'Quiz title')}
+              </div>
+            ) : null}
+
+            {block.type === 'reflection_prompts' ? (
+              <div className="space-y-2">
+                {listInput(block.payload?.text, (value) => patchBlock(block.id, (current) => ({ ...current, payload: { ...current.payload, text: value } })), 'Reflection notes')}
+                <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Prompts</p>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => patchBlock(block.id, (current) => ({
+                        ...current,
+                        payload: {
+                          ...current.payload,
+                          prompts: [...(Array.isArray(current.payload?.prompts) ? current.payload.prompts : []), ''],
+                        },
+                      }))}
+                    >
+                      + Add prompt
+                    </button>
+                  </div>
+                  {(Array.isArray(block.payload?.prompts) ? block.payload.prompts : []).map((prompt, promptIndex) => (
+                    <div key={promptIndex} className="grid gap-2 md:grid-cols-[1fr_auto]">
+                      {textInput(prompt, (value) => patchBlock(block.id, (current) => ({
+                        ...current,
+                        payload: {
+                          ...current.payload,
+                          prompts: (Array.isArray(current.payload?.prompts) ? current.payload.prompts : []).map((item, index) => (index === promptIndex ? value : item)),
+                        },
+                      })), `Prompt ${promptIndex + 1}`)}
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => patchBlock(block.id, (current) => ({
+                          ...current,
+                          payload: {
+                            ...current.payload,
+                            prompts: (Array.isArray(current.payload?.prompts) ? current.payload.prompts : []).filter((_, index) => index !== promptIndex),
+                          },
+                        }))}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {block.type === 'reference_table' ? (
+              <div className="space-y-2">
+                {listInput(block.payload?.text, (value) => patchBlock(block.id, (current) => ({ ...current, payload: { ...current.payload, text: value } })), 'Reference notes')}
+                <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Citations</p>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => patchBlock(block.id, (current) => ({
+                        ...current,
+                        payload: {
+                          ...current.payload,
+                          citations: [...(Array.isArray(current.payload?.citations) ? current.payload.citations : []), { label: '', href: '' }],
+                        },
+                      }))}
+                    >
+                      + Add citation
+                    </button>
+                  </div>
+                  {(Array.isArray(block.payload?.citations) ? block.payload.citations : []).map((citation, citationIndex) => (
+                    <div key={citationIndex} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                      {textInput(citation?.label, (value) => patchBlock(block.id, (current) => ({
+                        ...current,
+                        payload: {
+                          ...current.payload,
+                          citations: (Array.isArray(current.payload?.citations) ? current.payload.citations : []).map((item, index) => (index === citationIndex ? { ...item, label: value } : item)),
+                        },
+                      })), `Citation ${citationIndex + 1} label`)}
+                      {textInput(citation?.href, (value) => patchBlock(block.id, (current) => ({
+                        ...current,
+                        payload: {
+                          ...current.payload,
+                          citations: (Array.isArray(current.payload?.citations) ? current.payload.citations : []).map((item, index) => (index === citationIndex ? { ...item, href: value } : item)),
+                        },
+                      })), `Citation ${citationIndex + 1} link`)}
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => patchBlock(block.id, (current) => ({
+                          ...current,
+                          payload: {
+                            ...current.payload,
+                            citations: (Array.isArray(current.payload?.citations) ? current.payload.citations : []).filter((_, index) => index !== citationIndex),
+                          },
+                        }))}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
 

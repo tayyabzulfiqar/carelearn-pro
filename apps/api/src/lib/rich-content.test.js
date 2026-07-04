@@ -61,3 +61,61 @@ test('preserves pdf_document payload', () => {
   assert.equal(normalized.blocks[0].payload.url, '/uploads/media/abc123.pdf');
   assert.equal(normalized.blocks[0].payload.mimeType, 'application/pdf');
 });
+
+test('preserves reference citations and reflection prompts during normalization', () => {
+  const normalized = normalizeLessonDocument({
+    title: 'Reference Lesson',
+    content: {
+      blocks: [
+        {
+          type: 'reference_table',
+          payload: {
+            text: 'Standards',
+            citations: [
+              { label: 'CQC', href: 'https://www.cqc.org.uk' },
+            ],
+          },
+        },
+        {
+          type: 'reflection_prompts',
+          payload: {
+            text: 'Think about the response.',
+            prompts: ['What would you do first?'],
+            links: [
+              { label: 'Local policy', href: '/policies/evacuation' },
+            ],
+          },
+        },
+      ],
+    },
+  });
+
+  assert.deepEqual(normalized.blocks[0].payload.citations, [
+    { label: 'CQC', href: 'https://www.cqc.org.uk' },
+  ]);
+  assert.deepEqual(normalized.blocks[1].payload.prompts, ['What would you do first?']);
+  assert.deepEqual(normalized.blocks[1].payload.links, [
+    { label: 'Local policy', href: '/policies/evacuation' },
+  ]);
+});
+
+test('rejects invalid citation hyperlinks in structured content', () => {
+  const result = validateLessonDocument({
+    title: 'Broken Reference Lesson',
+    content: {
+      blocks: [
+        {
+          type: 'reference_table',
+          payload: {
+            text: 'Standards',
+            citations: [
+              { label: 'Unsafe link', href: 'javascript:alert(1)' },
+            ],
+          },
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.passed, false);
+});

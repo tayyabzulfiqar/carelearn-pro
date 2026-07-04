@@ -83,6 +83,9 @@ function collectBlockText(block = {}) {
     parts.push(Array.isArray(payload.objectives) ? payload.objectives.join(' ') : payload.text);
   } else if (block.type === 'summary' || block.type === 'reflection_prompts' || block.type === 'reference_table' || block.type === 'key_information' || block.type === 'warning_box' || block.type === 'critical_information' || block.type === 'best_practice' || block.type === 'important_note' || block.type === 'step_list' || block.type === 'quiz_point') {
     parts.push(payload.text, payload.question, payload.rationale);
+    if (Array.isArray(payload.prompts)) parts.push(payload.prompts.join(' '));
+    if (Array.isArray(payload.citations)) parts.push(payload.citations.map((citation) => `${citation.label || ''} ${citation.href || ''}`).join(' '));
+    if (Array.isArray(payload.links)) parts.push(payload.links.map((link) => `${link.label || ''} ${link.href || ''}`).join(' '));
   } else if (block.type === 'image_slot') {
     parts.push(payload.imageId, payload.alt, payload.caption, payload.cdnUrl);
   } else if (block.type === 'bullet_list') {
@@ -208,6 +211,33 @@ export function resolveAssetUrl(input = '') {
   return resolveMediaAssetUrl(input);
 }
 
+function normalizeLinkEntry(entry = {}, fallbackLabel = '') {
+  if (typeof entry === 'string') {
+    const text = sanitizeText(entry);
+    return text ? { label: text, href: '' } : null;
+  }
+
+  const label = sanitizeText(entry.label || entry.text || entry.title || fallbackLabel);
+  const href = sanitizeText(entry.href || entry.url || '');
+
+  if (!label && !href) return null;
+  return { label, href };
+}
+
+function normalizeLinkList(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => normalizeLinkEntry(item))
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function normalizePromptList(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => sanitizeText(item))
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
 function normalizeLegacyStepList(block = {}) {
   const payload = block.payload || {};
   const rawSteps = Array.isArray(payload.steps) ? payload.steps : (Array.isArray(block.steps) ? block.steps : []);
@@ -262,8 +292,21 @@ function normalizeBlockPayload(type, block = {}) {
       tone: sanitizeText(payload.tone || block.tone || ''),
     };
   }
-  if (type === 'summary' || type === 'reflection_prompts' || type === 'reference_table') {
+  if (type === 'summary') {
     return { text: sanitizeText(payload.text || block.text || block.content) };
+  }
+  if (type === 'reflection_prompts') {
+    return {
+      text: sanitizeText(payload.text || block.text || block.content),
+      prompts: normalizePromptList(payload.prompts || block.prompts || block.items || []),
+      links: normalizeLinkList(payload.links || block.links || []),
+    };
+  }
+  if (type === 'reference_table') {
+    return {
+      text: sanitizeText(payload.text || block.text || block.content),
+      citations: normalizeLinkList(payload.citations || block.citations || payload.references || block.references || []),
+    };
   }
   if (type === 'image_slot') {
     return {
@@ -459,12 +502,23 @@ export function sanitizeBlockForSave(block, index = 0) {
       objectives: Array.isArray(payload.objectives) ? payload.objectives.map((item) => sanitizeText(item)).filter(Boolean) : [],
       text: sanitizeText(payload.text),
     };
+  } else if (type === 'reflection_prompts') {
+    safe.payload = {
+      text: sanitizeText(payload.text),
+      prompts: normalizePromptList(payload.prompts || block.prompts || block.items || []),
+      links: normalizeLinkList(payload.links || block.links || []),
+    };
+  } else if (type === 'reference_table') {
+    safe.payload = {
+      text: sanitizeText(payload.text),
+      citations: normalizeLinkList(payload.citations || block.citations || payload.references || block.references || []),
+    };
   } else if (type === 'key_information' || type === 'warning_box' || type === 'critical_information' || type === 'best_practice' || type === 'important_note') {
     safe.payload = {
       text: sanitizeText(payload.text),
       tone: sanitizeText(payload.tone),
     };
-  } else if (type === 'summary' || type === 'reflection_prompts' || type === 'reference_table') {
+  } else if (type === 'summary') {
     safe.payload = {
       text: sanitizeText(payload.text),
     };

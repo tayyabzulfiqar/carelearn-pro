@@ -216,3 +216,40 @@ test('resolves uploaded lesson assets against the api origin', () => {
     'https://carelearn-pro-api.vercel.app/uploads/media/example-image.webp'
   );
 });
+
+test('preserves structured reference citations and reflection prompts when saving', () => {
+  const normalized = lessonBlocks.normalizeEditorDocument({
+    title: 'Reference Lesson',
+    blocks: [
+      {
+        type: 'reference_table',
+        payload: {
+          text: 'Standards',
+          citations: [
+            { label: 'CQC', href: 'https://www.cqc.org.uk' },
+          ],
+        },
+      },
+      {
+        type: 'reflection_prompts',
+        payload: {
+          text: 'Think about the response.',
+          prompts: ['What would you do first?'],
+          links: [
+            { label: 'Local policy', href: '/policies/evacuation' },
+          ],
+        },
+      },
+    ],
+  }, 'Reference Lesson');
+
+  const saved = normalized.blocks.map((block, index) => lessonBlocks.sanitizeBlockForSave(block, index));
+
+  assert.deepEqual(saved[0].payload.citations, [
+    { label: 'CQC', href: 'https://www.cqc.org.uk' },
+  ]);
+  assert.deepEqual(saved[1].payload.prompts, ['What would you do first?']);
+  assert.deepEqual(saved[1].payload.links, [
+    { label: 'Local policy', href: '/policies/evacuation' },
+  ]);
+});

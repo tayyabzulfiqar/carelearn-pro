@@ -49,6 +49,28 @@ test('fails publish validation for empty structured objectives, references, and 
   ]);
 });
 
+test('allows structured references and reflections when they include citations and prompts', () => {
+  const result = validatePublishableLessons([
+    {
+      id: 'lesson-structured',
+      title: 'Structured Lesson',
+      content: {
+        schema_version: 3,
+        title: 'Structured Lesson',
+        blocks: [
+          { type: 'heading', payload: { text: 'Structured Lesson', level: 2 } },
+          { type: 'reference_table', payload: { citations: [{ label: 'CQC', href: 'https://www.cqc.org.uk' }] } },
+          { type: 'reflection_prompts', payload: { prompts: ['What would you do first?'] } },
+          { type: 'rich_text', payload: { text: 'This lesson contains enough readable narrative text to pass baseline validation.' } },
+        ],
+      },
+    },
+  ]);
+
+  assert.equal(result.passed, true);
+  assert.deepEqual(result.errors, []);
+});
+
 test('fails publish validation for media blocks without usable sources', () => {
   const result = validatePublishableLessons([
     {
