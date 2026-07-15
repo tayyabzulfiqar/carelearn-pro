@@ -22,8 +22,15 @@ Reference build: **Basic Life Support — Recovery Test**.
 npm run recovery:test      # converter unit tests
 npm run recovery:publish -- --dry-run   # convert + validate, no DB write
 npm run recovery:publish   # publish the isolated test course
+npm run recovery:publish -- --reset     # re-publish after a test learner has progress
 npm run recovery:verify    # browser verification + screenshots
 ```
+
+Re-publishing replaces lessons, and `progress` rows reference them. Once a test
+learner has progress, `--reset` is required; it clears **this test course's own**
+progress, attempts and certificates first. Without it the publish refuses with an
+explanation rather than failing on a foreign key error. Every publish runs in a
+transaction, so a refusal leaves the existing course untouched.
 
 Nothing here is a new importer, renderer, or schema. The converter delegates all
 normalization to `normalizeLessonDocument` and all publish gating to

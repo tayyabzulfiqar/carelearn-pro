@@ -4,8 +4,11 @@
  * Usage:
  *   node apps/api/src/scripts/publish-recovery-course.js --dry-run
  *   node apps/api/src/scripts/publish-recovery-course.js
+ *   node apps/api/src/scripts/publish-recovery-course.js --reset
  *
  * --dry-run converts and validates without touching the database.
+ * --reset clears this test course's own progress, attempts and certificates,
+ *   which is required to re-publish once a test learner has progress.
  */
 const path = require('node:path');
 const bcrypt = require('bcryptjs');
@@ -94,7 +97,7 @@ async function main() {
   const db = require('../config/database');
   try {
     const result = await publishRecoveryCourse(payload, db, {
-      ...RECOVERY_LEARNER,
+      resetLearnerData: process.argv.includes('--reset'),
       learner: {
         email: RECOVERY_LEARNER.email,
         firstName: RECOVERY_LEARNER.firstName,

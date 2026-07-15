@@ -92,7 +92,7 @@ function buildRecoveryCoursePayload(config = {}) {
  * Publishes a built recovery payload. Scoped strictly to its own course id:
  * it never reads, deletes, or updates rows belonging to another course.
  */
-async function publishRecoveryCourse(payload, db, { learner = null } = {}) {
+async function publishRecoveryCourse(payload, db, { learner = null, resetLearnerData = false } = {}) {
   const courseId = payload.course.id;
   assert(!PROTECTED_COURSE_IDS.has(courseId), `refusing to publish over protected course ${courseId}`);
 
@@ -100,6 +100,20 @@ async function publishRecoveryCourse(payload, db, { learner = null } = {}) {
   assert(
     existing.rows.length === 0 || existing.rows[0].slug === payload.course.slug,
     `course ${courseId} already exists with slug "${existing.rows[0]?.slug}" — refusing to overwrite an unrelated course`,
+  );
+
+  // Re-publishing replaces lessons, which progress rows reference. Rather than
+  // fail on a raw foreign key error, require the caller to opt in to clearing
+  // this course's own learner data first.
+  const existingProgress = await db.query(
+    `SELECT count(*)::int AS n FROM progress
+     WHERE enrollment_id IN (SELECT id FROM enrollments WHERE course_id=$1)`,
+    [courseId],
+  );
+  assert(
+    existingProgress.rows[0].n === 0 || resetLearnerData,
+    `course ${courseId} has ${existingProgress.rows[0].n} learner progress rows referencing its lessons. `
+    + 'Re-publish with resetLearnerData (--reset) to clear this test course\'s own progress, attempts and certificates first.',
   );
 
   const moduleId = crypto.randomUUID();
@@ -130,6 +144,19 @@ async function publishRecoveryCourse(payload, db, { learner = null } = {}) {
         payload.course.mandatory,
       ],
     );
+
+    if (resetLearnerData) {
+      // Scoped strictly to this test course's own enrollments.
+      await db.query(
+        'DELETE FROM progress WHERE enrollment_id IN (SELECT id FROM enrollments WHERE course_id=$1)',
+        [courseId],
+      );
+      await db.query(
+        'DELETE FROM assessment_attempts WHERE enrollment_id IN (SELECT id FROM enrollments WHERE course_id=$1)',
+        [courseId],
+      );
+      await db.query('DELETE FROM certificates WHERE course_id=$1', [courseId]);
+    }
 
     // Re-publishing this test course replaces only its own content.
     await db.query('DELETE FROM assessment_questions WHERE course_id=$1', [courseId]);
