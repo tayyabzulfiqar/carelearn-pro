@@ -9,3 +9,6 @@ test-results/
 backups/
 *.sql.gz
 
+
+# Recovery verification output (screenshots + report)
+artifacts/

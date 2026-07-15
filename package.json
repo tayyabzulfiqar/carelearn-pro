@@ -15,7 +15,10 @@
     "web:verify": "npm run web:prebuild && npm run web:build",
     "fire-safety:import": "node apps/api/src/scripts/import-fire-safety-course.js",
     "fire-safety:validate": "node apps/api/src/scripts/validate-fire-safety-system.js",
-    "fire-safety:test": "node --test apps/api/src/lib/fire-safety-quiz.test.js apps/web/src/lib/quizSession.test.js apps/web/src/lib/coursePlayerState.test.js"
+    "fire-safety:test": "node --test apps/api/src/lib/fire-safety-quiz.test.js apps/web/src/lib/quizSession.test.js apps/web/src/lib/coursePlayerState.test.js",
+    "recovery:publish": "node apps/api/src/scripts/publish-recovery-course.js",
+    "recovery:verify": "node scripts/production/verify-recovery-course.js",
+    "recovery:test": "node --test apps/api/src/lib/recovery-package-converter.test.js"
   },
   "engines": {
     "node": ">=18.0.0"
