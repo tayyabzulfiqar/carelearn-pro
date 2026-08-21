@@ -5,12 +5,28 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const { Client } = require('ssh2');
 
-const VPS = {
-  host: process.env.VPS_HOST || '187.127.105.253',
-  port: Number(process.env.VPS_PORT || 22),
-  username: process.env.VPS_USER || 'root',
-  password: process.env.VPS_PASS || 'Abbasi@3155093759',
-};
+const VPS = (() => {
+  // Use SSH key authentication (preferred) or fall back to password if needed
+  const vpsConfig = {
+    host: process.env.VPS_HOST || '187.127.105.253',
+    port: Number(process.env.VPS_PORT || 22),
+    username: process.env.VPS_USER || 'root',
+  };
+  
+  // Try SSH key first (supports passphrase-less automation)
+  const keyPath = process.env.VPS_KEY_PATH || path.join(process.env.HOME || process.env.USERPROFILE, '.ssh', 'carelearn_vps_ed25519');
+  if (fs.existsSync(keyPath)) {
+    vpsConfig.privateKey = fs.readFileSync(keyPath);
+  } else if (process.env.VPS_PASS) {
+    // Fall back to password only if explicitly provided via env var
+    vpsConfig.password = process.env.VPS_PASS;
+  } else {
+    // Neither key nor password available
+    throw new Error('No SSH authentication configured. Provide either VPS_KEY_PATH (SSH key) or VPS_PASS (password) environment variable.');
+  }
+  
+  return vpsConfig;
+})();
 
 const COURSE_ROOT = process.env.HEALTHCARE_TRAININGS_ROOT || 'C:\\Users\\HP\\Desktop\\Healthcare trainings\\Nurse';
 
