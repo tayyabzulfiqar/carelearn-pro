@@ -29,16 +29,25 @@ export default function CertificateView({ certificate, course, user, onDone }) {
       <div className={`w-full max-w-5xl transition-all duration-700 ${show ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-3xl font-bold text-navy-900">Certificate Ready</h1>
-          <p className="text-stone-600">Preview and download the completed Fire Safety certificate.</p>
+          <p className="text-stone-600">Preview and download the completed {course?.title || 'course'} certificate.</p>
         </div>
 
         <div className="mb-6 rounded-[28px] bg-white shadow-2xl p-4">
           <div className="relative overflow-hidden rounded-[22px] border border-stone-200 bg-stone-100 aspect-[1.414/1]">
-            <img
-              src={backgroundImage}
-              alt="Fire safety certificate"
-              className="absolute inset-0 h-full w-full object-contain"
-            />
+            {downloadUrl ? (
+              <img
+                src={downloadUrl}
+                alt={`${course?.title || 'Course'} certificate`}
+                className="absolute inset-0 h-full w-full object-contain"
+              />
+            ) : (
+              <img
+                src={backgroundImage}
+                alt={`${course?.title || 'Course'} certificate background`}
+                className="absolute inset-0 h-full w-full object-contain"
+              />
+            )}
+            {!downloadUrl && (
             <div className="absolute inset-0">
               <div className="absolute left-1/2 top-[45%] -translate-x-1/2 text-center w-[70%]">
                 <h2 className="text-4xl font-semibold tracking-[0.08em] text-[#3b2418]">
@@ -62,6 +71,7 @@ export default function CertificateView({ certificate, course, user, onDone }) {
                 <p className="mt-1 text-sm italic text-[#3b2418]">Authorised by {template.authorizedBy || 'Nargis Nawaz'}</p>
               </div>
             </div>
+            )}
           </div>
         </div>
 
