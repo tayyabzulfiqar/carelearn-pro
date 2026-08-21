@@ -306,16 +306,53 @@ function ObjectiveList({ payload }) {
   );
 }
 
-function ReflectionPrompts({ payload }) {
+function ReflectionPrompts({ payload, meta }) {
+  const [reflection, setReflection] = useState('');
   const lines = (payload.text || '').split('\n').map(l => l.trim()).filter(Boolean);
   const prompts = Array.isArray(payload.prompts) && payload.prompts.length ? payload.prompts : lines;
   const links = Array.isArray(payload.links) ? payload.links.filter((link) => link && link.href) : [];
+
+  // Auto-save reflection text to localStorage by enrollment ID
+  const storageKey = meta?.enrollmentId ? `reflection_${meta.enrollmentId}_${meta?.lessonId || 'default'}` : null;
+  const handleReflectionChange = (text) => {
+    setReflection(text);
+    if (storageKey) {
+      try {
+        localStorage.setItem(storageKey, text);
+      } catch (err) {
+        console.warn('Could not save reflection to localStorage', err);
+      }
+    }
+  };
+
+  // Load reflection from localStorage on mount
+  useState(() => {
+    if (storageKey) {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) setReflection(saved);
+      } catch (err) {
+        console.warn('Could not load reflection from localStorage', err);
+      }
+    }
+  }, [storageKey]);
+
   return (
     <div className="rounded-xl border border-stone-200 bg-stone-50/50 p-4 space-y-3">
       <p className="text-xs font-bold uppercase tracking-[0.15em] text-stone-500">Reflection</p>
       {prompts.map((line, i) => (
         <p key={i} className="text-sm leading-7 text-stone-600 italic">{line}</p>
       ))}
+      <div className="pt-3 border-t border-stone-200 space-y-2">
+        <label className="block text-xs font-semibold text-stone-700">Your thoughts:</label>
+        <textarea
+          value={reflection}
+          onChange={(e) => handleReflectionChange(e.target.value)}
+          placeholder="Take a moment to reflect on what you have learned..."
+          className="w-full p-3 rounded-lg border border-stone-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-sm leading-6 resize-vertical min-h-[120px] font-sans"
+        />
+        <p className="text-xs text-stone-500">Your reflection is saved automatically as you type.</p>
+      </div>
       {links.length ? (
         <div className="pt-2 space-y-2 border-t border-stone-200">
           {links.map((link, i) => (
