@@ -16,6 +16,69 @@ const COURSE_ROOT = process.env.HEALTHCARE_TRAININGS_ROOT || 'C:\\Users\\HP\\Des
 
 const COURSES = [
   {
+    key: 'supervision',
+    id: '70c6017d-9c8a-4434-8e5e-8e6d08e9b139',
+    title: 'Supervision and Appraisal',
+    slug: 'supervision-and-appraisal',
+    description: 'Effective supervision and appraisal in health and social care: types and functions of supervision, appraisal and the appraisal process, performance management, difficult conversations, and record keeping.',
+    category: 'Nurse',
+    duration: 60,
+    folder: 'Supervision and Appraisal',
+    assetSlug: 'supervision-and-appraisal',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_20\.json$/i,
+    // Master Image Prompt document references IMG_505.webp for lesson 307, but that asset
+    // is not present on disk. Skip only the missing image and report it (all other images
+    // map 1:1 to the authored filenames, so no remap is required).
+    skipMissingImages: true,
+  },
+  {
+    key: 'sepsis',
+    id: '113631ab-2db3-4bac-8858-e06e339a86bd',
+    title: 'Sepsis: Bitesize Learning',
+    slug: 'sepsis-bitesize-learning',
+    description: 'Bitesize sepsis awareness for healthcare and care staff: what sepsis is, causes, symptoms, risk factors, screening tools and safe management and escalation.',
+    category: 'Nurse',
+    duration: 20,
+    folder: 'Sepsis Bitesize Learning',
+    assetSlug: 'sepsis-bitesize-learning',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_sepsis_bitesize_learning\.json$/i,
+    // Authored lesson JSON references placeholder image names (IMG_<lessonNumber>.webp)
+    // that do not exist on disk. The Master Image Prompt document is authoritative and
+    // maps each lesson to the real asset file. Applied in-memory only (source JSON files
+    // are never modified, images are never renamed, nothing moves between lessons).
+    imageOverrides: {
+      282: ['IMG_473.webp'],
+      283: ['IMG_474.webp'],
+      284: ['IMG_475.webp'],
+      285: ['IMG_476.webp'],
+      286: ['IMG_477.webp'],
+      287: ['IMG_478.webp'],
+      288: ['IMG_479.webp'],
+      289: ['IMG_480.webp'],
+      290: ['IMG_481.webp'],
+      291: ['IMG_482.webp'],
+      292: ['IMG_483.webp'],
+    },
+  },
+  {
+    key: 'movinghandling',
+    id: 'fde31da9-c229-4f7e-bdf7-c85f4619b046',
+    title: 'Moving and Handling Theory (L1 & L2)',
+    slug: 'moving-and-handling-theory',
+    description: 'Theory and legislation behind safe moving and handling practice: risk assessment, body mechanics, core stability, spinal protection, equipment, LOLER, and incident reporting in healthcare settings.',
+    category: 'Nurse',
+    duration: 60,
+    folder: 'Moving and Handling Theory (L1 & L2)',
+    assetSlug: 'moving-and-handling-theory',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_moving_and_handling_theory\.json$/i,
+  },
+  {
     key: 'healthsafety',
     id: '817950ac-da8f-4cc3-8344-295c1a5c8276',
     title: 'Health, Safety and Welfare (inc COSHH & RIDDOR)',
@@ -169,6 +232,20 @@ const COURSES = [
     mandatory: true,
     assessmentPattern: /^assessment_\d+\.json$/i,
   },
+  {
+    key: 'infogov',
+    id: 'd6a8df31-4f99-4368-92ca-591280f0de15',
+    title: 'Information Governance, Data Protection & GDPR',
+    slug: 'information-governance-data-protection-gdpr',
+    description: 'Information governance, data protection and GDPR for healthcare: data security principles, breach identification and reporting, Caldicott principles, record keeping, and individual rights.',
+    category: 'Nurse',
+    duration: 75,
+    folder: 'Information Governance, Data Protection & GDPR',
+    assetSlug: 'information-governance-data-protection-and-gdpr',
+    passMark: 75,
+    mandatory: true,
+    assessmentPattern: /^assessment_13\s*\.json$/i,
+  },
 ];
 
 const DEMO = {
@@ -187,6 +264,7 @@ const ASSETS_ONLY = String(process.env.ASSETS_ONLY || '').trim().toLowerCase() =
 const LESSON_MIN = Number(process.env.LESSON_MIN || 0);
 const LESSON_MAX = Number(process.env.LESSON_MAX || 0);
 const ASSESSMENT_FILE = String(process.env.ASSESSMENT_FILE || '').trim();
+const RESET_LEARNER_DATA = String(process.env.RESET_LEARNER_DATA || '').trim().toLowerCase() === 'true';
 
 function exec(conn, command, timeout = 300000) {
   return new Promise((resolve, reject) => {
@@ -287,7 +365,101 @@ function buildAssetIndex(rootDir) {
   return index;
 }
 
-function normalizeBlock(block, idx, imageSet, assetIndex, issues, lessonFile) {
+function listCourseImageNames(courseDir) {
+  return fs.readdirSync(courseDir)
+    .filter((f) => !!canonicalImageName(f))
+    .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]));
+}
+
+function addTextBlock(blocks, type, value) {
+  const text = String(value || '').trim();
+  if (!text) return;
+  blocks.push({ type, text });
+}
+
+function addListBlock(blocks, items) {
+  const cleanItems = Array.isArray(items) ? items.map((x) => String(x).trim()).filter(Boolean) : [];
+  if (cleanItems.length) blocks.push({ type: 'bulleted_list', items: cleanItems });
+}
+
+function blocksFromSourceCapture(raw) {
+  const blocks = [];
+  const title = String(raw?.lessonTitle || raw?.title || '').trim();
+  addTextBlock(blocks, 'heading', title);
+
+  addTextBlock(blocks, 'heading', raw?.subtitle);
+  addListBlock(blocks, raw?.learningObjectives);
+
+  for (const section of Array.isArray(raw?.content) ? raw.content : []) {
+    addTextBlock(blocks, 'heading', section?.heading);
+    for (const paragraph of Array.isArray(section?.paragraphs) ? section.paragraphs : []) {
+      addTextBlock(blocks, 'paragraph', paragraph);
+    }
+    addListBlock(blocks, section?.bullets);
+  }
+
+  for (const image of Array.isArray(raw?.images) ? raw.images : []) {
+    const filename = String(image?.filename || '').trim();
+    if (!filename) continue;
+    blocks.push({
+      type: 'image',
+      src: filename,
+      alt: String(image?.alt || '').trim(),
+      caption: String(image?.caption || '').trim(),
+    });
+  }
+
+  if (blocks.length > 1) return blocks;
+
+  for (const section of Array.isArray(raw?.sections) ? raw.sections : []) {
+    addTextBlock(blocks, 'heading', section?.text);
+  }
+  for (const paragraph of Array.isArray(raw?.paragraphs) ? raw.paragraphs : []) {
+    const text = String(paragraph || '').trim();
+    if (/^Chapter\s+\d+\s+of\s+\d+$/i.test(text)) continue;
+    addTextBlock(blocks, 'paragraph', text);
+  }
+  for (const list of Array.isArray(raw?.bulletLists) ? raw.bulletLists : []) {
+    addListBlock(blocks, list);
+  }
+  for (const list of Array.isArray(raw?.numberedLists) ? raw.numberedLists : []) {
+    addListBlock(blocks, list);
+  }
+  for (const note of Array.isArray(raw?.notes) ? raw.notes : []) {
+    addTextBlock(blocks, 'paragraph', note);
+  }
+  for (const warning of Array.isArray(raw?.warnings) ? raw.warnings : []) {
+    addTextBlock(blocks, 'paragraph', warning);
+  }
+  for (const definition of Array.isArray(raw?.definitions) ? raw.definitions : []) {
+    if (typeof definition === 'string') {
+      addTextBlock(blocks, 'paragraph', definition);
+    } else {
+      addTextBlock(blocks, 'paragraph', [definition?.term, definition?.definition].filter(Boolean).join(': '));
+    }
+  }
+  for (const table of Array.isArray(raw?.tables) ? raw.tables : []) {
+    addTextBlock(blocks, 'paragraph', JSON.stringify(table));
+  }
+
+  if (blocks.length > 1) return blocks;
+
+  const lines = Array.isArray(raw?.lessonContent?.lines) ? raw.lessonContent.lines : [];
+  const start = lines.findIndex((line) => String(line || '').trim() === title);
+  const contentLines = (start >= 0 ? lines.slice(start + 1) : lines)
+    .map((line) => String(line || '').trim())
+    .filter(Boolean)
+    .filter((line) => !/^(Home|Courses|Collections|My Learning|Portfolio|My Account|Course menu|Overview|Chapters|Assessment|Next chapter|Previous chapter|Take course assessment)$/i.test(line))
+    .filter((line) => !/^\d+\s+-\s+/.test(line));
+
+  for (const line of contentLines) {
+    if (line !== title) addTextBlock(blocks, 'paragraph', line);
+  }
+
+  return blocks;
+}
+
+function normalizeBlock(block, idx, imageSet, assetIndex, issues, lessonFile, skipMissing, missingImages) {
   const canonical = toCanonicalType(block?.type, block);
   const base = {
     id: crypto.randomUUID(),
@@ -309,10 +481,17 @@ function normalizeBlock(block, idx, imageSet, assetIndex, issues, lessonFile) {
     return { ...base, type: 'objective_list', payload: { objectives, text: '' } };
   }
 
-  const rawSrc = String(block?.src || block?.image || block?.payload?.src || '').trim();
+  const rawSrc = String(block?.src || block?.image || block?.filename || block?.payload?.src || '').trim();
   const fileName = rawSrc.split('/').pop();
   const canonicalName = canonicalImageName(fileName);
-  if (canonicalName && !imageSet.has(canonicalName) && !assetIndex.has(canonicalName)) {
+  const isMissing = canonicalName && !imageSet.has(canonicalName) && !assetIndex.has(canonicalName);
+  if (isMissing) {
+    if (Array.isArray(missingImages)) missingImages.push({ lessonFile, fileName: canonicalName });
+    if (skipMissing) {
+      // Authoritative master doc references an image with no asset on disk: drop this
+      // image block (it will be reported as skipped) rather than failing the import.
+      return { ...base, type: 'image', __skipMissing: true, payload: { src: rawSrc } };
+    }
     issues.push(`${lessonFile}: missing image asset ${fileName}`);
   }
   return {
@@ -336,7 +515,39 @@ function parseJsonFile(filePath) {
   return JSON.parse(utf16);
 }
 
-function validateAndParseLessons(courseDir, assetIndex) {
+function applyImageOverrides(raw, lessonNumber, overrides) {
+  if (!overrides) return raw;
+  const list = overrides[lessonNumber];
+  if (!Array.isArray(list) || !list.length) return raw;
+  let imgIdx = 0;
+  if (Array.isArray(raw.images)) {
+    raw.images = raw.images.map((im) => {
+      if (imgIdx < list.length) {
+        const filename = list[imgIdx];
+        imgIdx += 1;
+        return { ...im, filename };
+      }
+      return im;
+    });
+  }
+  let blockIdx = 0;
+  if (Array.isArray(raw.blocks)) {
+    raw.blocks = raw.blocks.map((b) => {
+      const t = String(b?.type || '').toLowerCase();
+      if (t === 'image' || t === 'hero_image') {
+        if (blockIdx < list.length) {
+          const filename = list[blockIdx];
+          blockIdx += 1;
+          return { ...b, src: filename, image: filename, filename };
+        }
+      }
+      return b;
+    });
+  }
+  return raw;
+}
+
+function validateAndParseLessons(courseDir, assetIndex, imageOverrides, skipMissingImages) {
   const files = fs.readdirSync(courseDir);
   const lessonFiles = files.filter((f) => /^lesson_\d+\.json$/i.test(f))
     .filter((f) => {
@@ -368,6 +579,7 @@ function validateAndParseLessons(courseDir, assetIndex) {
 
   const lessons = [];
   const referencedImages = new Set();
+  const missingImages = [];
   lessonFiles.forEach((file, sortedIndex) => {
     const lessonPath = path.join(courseDir, file);
     let raw;
@@ -378,16 +590,23 @@ function validateAndParseLessons(courseDir, assetIndex) {
       return;
     }
 
-    const rawBlocks = Array.isArray(raw.blocks) ? raw.blocks : [];
+    const fileNumber = Number(file.match(/\d+/)?.[0] || 0);
+    raw = applyImageOverrides(raw, fileNumber, imageOverrides);
+
+    const rawBlocks = Array.isArray(raw.blocks) ? raw.blocks : blocksFromSourceCapture(raw);
     if (!rawBlocks.length) {
       issues.push(`${file}: no blocks array content`);
       return;
     }
 
     const title = String(raw.lessonTitle || raw.title || '').trim() || `Lesson ${sortedIndex + 1}`;
+    const sourceNumber = Number(raw.lessonNumber || file.match(/\d+/)?.[0] || sortedIndex + 1);
     const durationMinutes = Number(String(raw.lessonDuration || '').match(/\d+/)?.[0] || 5);
 
-    const blocks = rawBlocks.map((b, idx) => normalizeBlock(b, idx, imageSet, assetIndex, issues, file));
+    const blocks = rawBlocks
+      .map((b, idx) => normalizeBlock(b, idx, imageSet, assetIndex, issues, file, skipMissingImages, missingImages))
+      .filter((b) => !b.__skipMissing)
+      .map((b, idx) => ({ ...b, order: idx }));
     for (const block of blocks) {
       if (block.type === 'image') {
         const src = String(block.payload?.src || '').trim();
@@ -401,13 +620,13 @@ function validateAndParseLessons(courseDir, assetIndex) {
       title,
       sourceFile: file,
       sourceNumber: Number(file.match(/\d+/)[0]),
-      lessonNumber: sortedIndex + 1,
+      lessonNumber: sourceNumber,
       durationMinutes,
       content: {
         schema_version: 3,
         title,
         blocks,
-        metadata: { locale: 'en', readingMinutes: durationMinutes, tags: [] },
+        metadata: { locale: 'en', readingMinutes: durationMinutes, tags: [], sourceLessonNumber: sourceNumber },
       },
     });
   });
@@ -422,6 +641,7 @@ function validateAndParseLessons(courseDir, assetIndex) {
     imageFiles,
     referencedImages: [...referencedImages],
     orphanImages,
+    missingImages,
     issues,
     warnings,
   };
@@ -461,7 +681,9 @@ function collectReferencedImageNames(lessons) {
 }
 
 async function syncCourseAssets(conn, course, lessons) {
-  const names = collectReferencedImageNames(lessons);
+  const referencedNames = collectReferencedImageNames(lessons);
+  const courseImageNames = listCourseImageNames(course.dir);
+  const names = [...new Set([...referencedNames, ...courseImageNames])];
   const localDir = course.dir;
   const hostDir = `/root/carelearn-pro/apps/web/public/course-assets/${course.assetSlug}`;
   const assetIndex = buildAssetIndex(COURSE_ROOT);
@@ -487,7 +709,8 @@ async function syncCourseAssets(conn, course, lessons) {
   const verify = await exec(conn, `cd /root/carelearn-pro && ls -1 apps/web/public/course-assets/${course.assetSlug} | wc -l`);
   const hostCount = Number(String(verify.out || '0').trim() || 0);
   return {
-    referenced: names.length,
+    referenced: referencedNames.length,
+    discovered: courseImageNames.length,
     uploaded: names.length - missingLocal.length,
     missingLocal,
     hostCount,
@@ -531,7 +754,7 @@ function parseAssessments(courseDir, pattern, courseKey) {
         ? q.options.map((o) => String(o?.text || '').trim())
         : q.options.map((o) => String(o || '').trim());
 
-      let correctAnswer = q.options.findIndex((o) => Boolean(o?.isCorrect));
+      let correctAnswer = q.options.findIndex((o) => Boolean(o?.isCorrect || o?.correct));
       if (correctAnswer < 0 && Array.isArray(q.correct_answers) && q.correct_answers.length) {
         correctAnswer = Number(q.correct_answers[0]);
         if (q.correct_answers.length > 1) {
@@ -540,6 +763,9 @@ function parseAssessments(courseDir, pattern, courseKey) {
       }
       if (correctAnswer < 0 && Number.isInteger(q.correct_answer)) {
         correctAnswer = Number(q.correct_answer);
+      }
+      if (correctAnswer < 0 && Number.isInteger(q.correctAnswer)) {
+        correctAnswer = Number(q.correctAnswer);
       }
       if (correctAnswer < 0 && typeof q.answer === 'string') {
         const normalizedAnswer = q.answer.trim().toLowerCase();
@@ -628,6 +854,36 @@ ON CONFLICT (id) DO UPDATE SET
 `;
 
     const moduleId = crypto.randomUUID();
+
+    // Re-publishing replaces this course's lessons under fresh ids, and progress
+    // rows reference them. IMPORT_MODE=full already clears progress above; every
+    // other mode would otherwise die on progress_lesson_id_fkey with an
+    // unactionable raw FK error. Same guard as recovery-course-publisher.js:
+    // refuse unless the caller opts in, and keep every delete scoped to this
+    // course's own enrollments. The whole script runs inside one transaction, so
+    // a refusal rolls back and leaves the existing course untouched.
+    if (IMPORT_MODE !== 'full') {
+      sql += RESET_LEARNER_DATA
+        ? `
+DELETE FROM progress WHERE enrollment_id IN (SELECT id FROM enrollments WHERE course_id='${course.id}');
+DELETE FROM assessment_attempts WHERE enrollment_id IN (SELECT id FROM enrollments WHERE course_id='${course.id}');
+DELETE FROM certificates WHERE course_id='${course.id}';
+`
+        : `
+DO $guard$
+DECLARE n integer;
+BEGIN
+  SELECT count(*) INTO n FROM progress
+   WHERE enrollment_id IN (SELECT id FROM enrollments WHERE course_id='${course.id}');
+  IF n > 0 THEN
+    RAISE EXCEPTION
+      'course ${course.id} (${sqlEsc(course.title)}) has % learner progress rows referencing its lessons. Re-run with RESET_LEARNER_DATA=true to clear this course''s own progress, attempts and certificates first.', n;
+  END IF;
+END
+$guard$;
+`;
+    }
+
     sql += `
 DELETE FROM assessment_questions WHERE course_id='${course.id}';
 DELETE FROM lessons WHERE module_id IN (SELECT id FROM modules WHERE course_id='${course.id}');
@@ -693,11 +949,14 @@ async function run() {
   const assetIndex = buildAssetIndex(COURSE_ROOT);
 
   for (const c of sourceCourses) {
-    const lessonValidation = validateAndParseLessons(c.dir, assetIndex);
+    const lessonValidation = validateAndParseLessons(c.dir, assetIndex, c.imageOverrides, c.skipMissingImages);
     const assessmentValidation = parseAssessments(c.dir, c.assessmentPattern, c.key);
 
+    const missingImages = lessonValidation.missingImages || [];
+    const missingImageWarnings = missingImages.map((m) => `${m.lessonFile}: image asset ${m.fileName} referenced by master mapping but missing on disk — skipped`);
+
     const allIssues = [...lessonValidation.issues, ...assessmentValidation.issues];
-    const allWarnings = [...lessonValidation.warnings, ...assessmentValidation.warnings];
+    const allWarnings = [...lessonValidation.warnings, ...assessmentValidation.warnings, ...missingImageWarnings];
 
     validation.courses.push({
       key: c.key,
@@ -712,6 +971,7 @@ async function run() {
       image_files: lessonValidation.imageFiles,
       image_ref_count: lessonValidation.referencedImages.length,
       orphan_images: lessonValidation.orphanImages,
+      skipped_missing_images: missingImages,
       issues: allIssues,
       warnings: allWarnings,
       normalized_numbering: lessonValidation.lessons.map((l) => ({ source_file: l.sourceFile, source_number: l.sourceNumber, normalized_number: l.lessonNumber })),
